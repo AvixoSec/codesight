@@ -7,18 +7,12 @@ from pathlib import Path
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, MofNCompleteColumn
+from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn, TextColumn
 from rich.text import Text
 
 from . import __version__
-from .analyzer import Analyzer, AnalysisError, TaskType, collect_files
-from .config import (
-    AppConfig,
-    CONFIG_FILE,
-    ProviderConfig,
-    load_config,
-    save_config,
-)
+from .analyzer import AnalysisError, Analyzer, TaskType, collect_files
+from .config import AppConfig, CONFIG_FILE, ProviderConfig, load_config, save_config
 
 console = Console(stderr=True)
 out = Console()
