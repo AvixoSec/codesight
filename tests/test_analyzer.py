@@ -1,11 +1,9 @@
-"""Analyzer tests."""
-
 import asyncio
 from unittest.mock import AsyncMock, patch, MagicMock
 
 import pytest
 
-from codesight.analyzer import Analyzer, TaskType, SYSTEM_PROMPTS
+from codesight.analyzer import Analyzer, AnalysisError, TaskType, SYSTEM_PROMPTS, collect_files
 from codesight.config import AppConfig, ProviderConfig
 from codesight.providers.base import LLMResponse
 
@@ -51,3 +49,59 @@ def test_analyze_file(mock_config, mock_provider, tmp_path):
     assert result.content == "## Summary\nAll looks good."
     assert result.tokens_used == 150
     mock_provider.complete.assert_called_once()
+
+
+def test_collect_files_finds_source_files(tmp_path):
+    # create some files
+    (tmp_path / "main.py").write_text("print(1)")
+    (tmp_path / "utils.py").write_text("def helper(): pass")
+    (tmp_path / "data.txt").write_text("not a source file")
+
+    files = collect_files(str(tmp_path))
+
+    assert len(files) == 2
+    assert any("main.py" in f for f in files)
+    assert any("utils.py" in f for f in files)
+
+
+def test_collect_files_ignores_hidden_and_ignore_patterns(tmp_path):
+    # hidden dir
+    hidden = tmp_path / ".git"
+    hidden.mkdir()
+    (hidden / "config.py").write_text("a = 1")
+
+    # ignored dir
+    node = tmp_path / "node_modules"
+    node.mkdir()
+    (node / "lib.js").write_text("module.exports = {};")
+
+    (tmp_path / "app.py").write_text("print(1)")
+
+    files = collect_files(str(tmp_path), ignore=["node_modules"])
+
+    assert len(files) == 1
+    assert "app.py" in files[0]
+
+
+def test_collect_files_filter_by_extension(tmp_path):
+    (tmp_path / "script.py").write_text("pass")
+    (tmp_path / "main.go").write_text("package main")
+    (tmp_path / "app.rs").write_text("fn main() {}")
+
+    files = collect_files(str(tmp_path), extensions={".py", ".rs"})
+
+    assert len(files) == 2
+    assert any(".py" in f for f in files)
+    assert any(".rs" in f for f in files)
+    assert not any("main.go" in f for f in files)
+
+
+def test_collect_files_skip_large_files(tmp_path):
+    (tmp_path / "small.py").write_text("x = 1")
+    big = tmp_path / "large.py"
+    big.write_text("x = 1\n" * 10000)  # ~70KB
+
+    files = collect_files(str(tmp_path), max_size_kb=50)
+
+    assert len(files) == 1
+    assert "small.py" in files[0]

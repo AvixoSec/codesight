@@ -1,5 +1,3 @@
-"""Config tests."""
-
 from unittest.mock import patch
 
 from codesight.config import AppConfig, ProviderConfig, load_config, save_config

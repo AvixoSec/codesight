@@ -1,8 +1,5 @@
-"""Core analysis engine."""
-
-from __future__ import annotations
-
 import asyncio
+import fnmatch
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -10,6 +7,32 @@ from pathlib import Path
 from .config import AppConfig, get_provider_config
 from .providers import create_provider
 from .providers.base import BaseLLMProvider, LLMResponse, Message
+
+SCAN_EXTENSIONS = {".py", ".js", ".ts", ".go", ".rs", ".java", ".cpp", ".c", ".h"}
+DEFAULT_MAX_SIZE = 500  # KB
+
+
+def collect_files(directory, extensions=None, ignore=None, max_size_kb=DEFAULT_MAX_SIZE):
+    root = Path(directory).resolve()
+    if not root.is_dir():
+        return []
+    exts = extensions or SCAN_EXTENSIONS
+    skip = ignore or []
+    found = []
+    for p in sorted(root.rglob("*")):
+        if not p.is_file() or p.suffix not in exts:
+            continue
+        rel = str(p.relative_to(root))
+        if any(fnmatch.fnmatch(rel, pat) or fnmatch.fnmatch(p.name, pat) for pat in skip):
+            continue
+        if any(fnmatch.fnmatch(part, pat) for pat in skip for part in Path(rel).parts):
+            continue
+        if any(part.startswith(".") for part in Path(rel).parts):
+            continue
+        if p.stat().st_size / 1024 > max_size_kb:
+            continue
+        found.append(str(p))
+    return found
 
 
 class TaskType(Enum):
@@ -31,89 +54,64 @@ class AnalysisResult:
 
 
 SYSTEM_PROMPTS = {
-    TaskType.REVIEW: (
-        "You are CodeSight, a senior software engineer performing a thorough code review. "
-        "Analyze the provided source code for: correctness, performance, security vulnerabilities, "
-        "code style, and maintainability. Structure your response with sections: "
-        "## Summary, ## Issues (severity: critical/warning/info), ## Suggestions."
-    ),
-    TaskType.BUGS: (
-        "You are CodeSight, a bug-detection specialist. Analyze the code for potential bugs, "
-        "race conditions, off-by-one errors, null-pointer dereferences, resource leaks, and "
-        "logic flaws. For each bug found, explain the root cause and propose a fix. "
-        "Use sections: ## Bugs Found, ## Risk Assessment."
-    ),
-    TaskType.DOCS: (
-        "You are CodeSight, a technical documentation generator. Given the source code, produce "
-        "clean, comprehensive docstrings and module-level documentation in the style of the "
-        "language's conventions (e.g. Google-style for Python, JSDoc for JS/TS). "
-        "Return the full file with added documentation."
-    ),
-    TaskType.EXPLAIN: (
-        "You are CodeSight, a patient code explainer. Break down the provided code for a "
-        "developer who is seeing it for the first time. Explain the purpose, data flow, "
-        "key design decisions, and any non-obvious patterns. Use clear headings."
-    ),
-    TaskType.REFACTOR: (
-        "You are CodeSight, a refactoring advisor. Analyze the code and suggest concrete "
-        "refactoring opportunities: extract functions, reduce complexity, improve naming, "
-        "apply design patterns where appropriate. Show before/after snippets."
-    ),
+    TaskType.REVIEW: "Code review. Find issues, tag severity [crit/warn/info], suggest fixes. Sections: Summary, Issues, Suggestions.",
+    TaskType.BUGS: "Find runtime bugs: logic errors, null access, resource leaks, races. Skip style. Sections: Bugs Found, Risk.",
+    TaskType.DOCS: "Generate docs. Follow language conventions. Document all public APIs. Return full file with docs.",
+    TaskType.EXPLAIN: "Explain this code. What it does, data flow, why structured this way. Reference specific lines.",
+    TaskType.REFACTOR: "Suggest refactors. Show before/after. Focus on: extract logic, reduce nesting, better names.",
 }
 
 
-class Analyzer:
-    """Main analysis orchestrator."""
+class AnalysisError(Exception):
+    pass
 
-    def __init__(self, config: AppConfig, provider_name: str | None = None) -> None:
+
+class Analyzer:
+
+    def __init__(self, config, provider_name=None):
         pconfig = get_provider_config(config, provider_name)
-        self._provider: BaseLLMProvider = create_provider(pconfig)
+        self._provider = create_provider(pconfig)
         self._max_tokens = pconfig.max_tokens
         self._temperature = pconfig.temperature
+        self._max_size = config.max_file_size_kb
 
-    async def analyze_file(
-        self,
-        file_path: str,
-        task: TaskType,
-        extra_context: str | None = None,
-    ) -> AnalysisResult:
-        """Run a single analysis task on one file."""
-        source = Path(file_path).read_text(encoding="utf-8", errors="replace")
-        ext = Path(file_path).suffix
+    def _check_file(self, path):
+        p = Path(path)
+        if not p.is_file():
+            raise AnalysisError(f"Not found: {path}")
+        if p.stat().st_size / 1024 > self._max_size:
+            raise AnalysisError(f"Too big: {p.stat().st_size / 1024:.0f}KB (max {self._max_size}KB)")
+        return p
 
-        user_content = f"File: `{file_path}` ({ext})\n\n```{ext.lstrip('.')}\n{source}\n```"
+    async def analyze_file(self, file_path, task, extra_context=None):
+        p = self._check_file(file_path)
+        src = p.read_text(encoding="utf-8", errors="replace")
+        ext = p.suffix.lstrip(".")
+
+        content = f"File: `{file_path}`\n\n```{ext}\n{src}\n```"
         if extra_context:
-            user_content += f"\n\nAdditional context: {extra_context}"
+            content += f"\n\nContext: {extra_context}"
 
-        messages = [
-            Message(role="system", content=SYSTEM_PROMPTS[task]),
-            Message(role="user", content=user_content),
-        ]
+        msgs = [Message(role="system", content=SYSTEM_PROMPTS[task]),
+                Message(role="user", content=content)]
 
-        response: LLMResponse = await self._provider.complete(
-            messages,
-            max_tokens=self._max_tokens,
-            temperature=self._temperature,
-        )
+        try:
+            resp = await self._provider.complete(msgs, max_tokens=self._max_tokens,
+                                                  temperature=self._temperature)
+        except Exception as e:
+            raise AnalysisError(f"API failed: {e}") from e
 
         return AnalysisResult(
-            task=task,
-            file_path=file_path,
-            content=response.content,
-            model=response.model,
-            provider=response.provider,
-            tokens_used=response.usage.get("prompt_tokens", 0)
-            + response.usage.get("completion_tokens", 0),
+            task=task, file_path=file_path, content=resp.content,
+            model=resp.model, provider=resp.provider,
+            tokens_used=resp.usage.get("prompt_tokens", 0) + resp.usage.get("completion_tokens", 0)
         )
 
-    async def analyze_files(
-        self,
-        file_paths: list[str],
-        task: TaskType,
-    ) -> list[AnalysisResult]:
-        """Run analysis on multiple files concurrently."""
-        tasks = [self.analyze_file(fp, task) for fp in file_paths]
-        return await asyncio.gather(*tasks)
+    async def analyze_files(self, paths, task):
+        out = []
+        for p in paths:
+            out.append(await self.analyze_file(p, task))
+        return out
 
-    async def health(self) -> bool:
+    async def health(self):
         return await self._provider.health_check()

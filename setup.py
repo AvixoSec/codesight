@@ -6,7 +6,7 @@ long_description = (Path(__file__).parent / "README.md").read_text(encoding="utf
 setup(
     name="codesight",
     version="0.1.0",
-    description="AI-powered code analysis and review tool",
+    description="Code analysis and review CLI tool",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="AvixoSec",
@@ -18,6 +18,7 @@ setup(
         "httpx>=0.27",
         "anthropic>=0.40",
         "google-auth>=2.29",
+        "rich>=13.7",
     ],
     extras_require={
         "dev": ["pytest", "pytest-asyncio", "ruff", "mypy"],

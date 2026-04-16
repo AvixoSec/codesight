@@ -1,14 +1,10 @@
-"""Base LLM provider interface."""
-
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 
 @dataclass
 class Message:
-    role: str  # "system", "user", "assistant"
+    role: str
     content: str
 
 
@@ -16,30 +12,18 @@ class Message:
 class LLMResponse:
     content: str
     model: str
-    usage: dict  # {"prompt_tokens": int, "completion_tokens": int}
+    usage: dict
     provider: str
 
 
 class BaseLLMProvider(ABC):
-    """Interface that every LLM provider must implement."""
 
     @abstractmethod
-    async def complete(
-        self,
-        messages: list[Message],
-        max_tokens: int = 4096,
-        temperature: float = 0.2,
-    ) -> LLMResponse:
-        """Send a chat-completion request and return the response."""
-        ...
+    async def complete(self, messages, max_tokens=4096, temperature=0.2): ...
 
     @abstractmethod
-    async def health_check(self) -> bool:
-        """Return True if the provider is reachable."""
-        ...
+    async def health_check(self): ...
 
     @property
     @abstractmethod
-    def name(self) -> str:
-        """Human-readable provider name."""
-        ...
+    def name(self): ...
