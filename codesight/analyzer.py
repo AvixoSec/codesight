@@ -1,12 +1,11 @@
-import asyncio
 import fnmatch
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-from .config import AppConfig, get_provider_config
+from .config import get_provider_config
 from .providers import create_provider
-from .providers.base import BaseLLMProvider, LLMResponse, Message
+from .providers.base import Message
 
 SCAN_EXTENSIONS = {".py", ".js", ".ts", ".go", ".rs", ".java", ".cpp", ".c", ".h"}
 DEFAULT_MAX_SIZE = 500  # KB
@@ -54,11 +53,26 @@ class AnalysisResult:
 
 
 SYSTEM_PROMPTS = {
-    TaskType.REVIEW: "Code review. Find issues, tag severity [crit/warn/info], suggest fixes. Sections: Summary, Issues, Suggestions.",
-    TaskType.BUGS: "Find runtime bugs: logic errors, null access, resource leaks, races. Skip style. Sections: Bugs Found, Risk.",
-    TaskType.DOCS: "Generate docs. Follow language conventions. Document all public APIs. Return full file with docs.",
-    TaskType.EXPLAIN: "Explain this code. What it does, data flow, why structured this way. Reference specific lines.",
-    TaskType.REFACTOR: "Suggest refactors. Show before/after. Focus on: extract logic, reduce nesting, better names.",
+    TaskType.REVIEW: (
+        "Code review. Find issues, tag severity [crit/warn/info], suggest fixes. "
+        "Sections: Summary, Issues, Suggestions."
+    ),
+    TaskType.BUGS: (
+        "Find runtime bugs: logic errors, null access, resource leaks, races. "
+        "Skip style. Sections: Bugs Found, Risk."
+    ),
+    TaskType.DOCS: (
+        "Generate docs. Follow language conventions. Document all public APIs. "
+        "Return full file with docs."
+    ),
+    TaskType.EXPLAIN: (
+        "Explain this code. What it does, data flow, why structured this way. "
+        "Reference specific lines."
+    ),
+    TaskType.REFACTOR: (
+        "Suggest refactors. Show before/after. Focus on: extract logic, "
+        "reduce nesting, better names."
+    ),
 }
 
 
@@ -80,7 +94,8 @@ class Analyzer:
         if not p.is_file():
             raise AnalysisError(f"Not found: {path}")
         if p.stat().st_size / 1024 > self._max_size:
-            raise AnalysisError(f"Too big: {p.stat().st_size / 1024:.0f}KB (max {self._max_size}KB)")
+            sz = p.stat().st_size / 1024
+            raise AnalysisError(f"Too big: {sz:.0f}KB (max {self._max_size}KB)")
         return p
 
     async def analyze_file(self, file_path, task, extra_context=None):

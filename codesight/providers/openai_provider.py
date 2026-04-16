@@ -1,7 +1,6 @@
 import httpx
 
-from ..config import ProviderConfig
-from .base import BaseLLMProvider, LLMResponse, Message
+from .base import BaseLLMProvider, LLMResponse
 
 
 class OpenAIProvider(BaseLLMProvider):
@@ -12,7 +11,10 @@ class OpenAIProvider(BaseLLMProvider):
         if not config.api_key:
             raise ValueError("Missing OPENAI_API_KEY")
         self._config = config
-        self._headers = {"Authorization": f"Bearer {config.api_key}", "Content-Type": "application/json"}
+        self._headers = {
+            "Authorization": f"Bearer {config.api_key}",
+            "Content-Type": "application/json",
+        }
 
     @property
     def name(self):
@@ -23,7 +25,8 @@ class OpenAIProvider(BaseLLMProvider):
                    "messages": [{"role": m.role, "content": m.content} for m in messages],
                    "max_tokens": max_tokens, "temperature": temperature}
         async with httpx.AsyncClient(timeout=120) as c:
-            r = await c.post(f"{self.API_BASE}/chat/completions", headers=self._headers, json=payload)
+            url = f"{self.API_BASE}/chat/completions"
+            r = await c.post(url, headers=self._headers, json=payload)
             r.raise_for_status()
             d = r.json()
         usage = d.get("usage", {})

@@ -190,7 +190,9 @@ def _run_config() -> None:
         project = console.input("Google Cloud Project: ").strip()
         region = console.input("Region [us-central1]: ").strip() or "us-central1"
         model = console.input("Model [gemini-3.1-pro]: ").strip() or "gemini-3.1-pro"
-        cfg.providers["google"] = ProviderConfig(provider="google", project_id=project, region=region, model=model)
+        cfg.providers["google"] = ProviderConfig(
+            provider="google", project_id=project, region=region, model=model
+        )
     else:
         console.print(f"[red]Unknown: {p}[/]")
         sys.exit(1)
@@ -221,7 +223,8 @@ def main():
     args = parser.parse_args()
 
     if not args.command:
-        console.print(Panel(f"codesight {__version__}\nRun: codesight --help", border_style="green"))
+        msg = f"codesight {__version__}\nRun: codesight --help"
+        console.print(Panel(msg, border_style="green"))
         sys.exit(0)
 
     cfg = load_config()

@@ -25,7 +25,9 @@ class AppConfig:
     output_format: str = "markdown"
     language: str = "en"
     max_file_size_kb: int = 500
-    ignore_patterns: list = field(default_factory=lambda: ["*.pyc", "__pycache__", ".git", "node_modules", ".env"])
+    ignore_patterns: list = field(default_factory=lambda: [
+        "*.pyc", "__pycache__", ".git", "node_modules", ".env"
+    ])
 
     def to_dict(self):
         return asdict(self)
