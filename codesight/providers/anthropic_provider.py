@@ -1,6 +1,6 @@
 """Anthropic provider."""
 
-from typing import List
+from __future__ import annotations
 
 import httpx
 
@@ -16,7 +16,8 @@ class AnthropicProvider(BaseLLMProvider):
     def __init__(self, config: ProviderConfig) -> None:
         if not config.api_key:
             raise ValueError(
-                "Anthropic API key is required. Set ANTHROPIC_API_KEY or configure it in ~/.codesight/config.json"
+                "Anthropic API key is required. "
+                "Set ANTHROPIC_API_KEY or configure it in ~/.codesight/config.json"
             )
         self._config = config
         self._model = config.model or "claude-opus-4-6-20251101"
@@ -32,7 +33,7 @@ class AnthropicProvider(BaseLLMProvider):
 
     async def complete(
         self,
-        messages: List[Message],
+        messages: list[Message],
         max_tokens: int = 4096,
         temperature: float = 0.2,
     ) -> LLMResponse:
@@ -80,7 +81,10 @@ class AnthropicProvider(BaseLLMProvider):
             async with httpx.AsyncClient(timeout=10) as client:
                 resp = await client.get(
                     f"{self.API_BASE}/models",
-                    headers={"x-api-key": self._config.api_key, "anthropic-version": "2023-06-01"},
+                    headers={
+                        "x-api-key": self._config.api_key or "",
+                        "anthropic-version": "2023-06-01",
+                    },
                 )
                 return resp.status_code == 200
         except Exception:

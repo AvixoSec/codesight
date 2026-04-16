@@ -1,10 +1,11 @@
 """Core analysis engine."""
 
+from __future__ import annotations
+
 import asyncio
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional
 
 from .config import AppConfig, get_provider_config
 from .providers import create_provider
@@ -64,7 +65,7 @@ SYSTEM_PROMPTS = {
 class Analyzer:
     """Main analysis orchestrator."""
 
-    def __init__(self, config: AppConfig, provider_name: Optional[str] = None) -> None:
+    def __init__(self, config: AppConfig, provider_name: str | None = None) -> None:
         pconfig = get_provider_config(config, provider_name)
         self._provider: BaseLLMProvider = create_provider(pconfig)
         self._max_tokens = pconfig.max_tokens
@@ -74,7 +75,7 @@ class Analyzer:
         self,
         file_path: str,
         task: TaskType,
-        extra_context: Optional[str] = None,
+        extra_context: str | None = None,
     ) -> AnalysisResult:
         """Run a single analysis task on one file."""
         source = Path(file_path).read_text(encoding="utf-8", errors="replace")
@@ -107,9 +108,9 @@ class Analyzer:
 
     async def analyze_files(
         self,
-        file_paths: List[str],
+        file_paths: list[str],
         task: TaskType,
-    ) -> List[AnalysisResult]:
+    ) -> list[AnalysisResult]:
         """Run analysis on multiple files concurrently."""
         tasks = [self.analyze_file(fp, task) for fp in file_paths]
         return await asyncio.gather(*tasks)

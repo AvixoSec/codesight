@@ -1,12 +1,16 @@
 """Provider factory."""
 
-from ..config import ProviderConfig
-from .base import BaseLLMProvider
-from .openai_provider import OpenAIProvider
-from .anthropic_provider import AnthropicProvider
-from .google_provider import GoogleVertexProvider
+from __future__ import annotations
 
-_REGISTRY = {
+from collections.abc import Callable
+
+from ..config import ProviderConfig
+from .anthropic_provider import AnthropicProvider
+from .base import BaseLLMProvider
+from .google_provider import GoogleVertexProvider
+from .openai_provider import OpenAIProvider
+
+_REGISTRY: dict[str, Callable[[ProviderConfig], BaseLLMProvider]] = {
     "openai": OpenAIProvider,
     "anthropic": AnthropicProvider,
     "google": GoogleVertexProvider,
@@ -15,10 +19,10 @@ _REGISTRY = {
 
 def create_provider(config: ProviderConfig) -> BaseLLMProvider:
     """Instantiate the correct provider based on configuration."""
-    cls = _REGISTRY.get(config.provider)
-    if cls is None:
+    factory = _REGISTRY.get(config.provider)
+    if factory is None:
         supported = ", ".join(_REGISTRY.keys())
         raise ValueError(
             f"Unknown provider '{config.provider}'. Supported: {supported}"
         )
-    return cls(config)
+    return factory(config)

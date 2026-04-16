@@ -1,6 +1,6 @@
 """OpenAI provider."""
 
-from typing import List
+from __future__ import annotations
 
 import httpx
 
@@ -15,7 +15,10 @@ class OpenAIProvider(BaseLLMProvider):
 
     def __init__(self, config: ProviderConfig) -> None:
         if not config.api_key:
-            raise ValueError("OpenAI API key is required. Set OPENAI_API_KEY or configure it in ~/.codesight/config.json")
+            raise ValueError(
+                "OpenAI API key is required. "
+                "Set OPENAI_API_KEY or configure it in ~/.codesight/config.json"
+            )
         self._config = config
         self._headers = {
             "Authorization": f"Bearer {config.api_key}",
@@ -28,7 +31,7 @@ class OpenAIProvider(BaseLLMProvider):
 
     async def complete(
         self,
-        messages: List[Message],
+        messages: list[Message],
         max_tokens: int = 4096,
         temperature: float = 0.2,
     ) -> LLMResponse:

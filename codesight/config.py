@@ -1,10 +1,12 @@
 """Configuration management."""
 
-import os
+from __future__ import annotations
+
 import json
-from dataclasses import dataclass, field, asdict
+import os
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any
 
 CONFIG_DIR = Path.home() / ".codesight"
 CONFIG_FILE = CONFIG_DIR / "config.json"
@@ -14,10 +16,10 @@ CONFIG_FILE = CONFIG_DIR / "config.json"
 class ProviderConfig:
     """Configuration for a single LLM provider."""
     provider: str  # "openai", "anthropic", "google"
-    api_key: Optional[str] = None
+    api_key: str | None = None
     model: str = "gpt-5.4"
-    project_id: Optional[str] = None  # Google Cloud project ID
-    region: Optional[str] = None  # Google Cloud region
+    project_id: str | None = None  # Google Cloud project ID
+    region: str | None = None  # Google Cloud region
     max_tokens: int = 4096
     temperature: float = 0.2
 
@@ -26,7 +28,7 @@ class ProviderConfig:
 class AppConfig:
     """Global application configuration."""
     default_provider: str = "openai"
-    providers: Dict[str, ProviderConfig] = field(default_factory=dict)
+    providers: dict[str, ProviderConfig] = field(default_factory=dict)
     output_format: str = "markdown"  # "markdown", "json", "plain"
     language: str = "en"
     max_file_size_kb: int = 500
@@ -34,11 +36,11 @@ class AppConfig:
         "*.pyc", "__pycache__", ".git", "node_modules", ".env"
     ])
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "AppConfig":
+    def from_dict(cls, data: dict[str, Any]) -> AppConfig:
         providers = {}
         for name, pconf in data.get("providers", {}).items():
             providers[name] = ProviderConfig(**pconf)
@@ -49,7 +51,7 @@ class AppConfig:
 def load_config() -> AppConfig:
     """Load configuration from disk or return defaults."""
     if CONFIG_FILE.exists():
-        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+        with open(CONFIG_FILE, encoding="utf-8") as f:
             return AppConfig.from_dict(json.load(f))
     return AppConfig()
 
@@ -61,7 +63,7 @@ def save_config(config: AppConfig) -> None:
         json.dump(config.to_dict(), f, indent=2)
 
 
-def get_provider_config(config: AppConfig, provider_name: Optional[str] = None) -> ProviderConfig:
+def get_provider_config(config: AppConfig, provider_name: str | None = None) -> ProviderConfig:
     """Retrieve a specific provider configuration, falling back to env vars."""
     name = provider_name or config.default_provider
     if name in config.providers:

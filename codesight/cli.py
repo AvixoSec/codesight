@@ -84,9 +84,9 @@ def _run_config() -> None:
     print("CodeSight Configuration")
     print("-" * 40)
 
-    provider = input("Default provider [openai/anthropic/google] (current: {}): ".format(
-        config.default_provider
-    )).strip() or config.default_provider
+    provider = input(
+        f"Default provider [openai/anthropic/google] (current: {config.default_provider}): "
+    ).strip() or config.default_provider
     config.default_provider = provider
 
     if provider == "openai":

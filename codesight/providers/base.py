@@ -1,8 +1,9 @@
 """Base LLM provider interface."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List
 
 
 @dataclass
@@ -25,7 +26,7 @@ class BaseLLMProvider(ABC):
     @abstractmethod
     async def complete(
         self,
-        messages: List[Message],
+        messages: list[Message],
         max_tokens: int = 4096,
         temperature: float = 0.2,
     ) -> LLMResponse:

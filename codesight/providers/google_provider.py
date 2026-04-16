@@ -1,6 +1,6 @@
 """Google Vertex AI provider."""
 
-from typing import List
+from __future__ import annotations
 
 import httpx
 
@@ -41,16 +41,16 @@ class GoogleVertexProvider(BaseLLMProvider):
 
             credentials, _ = google.auth.default()
             credentials.refresh(google.auth.transport.requests.Request())
-            return credentials.token
-        except ImportError:
+            return str(credentials.token)
+        except ImportError as err:
             raise ImportError(
                 "google-auth is required for Vertex AI. "
                 "Install it: pip install google-auth"
-            )
+            ) from err
 
     async def complete(
         self,
-        messages: List[Message],
+        messages: list[Message],
         max_tokens: int = 4096,
         temperature: float = 0.2,
     ) -> LLMResponse:
