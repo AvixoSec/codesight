@@ -12,12 +12,12 @@ from rich.text import Text
 
 from . import __version__
 from .analyzer import AnalysisError, Analyzer, TaskType, collect_files
-from .config import AppConfig, CONFIG_FILE, ProviderConfig, load_config, save_config
+from .config import CONFIG_FILE, ProviderConfig, load_config, save_config
 
 console = Console(stderr=True)
 out = Console()
 
-def _build_parser() -> argparse.ArgumentParser:
+def _build_parser():
     parser = argparse.ArgumentParser(prog="codesight", description="Code analysis CLI")
     parser.add_argument("-v", "--version", action="version", version=f"codesight {__version__}")
     parser.add_argument("-p", "--provider", choices=["openai", "anthropic", "google"],
@@ -78,7 +78,7 @@ def _format_output(result, fmt):
     out.print()
 
 
-def _run_analysis(args, config: AppConfig) -> None:
+def _run_analysis(args, config):
     mapping = {"review": TaskType.REVIEW, "bugs": TaskType.BUGS,
                "docs": TaskType.DOCS, "explain": TaskType.EXPLAIN,
                "refactor": TaskType.REFACTOR}
@@ -102,7 +102,7 @@ def _run_analysis(args, config: AppConfig) -> None:
     _format_output(result, config.output_format)
 
 
-def _run_scan(args, config: AppConfig) -> None:
+def _run_scan(args, config):
     task = TaskType.REVIEW if args.task == "review" else TaskType.BUGS
     exts = {e if e.startswith(".") else f".{e}" for e in args.ext} if args.ext else None
 
@@ -195,7 +195,7 @@ def _run_config() -> None:
     console.print(f"\n[green]Saved to {CONFIG_FILE}[/]")
 
 
-def _run_health(args, config: AppConfig) -> None:
+def _run_health(args, config):
     try:
         a = Analyzer(config, provider_name=args.provider)
     except ValueError as e:
