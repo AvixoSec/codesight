@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeSight &mdash; your code, reviewed by machines</title>
+    <meta name="description" content="Open-source CLI that plugs into GPT, Claude, and Gemini to catch real bugs in your code. Not a linter. Not vibes. Actual analysis.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --bg:#07070d;
+            --surface:#0e0e18;
+            --surface2:#151522;
+            --text:#d4d4e0;
+            --dim:#6b6b82;
+            --accent:#8b5cf6;
+            --accent2:#c084fc;
+            --mint:#34d399;
+            --amber:#fbbf24;
+            --rose:#fb7185;
+            --border:rgba(255,255,255,.06);
+            --r:14px;
+        }
+        body{
+            font-family:'Space Grotesk',system-ui,sans-serif;
+            background:var(--bg);
+            color:var(--text);
+            line-height:1.65;
+            overflow-x:hidden;
+        }
+
+        /* ── grid bg ── */
+        .grid-bg{
+            position:fixed;inset:0;z-index:0;
+            background-image:
+                linear-gradient(rgba(139,92,246,.04) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(139,92,246,.04) 1px,transparent 1px);
+            background-size:60px 60px;
+            mask-image:radial-gradient(ellipse 70% 50% at 50% 0%,#000 30%,transparent 100%);
+            -webkit-mask-image:radial-gradient(ellipse 70% 50% at 50% 0%,#000 30%,transparent 100%);
+        }
+
+        /* ── spot lights ── */
+        .spot{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(100px);opacity:.35}
+        .spot-1{width:600px;height:600px;top:-200px;left:10%;background:var(--accent)}
+        .spot-2{width:400px;height:400px;top:-100px;right:5%;background:#6366f1}
+
+        /* ── nav ── */
+        nav{position:fixed;top:0;left:0;right:0;z-index:100;backdrop-filter:blur(24px);background:rgba(7,7,13,.7);border-bottom:1px solid var(--border)}
+        .nav-in{max-width:1060px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+        .logo{font-weight:700;font-size:1.2rem;color:#fff;text-decoration:none;letter-spacing:-.02em}
+        .logo span{color:var(--accent)}
+        .nav-r{display:flex;gap:24px;align-items:center}
+        .nav-r a{color:var(--dim);text-decoration:none;font-size:.88rem;font-weight:500;transition:color .15s}
+        .nav-r a:hover{color:#fff}
+
+        /* ── buttons ── */
+        .btn{display:inline-flex;align-items:center;gap:7px;padding:10px 24px;border-radius:8px;font-weight:600;font-size:.88rem;text-decoration:none;transition:all .2s;border:none;cursor:pointer;font-family:inherit}
+        .btn-main{background:var(--accent);color:#fff}
+        .btn-main:hover{background:#7c3aed;transform:translateY(-1px);box-shadow:0 8px 30px rgba(139,92,246,.3)}
+        .btn-ghost{background:rgba(255,255,255,.05);color:var(--text);border:1px solid var(--border)}
+        .btn-ghost:hover{border-color:var(--accent);color:#fff}
+
+        /* ── hero ── */
+        .hero{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:150px 24px 60px;text-align:center}
+        .pill{display:inline-block;padding:5px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:99px;font-size:.78rem;color:var(--accent2);font-weight:500;margin-bottom:28px;letter-spacing:.01em}
+        .hero h1{font-size:clamp(2.2rem,5.5vw,3.4rem);font-weight:700;line-height:1.12;margin-bottom:22px;letter-spacing:-.03em;color:#fff}
+        .hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent),var(--accent2),var(--mint));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+        .hero p{font-size:1.08rem;color:var(--dim);max-width:540px;margin:0 auto 34px;line-height:1.7}
+        .hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+        /* ── terminal ── */
+        .term-wrap{position:relative;z-index:1;max-width:700px;margin:0 auto 110px;padding:0 24px}
+        .term{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 0 1px rgba(139,92,246,.08)}
+        .term-top{display:flex;align-items:center;gap:8px;padding:12px 16px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border)}
+        .dot{width:11px;height:11px;border-radius:50%}
+        .dot-r{background:#ef4444}.dot-y{background:#eab308}.dot-g{background:#22c55e}
+        .term-top span:last-child{margin-left:auto;font-size:.72rem;color:var(--dim);font-family:'JetBrains Mono',monospace}
+        .term-body{padding:20px 22px;font-family:'JetBrains Mono',monospace;font-size:.82rem;line-height:1.9;color:var(--dim)}
+        .term-body .p{color:var(--mint)}.term-body .c{color:#fff}.term-body .f{color:var(--amber)}.term-body .h{color:var(--accent2)}
+        .term-body .crit{color:var(--rose)}.term-body .warn{color:var(--amber)}
+
+        /* ── section ── */
+        .sec{position:relative;z-index:1;max-width:1060px;margin:0 auto;padding:90px 24px}
+        .sec-head{margin-bottom:52px}
+        .sec-head h2{font-size:1.8rem;font-weight:700;margin-bottom:10px;letter-spacing:-.02em;color:#fff}
+        .sec-head p{color:var(--dim);font-size:1rem;max-width:480px}
+
+        /* ── how-it-works 3 cols ── */
+        .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;border-radius:var(--r);overflow:hidden;background:var(--border)}
+        .step{background:var(--surface);padding:36px 30px;position:relative}
+        .step-n{font-size:2.8rem;font-weight:700;color:rgba(139,92,246,.15);position:absolute;top:16px;right:20px;line-height:1}
+        .step h3{font-size:1.05rem;font-weight:600;margin-bottom:8px;color:#fff}
+        .step p{color:var(--dim);font-size:.9rem}
+
+        /* ── what it catches — left/right layout ── */
+        .catches{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
+        .catches-text h2{font-size:1.8rem;font-weight:700;margin-bottom:14px;letter-spacing:-.02em;color:#fff}
+        .catches-text p{color:var(--dim);font-size:1rem;margin-bottom:28px;line-height:1.7}
+        .tag-list{display:flex;flex-wrap:wrap;gap:8px}
+        .tag{padding:6px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:.82rem;color:var(--text);font-weight:500}
+        .catches-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px 24px}
+        .catches-card .row{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid var(--border)}
+        .catches-card .row:last-child{border-bottom:none}
+        .sev{font-size:.72rem;font-weight:700;padding:3px 8px;border-radius:5px;flex-shrink:0;text-transform:uppercase;letter-spacing:.04em}
+        .sev-crit{background:rgba(251,113,133,.12);color:var(--rose)}
+        .sev-warn{background:rgba(251,191,36,.12);color:var(--amber)}
+        .sev-info{background:rgba(139,92,246,.12);color:var(--accent2)}
+        .row-text{font-size:.88rem;color:var(--dim)}
+        .row-text strong{color:var(--text);font-weight:500}
+
+        /* ── providers strip ── */
+        .prov-strip{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:36px}
+        .prov{display:flex;align-items:center;gap:10px;padding:16px 28px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);transition:border-color .2s}
+        .prov:hover{border-color:var(--accent)}
+        .prov-dot{width:8px;height:8px;border-radius:50%}
+        .prov-info .prov-name{font-weight:600;font-size:.95rem;color:#fff}
+        .prov-info .prov-models{font-size:.78rem;color:var(--dim)}
+
+        /* ── cta ── */
+        .cta{text-align:center;padding:80px 24px 100px;position:relative;z-index:1}
+        .cta h2{font-size:1.7rem;font-weight:700;margin-bottom:12px;color:#fff;letter-spacing:-.02em}
+        .cta p{color:var(--dim);margin-bottom:28px;font-size:1rem}
+
+        /* ── footer ── */
+        footer{border-top:1px solid var(--border);padding:28px 24px;display:flex;justify-content:space-between;align-items:center;max-width:1060px;margin:0 auto;color:var(--dim);font-size:.82rem}
+        footer a{color:var(--accent2);text-decoration:none}
+        footer a:hover{color:#fff}
+
+        /* ── responsive ── */
+        @media(max-width:768px){
+            .steps{grid-template-columns:1fr}
+            .catches{grid-template-columns:1fr;gap:32px}
+            .prov-strip{flex-direction:column;align-items:center}
+            footer{flex-direction:column;gap:8px;text-align:center}
+        }
+        @media(max-width:480px){
+            .nav-r a:not(.btn){display:none}
+            .hero h1{font-size:2rem}
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+    <div class="spot spot-1"></div>
+    <div class="spot spot-2"></div>
+
+    <!-- nav -->
+    <nav>
+        <div class="nav-in">
+            <a href="#" class="logo">code<span>sight</span></a>
+            <div class="nav-r">
+                <a href="#how">How it works</a>
+                <a href="#catches">What it finds</a>
+                <a href="https://github.com/AvixoSec/codesight" target="_blank">GitHub</a>
+                <a href="https://github.com/AvixoSec/codesight" class="btn btn-main" target="_blank">Get the CLI</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- hero -->
+    <section class="hero">
+        <span class="pill">v0.1 &mdash; open source, MIT</span>
+        <h1>Your linter is blind.<br>This one <em>actually reads</em> the code.</h1>
+        <p>CodeSight is a CLI that sends your files to GPT-5.4, Claude 4.6, or Gemini 3.1 and gets back a real review &mdash; security holes, logic bugs, bad patterns. One command. No config files to fight.</p>
+        <div class="hero-btns">
+            <a href="https://github.com/AvixoSec/codesight" class="btn btn-main" target="_blank">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.2.08 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6.02 0c2.3-1.55 3.3-1.23 3.3-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.21.7.82.58A12.01 12.01 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                View on GitHub
+            </a>
+            <a href="#how" class="btn btn-ghost">See how it works</a>
+        </div>
+    </section>
+
+    <!-- terminal -->
+    <div class="term-wrap">
+        <div class="term">
+            <div class="term-top">
+                <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+                <span>bash &mdash; codesight</span>
+            </div>
+            <div class="term-body">
+                <div><span class="p">$</span> <span class="c">codesight review</span> <span class="f">src/auth.py</span> <span class="f">--provider openai</span></div>
+                <br>
+                <div><span class="h">Analyzing with gpt-5.4 ...</span></div>
+                <br>
+                <div style="color:#fff">REVIEW &mdash; src/auth.py</div>
+                <div>Found <strong style="color:var(--rose)">2 critical</strong>, <strong style="color:var(--amber)">1 warning</strong></div>
+                <br>
+                <div><span class="crit">[crit]</span> ln 42 &mdash; JWT secret is hardcoded in source</div>
+                <div><span class="crit">[crit]</span> ln 87 &mdash; f-string in SQL query, injection risk</div>
+                <div><span class="warn">[warn]</span> ln 15 &mdash; hashlib imported but never used</div>
+                <br>
+                <div style="color:var(--dim)">3 issues &middot; 814 tokens &middot; 1.2s</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- how it works -->
+    <section class="sec" id="how">
+        <div class="sec-head">
+            <h2>Three steps. No magic.</h2>
+            <p>Install it, point it at a file, read the output. That's it.</p>
+        </div>
+        <div class="steps">
+            <div class="step">
+                <span class="step-n">01</span>
+                <h3>Install &amp; configure</h3>
+                <p><code style="color:var(--mint)">pip install codesight</code> then run <code style="color:var(--mint)">codesight config</code> to set your API key. Takes about 20 seconds.</p>
+            </div>
+            <div class="step">
+                <span class="step-n">02</span>
+                <h3>Pick a task</h3>
+                <p><strong style="color:#fff">review</strong> for a full audit, <strong style="color:#fff">bugs</strong> to hunt issues, <strong style="color:#fff">docs</strong> to generate docstrings, <strong style="color:#fff">explain</strong> to decode someone else's code, <strong style="color:#fff">refactor</strong> to clean it up.</p>
+            </div>
+            <div class="step">
+                <span class="step-n">03</span>
+                <h3>Read &amp; fix</h3>
+                <p>The model returns structured findings with line numbers. Fix the real stuff, skip the noise. Done.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- what it catches -->
+    <section class="sec" id="catches">
+        <div class="catches">
+            <div class="catches-text">
+                <h2>Linters check syntax.<br>We check logic.</h2>
+                <p>Standard tools won't tell you that your auth flow leaks tokens or that a race condition hides in your queue handler. CodeSight actually understands what the code is supposed to do &mdash; and where it fails.</p>
+                <div class="tag-list">
+                    <span class="tag">SQL injection</span>
+                    <span class="tag">Hardcoded secrets</span>
+                    <span class="tag">Race conditions</span>
+                    <span class="tag">Off-by-one</span>
+                    <span class="tag">Resource leaks</span>
+                    <span class="tag">Dead code paths</span>
+                    <span class="tag">Type mismatches</span>
+                    <span class="tag">Logic inversions</span>
+                </div>
+            </div>
+            <div class="catches-card">
+                <div class="row">
+                    <span class="sev sev-crit">crit</span>
+                    <div class="row-text"><strong>ln 42</strong> &mdash; JWT_SECRET is assigned a string literal. Move it to env vars or a secrets manager.</div>
+                </div>
+                <div class="row">
+                    <span class="sev sev-crit">crit</span>
+                    <div class="row-text"><strong>ln 87</strong> &mdash; User input interpolated into SQL via f-string. Use parameterized queries.</div>
+                </div>
+                <div class="row">
+                    <span class="sev sev-warn">warn</span>
+                    <div class="row-text"><strong>ln 15</strong> &mdash; <code>import hashlib</code> is unused. Safe to remove.</div>
+                </div>
+                <div class="row">
+                    <span class="sev sev-info">info</span>
+                    <div class="row-text"><strong>ln 63</strong> &mdash; <code>verify_token()</code> catches all exceptions silently. Consider logging failures.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- providers -->
+    <section class="sec" id="providers">
+        <div class="sec-head" style="text-align:center">
+            <h2>Pick your model. Or switch mid-project.</h2>
+            <p style="margin:0 auto">One flag: <code style="color:var(--mint)">--provider anthropic</code>. That's it.</p>
+        </div>
+        <div class="prov-strip">
+            <div class="prov">
+                <div class="prov-dot" style="background:#10a37f"></div>
+                <div class="prov-info">
+                    <div class="prov-name">OpenAI</div>
+                    <div class="prov-models">GPT-5.4, GPT-5.3-Codex</div>
+                </div>
+            </div>
+            <div class="prov">
+                <div class="prov-dot" style="background:#d97706"></div>
+                <div class="prov-info">
+                    <div class="prov-name">Anthropic</div>
+                    <div class="prov-models">Claude Opus 4.6, Sonnet 4.6</div>
+                </div>
+            </div>
+            <div class="prov">
+                <div class="prov-dot" style="background:#4285f4"></div>
+                <div class="prov-info">
+                    <div class="prov-name">Google Gemini</div>
+                    <div class="prov-models">Gemini 3.1 Pro, 3.1 Flash</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- cta -->
+    <section class="cta">
+        <h2>Stop reading about it. Try it.</h2>
+        <p>One pip install. One config command. Then point it at your worst file.</p>
+        <a href="https://github.com/AvixoSec/codesight" class="btn btn-main" target="_blank">Get CodeSight on GitHub</a>
+    </section>
+
+    <!-- footer -->
+    <footer>
+        <div>MIT License &middot; <a href="https://github.com/AvixoSec/codesight" target="_blank">AvixoSec/codesight</a></div>
+        <div><a href="mailto:AvixoSec@gmail.com">AvixoSec@gmail.com</a></div>
+    </footer>
+</body>
+</html>
