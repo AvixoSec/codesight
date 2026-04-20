@@ -7,10 +7,10 @@ from .providers.base import Message
 
 @dataclass
 class PipelineConfig:
-    triage_provider: str  # e.g. "ollama"
-    triage_model: str     # e.g. "llama3"
-    verify_provider: str  # e.g. "openai"
-    verify_model: str     # e.g. "gpt-4o"
+    triage_provider: str
+    triage_model: str
+    verify_provider: str
+    verify_model: str
 
 
 TRIAGE_PROMPT = (

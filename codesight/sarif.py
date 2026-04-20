@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Finding:
-    severity: str  # CRITICAL, HIGH, MEDIUM, LOW
+    severity: str
     title: str
     cwe_id: str | None
     line: int
