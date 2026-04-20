@@ -12,6 +12,7 @@ SCAN_EXTENSIONS = {
     ".py", ".js", ".ts", ".jsx", ".tsx", ".go", ".rs", ".rb",
     ".java", ".kt", ".cs", ".cpp", ".c", ".h", ".hpp",
     ".php", ".swift", ".scala", ".sh", ".bash",
+    ".sol", ".vy",
 }
 
 
@@ -122,6 +123,34 @@ SYSTEM_PROMPTS = {
 }
 
 
+SOLIDITY_SECURITY_PROMPT = (
+    "You are a smart contract security auditor. Analyze this Solidity code. "
+    "For EACH finding, provide:\n"
+    "- Severity: CRITICAL / HIGH / MEDIUM / LOW\n"
+    "- SWC ID (e.g. SWC-107 for reentrancy)\n"
+    "- CWE ID if applicable\n"
+    "- Line number(s)\n"
+    "- Description of the vulnerability\n"
+    "- Attack scenario with example transaction sequence\n"
+    "- Recommended fix with code example\n\n"
+    "Focus on: reentrancy (SWC-107), integer overflow/underflow (SWC-101), "
+    "unchecked external calls (SWC-104), tx.origin authentication (SWC-115), "
+    "delegatecall injection (SWC-112), front-running / MEV, "
+    "access control issues, flash loan attack vectors, "
+    "price oracle manipulation, storage collision, "
+    "selfdestruct abuse, and gas griefing.\n\n"
+    "Output format:\n"
+    "## Security Findings\n"
+    "### [SEVERITY] Title — SWC-XXX\n"
+    "**Location:** contract:function:line\n"
+    "**Description:** ...\n"
+    "**Attack Scenario:** ...\n"
+    "**Fix:** ...\n\n"
+    "## Summary\n"
+    "Total findings by severity. Overall risk assessment."
+)
+
+
 class AnalysisError(Exception):
     pass
 
@@ -162,8 +191,12 @@ class Analyzer:
         if extra_context:
             user_content += f"\n\nAdditional context: {extra_context}"
 
+        system_prompt = SYSTEM_PROMPTS[task]
+        if ext == ".sol" and task == TaskType.SECURITY:
+            system_prompt = SOLIDITY_SECURITY_PROMPT
+
         messages = [
-            Message(role="system", content=SYSTEM_PROMPTS[task]),
+            Message(role="system", content=system_prompt),
             Message(role="user", content=user_content),
         ]
 

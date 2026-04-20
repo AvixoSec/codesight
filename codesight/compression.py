@@ -71,11 +71,28 @@ LANG_PATTERNS["ts"] = LANG_PATTERNS["js"]
 LANG_PATTERNS["jsx"] = LANG_PATTERNS["js"]
 LANG_PATTERNS["tsx"] = LANG_PATTERNS["js"]
 LANG_PATTERNS["kt"] = LANG_PATTERNS["java"]
+LANG_PATTERNS["sol"] = {
+    "class": re.compile(
+        r"^((?:abstract\s+)?contract\s+\w+[^{]*)", re.MULTILINE
+    ),
+    "interface": re.compile(
+        r"^((?:interface|library)\s+\w+[^{]*)", re.MULTILINE
+    ),
+    "function": re.compile(
+        r"^\s*(function\s+\w+\s*\([^)]*\)[^{;]*)", re.MULTILINE
+    ),
+    "import": re.compile(r"^(import\s+.+;)$", re.MULTILINE),
+    "struct": re.compile(r"^\s*(struct\s+\w+\s*\{)", re.MULTILINE),
+    "method": re.compile(
+        r"^\s*(modifier\s+\w+\s*\([^)]*\))", re.MULTILINE
+    ),
+}
 
 
 EXT_TO_LANG = {
     ".py": "py", ".js": "js", ".ts": "ts", ".jsx": "jsx", ".tsx": "tsx",
     ".go": "go", ".rs": "rs", ".java": "java", ".kt": "kt",
+    ".sol": "sol", ".vy": "vy",
 }
 
 
@@ -134,6 +151,17 @@ def _build_structure(source: str, language: str) -> str:
             is_sig = any(
                 content.startswith(kw)
                 for kw in ("public ", "private ", "protected ", "class ", "import ", "interface ")
+            )
+        elif language == "sol":
+            is_sig = any(
+                content.startswith(kw)
+                for kw in (
+                    "contract ", "abstract contract ",
+                    "interface ", "library ",
+                    "function ", "modifier ",
+                    "struct ", "enum ", "event ",
+                    "mapping", "import ", "pragma ",
+                )
             )
 
         if is_sig:
