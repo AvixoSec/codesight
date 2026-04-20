@@ -13,6 +13,12 @@ venv/
 .ruff_cache/
 .pytest_cache/
 .codesight/
+node_modules/
+vscode-extension/out/
+vscode-extension/node_modules/
+
+# Private grant files - keep local only
+GRANTS.md
 GRANT_PLAN.md
 GRANT_PLAN_v2.md
 GRANT_ANSWERS.md
@@ -20,7 +26,9 @@ GRANTS_TRACKER.md
 GRANT_GUIDE_SIMPLE.md
 WHAT_I_GET.md
 gpu_usecase.md
+sovereign_tech_application.md
 pitch_*.html
-node_modules/
-vscode-extension/out/
-vscode-extension/node_modules/
+
+# Paper utility scripts (contain API integrations)
+paper/convert_to_pdf.py
+paper/upload_to_zenodo.py
