@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installation — CodeSight Docs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="doc-nav">
+        <a href="../" class="logo">code<span>sight</span></a>
+        <div class="nav-links">
+            <a href="./" class="active">Docs</a>
+            <a href="https://github.com/AvixoSec/codesight" target="_blank">GitHub</a>
+            <a href="https://pypi.org/project/codesight/" target="_blank">PyPI</a>
+        </div>
+    </nav>
+    <div class="doc-layout">
+        <aside class="sidebar">
+            <div class="sb-section">
+                <div class="sb-title">Getting Started</div>
+                <a href="./" class="sb-link">Overview</a>
+                <a href="installation.html" class="sb-link active">Installation</a>
+                <a href="quickstart.html" class="sb-link">Quick Start</a>
+            </div>
+            <div class="sb-section">
+                <div class="sb-title">Usage</div>
+                <a href="commands.html" class="sb-link">Commands</a>
+                <a href="providers.html" class="sb-link">Providers</a>
+                <a href="templates.html" class="sb-link">Custom Templates</a>
+                <a href="ci-cd.html" class="sb-link">CI/CD Integration</a>
+            </div>
+            <div class="sb-section">
+                <div class="sb-title">Reference</div>
+                <a href="benchmarks.html" class="sb-link">Benchmarks</a>
+                <a href="architecture.html" class="sb-link">Architecture</a>
+                <a href="api.html" class="sb-link">Python API</a>
+            </div>
+            <div class="sb-section">
+                <div class="sb-title">Community</div>
+                <a href="contributing.html" class="sb-link">Contributing</a>
+                <a href="security.html" class="sb-link">Security Policy</a>
+            </div>
+        </aside>
+        <main class="doc-content">
+            <h1>Installation</h1>
+            <p class="lead">CodeSight requires Python 3.10+ and an API key from at least one LLM provider (or Ollama for offline use).</p>
+
+            <h2>From PyPI</h2>
+            <div class="code-block">
+                <div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> pip install codesight</code></pre>
+            </div>
+
+            <h2>From Source</h2>
+            <div class="code-block">
+                <div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> git clone https://github.com/AvixoSec/codesight.git
+<span class="prompt">$</span> cd codesight
+<span class="prompt">$</span> pip install -e ".[dev]"</code></pre>
+            </div>
+
+            <h2>Verify Installation</h2>
+            <div class="code-block">
+                <div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> codesight --version
+<span class="dim">codesight 0.1.0</span></code></pre>
+            </div>
+
+            <h2>Provider Setup</h2>
+            <p>You need at least one provider configured. The fastest way:</p>
+            <div class="code-block">
+                <div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> codesight config</code></pre>
+            </div>
+            <p>Or set environment variables directly:</p>
+
+            <h3>OpenAI</h3>
+            <div class="code-block">
+                <div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> export OPENAI_API_KEY="sk-..."</code></pre>
+            </div>
+
+            <h3>Anthropic</h3>
+            <div class="code-block">
+                <div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> export ANTHROPIC_API_KEY="sk-ant-..."</code></pre>
+            </div>
+
+            <h3>Google Vertex AI</h3>
+            <div class="code-block">
+                <div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> export GOOGLE_CLOUD_PROJECT="my-project"
+<span class="prompt">$</span> gcloud auth application-default login</code></pre>
+            </div>
+
+            <h3>Ollama (fully offline)</h3>
+            <div class="code-block">
+                <div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> ollama serve
+<span class="prompt">$</span> ollama pull llama3
+<span class="prompt">$</span> codesight review my_file.py --provider ollama</code></pre>
+            </div>
+            <div class="callout">
+                <strong>No data leaves your machine</strong> when using Ollama. Everything runs locally.
+            </div>
+
+            <h2>Check Connectivity</h2>
+            <div class="code-block">
+                <div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> codesight health
+<span class="green">✓ Provider is reachable and healthy.</span></code></pre>
+            </div>
+        </main>
+    </div>
+    <footer class="doc-footer">
+        <div>MIT License · <a href="https://github.com/AvixoSec/codesight">AvixoSec/codesight</a></div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Providers — CodeSight Docs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="doc-nav">
+        <a href="../" class="logo">code<span>sight</span></a>
+        <div class="nav-links">
+            <a href="./" class="active">Docs</a>
+            <a href="https://github.com/AvixoSec/codesight" target="_blank">GitHub</a>
+        </div>
+    </nav>
+    <div class="doc-layout">
+        <aside class="sidebar">
+            <div class="sb-section">
+                <div class="sb-title">Getting Started</div>
+                <a href="./" class="sb-link">Overview</a>
+                <a href="installation.html" class="sb-link">Installation</a>
+                <a href="quickstart.html" class="sb-link">Quick Start</a>
+            </div>
+            <div class="sb-section">
+                <div class="sb-title">Usage</div>
+                <a href="commands.html" class="sb-link">Commands</a>
+                <a href="providers.html" class="sb-link active">Providers</a>
+                <a href="templates.html" class="sb-link">Custom Templates</a>
+                <a href="ci-cd.html" class="sb-link">CI/CD Integration</a>
+            </div>
+            <div class="sb-section">
+                <div class="sb-title">Reference</div>
+                <a href="benchmarks.html" class="sb-link">Benchmarks</a>
+                <a href="architecture.html" class="sb-link">Architecture</a>
+                <a href="api.html" class="sb-link">Python API</a>
+            </div>
+            <div class="sb-section">
+                <div class="sb-title">Community</div>
+                <a href="contributing.html" class="sb-link">Contributing</a>
+                <a href="security.html" class="sb-link">Security Policy</a>
+            </div>
+        </aside>
+        <main class="doc-content">
+            <h1>Providers</h1>
+            <p class="lead">CodeSight supports four LLM providers. Switch between them with a single flag.</p>
+
+            <h2>Overview</h2>
+            <table>
+                <thead>
+                    <tr><th>Provider</th><th>Models</th><th>Auth</th><th>Offline</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>OpenAI</strong></td>
+                        <td>GPT-5.4, GPT-5.3-Codex</td>
+                        <td><code>OPENAI_API_KEY</code></td>
+                        <td>No</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Anthropic</strong></td>
+                        <td>Claude Opus 4.6, Claude Sonnet 4.6</td>
+                        <td><code>ANTHROPIC_API_KEY</code></td>
+                        <td>No</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Google Vertex AI</strong></td>
+                        <td>Gemini 3.1 Pro, Gemini 3.1 Flash</td>
+                        <td>ADC + <code>GOOGLE_CLOUD_PROJECT</code></td>
+                        <td>No</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Ollama</strong></td>
+                        <td>Llama 3, CodeLlama, Mistral, etc.</td>
+                        <td>None (local)</td>
+                        <td>Yes</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Switching Providers</h2>
+            <div class="code-block">
+                <div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> codesight review file.py --provider openai
+<span class="prompt">$</span> codesight review file.py --provider anthropic
+<span class="prompt">$</span> codesight review file.py --provider google
+<span class="prompt">$</span> codesight review file.py --provider ollama</code></pre>
+            </div>
+
+            <h2>OpenAI</h2>
+            <p>Best overall accuracy for code analysis. Default provider.</p>
+            <div class="code-block">
+                <div class="code-header">Setup</div>
+                <pre><code><span class="prompt">$</span> export OPENAI_API_KEY="sk-..."
+<span class="prompt">$</span> export CODESIGHT_MODEL="gpt-5.4"  <span class="comment"># optional, default</span></code></pre>
+            </div>
+            <p>Approximate cost: <strong>$0.002–0.005 per file</strong> depending on file size.</p>
+
+            <h2>Anthropic</h2>
+            <p>Strong at nuanced reasoning and catching subtle logic bugs.</p>
+            <div class="code-block">
+                <div class="code-header">Setup</div>
+                <pre><code><span class="prompt">$</span> export ANTHROPIC_API_KEY="sk-ant-..."
+<span class="prompt">$</span> export CODESIGHT_MODEL="claude-opus-4-6-20251101"</code></pre>
+            </div>
+
+            <h2>Google Vertex AI</h2>
+            <p>Requires a Google Cloud project with Vertex AI API enabled.</p>
+            <div class="code-block">
+                <div class="code-header">Setup</div>
+                <pre><code><span class="prompt">$</span> export GOOGLE_CLOUD_PROJECT="my-project"
+<span class="prompt">$</span> export GOOGLE_CLOUD_REGION="us-central1"
+<span class="prompt">$</span> gcloud auth application-default login</code></pre>
+            </div>
+
+            <h2>Ollama (Local / Offline)</h2>
+            <p>No API key needed. No data leaves your machine. Ideal for sensitive codebases.</p>
+            <div class="code-block">
+                <div class="code-header">Setup</div>
+                <pre><code><span class="prompt">$</span> ollama serve
+<span class="prompt">$</span> ollama pull llama3
+<span class="prompt">$</span> codesight review file.py --provider ollama</code></pre>
+            </div>
+            <div class="callout">
+                <strong>Air-gapped environments:</strong> Ollama runs entirely locally. You can pre-download models and use CodeSight on machines with no internet access.
+            </div>
+
+            <h2>Multi-Model Pipeline</h2>
+            <p>For security analysis, you can chain two models — a fast local model for triage, then a cloud model for deep verification:</p>
+            <div class="code-block">
+                <div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> codesight security src/auth.py --pipeline ollama/llama3:openai/gpt-5.4</code></pre>
+            </div>
+            <p>The triage model flags potential issues quickly. Only those flagged areas are sent to the verification model, reducing cost and latency.</p>
+
+            <h2>Configuration File</h2>
+            <p>Provider settings are stored in <code>~/.codesight/config.json</code>:</p>
+            <div class="code-block">
+                <div class="code-header">~/.codesight/config.json</div>
+                <pre><code>{
+  "default_provider": "openai",
+  "providers": {
+    "openai": {
+      "provider": "openai",
+      "api_key": "sk-...",
+      "model": "gpt-5.4",
+      "max_tokens": 4096,
+      "temperature": 0.2
+    }
+  }
+}</code></pre>
+            </div>
+        </main>
+    </div>
+    <footer class="doc-footer">
+        <div>MIT License · <a href="https://github.com/AvixoSec/codesight">AvixoSec/codesight</a></div>
+    </footer>
+</body>
+</html>

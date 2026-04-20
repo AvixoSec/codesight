@@ -1,0 +1,136 @@
+{
+  "name": "codesight",
+  "displayName": "CodeSight",
+  "description": "AI-powered code analysis and security review",
+  "version": "0.1.0",
+  "publisher": "AvixoSec",
+  "license": "MIT",
+  "icon": "assets/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AvixoSec/codesight"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Linters",
+    "Programming Languages",
+    "Other"
+  ],
+  "keywords": [
+    "security",
+    "code review",
+    "ai",
+    "llm",
+    "vulnerability",
+    "cwe",
+    "owasp"
+  ],
+  "activationEvents": [
+    "onCommand:codesight.review",
+    "onCommand:codesight.bugs",
+    "onCommand:codesight.security",
+    "onCommand:codesight.docs",
+    "onCommand:codesight.explain",
+    "onCommand:codesight.refactor"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "codesight.review",
+        "title": "CodeSight: Review File"
+      },
+      {
+        "command": "codesight.bugs",
+        "title": "CodeSight: Find Bugs"
+      },
+      {
+        "command": "codesight.security",
+        "title": "CodeSight: Security Audit"
+      },
+      {
+        "command": "codesight.docs",
+        "title": "CodeSight: Generate Docs"
+      },
+      {
+        "command": "codesight.explain",
+        "title": "CodeSight: Explain Code"
+      },
+      {
+        "command": "codesight.refactor",
+        "title": "CodeSight: Refactor Suggestions"
+      },
+      {
+        "command": "codesight.scanDir",
+        "title": "CodeSight: Scan Directory"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "submenu": "codesight.submenu",
+          "group": "codesight"
+        }
+      ],
+      "codesight.submenu": [
+        { "command": "codesight.review" },
+        { "command": "codesight.bugs" },
+        { "command": "codesight.security" },
+        { "command": "codesight.docs" },
+        { "command": "codesight.explain" },
+        { "command": "codesight.refactor" }
+      ],
+      "explorer/context": [
+        {
+          "command": "codesight.scanDir",
+          "when": "explorerResourceIsFolder",
+          "group": "codesight"
+        }
+      ]
+    },
+    "submenus": [
+      {
+        "id": "codesight.submenu",
+        "label": "CodeSight"
+      }
+    ],
+    "configuration": {
+      "title": "CodeSight",
+      "properties": {
+        "codesight.provider": {
+          "type": "string",
+          "default": "openai",
+          "enum": ["openai", "anthropic", "google", "ollama"],
+          "description": "Default LLM provider"
+        },
+        "codesight.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Path to Python interpreter with codesight installed"
+        },
+        "codesight.outputFormat": {
+          "type": "string",
+          "default": "markdown",
+          "enum": ["markdown", "json", "plain"],
+          "description": "Output format for analysis results"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0",
+    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0"
+  }
+}

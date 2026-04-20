@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contributing — CodeSight Docs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="doc-nav">
+        <a href="../" class="logo">code<span>sight</span></a>
+        <div class="nav-links"><a href="./" class="active">Docs</a><a href="https://github.com/AvixoSec/codesight" target="_blank">GitHub</a></div>
+    </nav>
+    <div class="doc-layout">
+        <aside class="sidebar">
+            <div class="sb-section"><div class="sb-title">Getting Started</div><a href="./" class="sb-link">Overview</a><a href="installation.html" class="sb-link">Installation</a><a href="quickstart.html" class="sb-link">Quick Start</a></div>
+            <div class="sb-section"><div class="sb-title">Usage</div><a href="commands.html" class="sb-link">Commands</a><a href="providers.html" class="sb-link">Providers</a><a href="templates.html" class="sb-link">Custom Templates</a><a href="ci-cd.html" class="sb-link">CI/CD Integration</a></div>
+            <div class="sb-section"><div class="sb-title">Reference</div><a href="benchmarks.html" class="sb-link">Benchmarks</a><a href="architecture.html" class="sb-link">Architecture</a><a href="api.html" class="sb-link">Python API</a></div>
+            <div class="sb-section"><div class="sb-title">Community</div><a href="contributing.html" class="sb-link active">Contributing</a><a href="security.html" class="sb-link">Security Policy</a></div>
+        </aside>
+        <main class="doc-content">
+            <h1>Contributing</h1>
+            <p class="lead">CodeSight is open source. Here's how to contribute.</p>
+
+            <h2>Setup</h2>
+            <div class="code-block"><div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> git clone https://github.com/AvixoSec/codesight.git
+<span class="prompt">$</span> cd codesight
+<span class="prompt">$</span> python -m venv .venv
+<span class="prompt">$</span> source .venv/bin/activate
+<span class="prompt">$</span> pip install -e ".[dev]"</code></pre>
+            </div>
+
+            <h2>Tests</h2>
+            <div class="code-block"><div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> pytest tests/ -v</code></pre>
+            </div>
+
+            <h2>Linting</h2>
+            <div class="code-block"><div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> ruff check codesight/
+<span class="prompt">$</span> ruff format codesight/
+<span class="prompt">$</span> mypy codesight/ --ignore-missing-imports</code></pre>
+            </div>
+
+            <h2>Pull Request Process</h2>
+            <ol>
+                <li>Fork the repository</li>
+                <li>Create a feature branch: <code>git checkout -b feat/my-feature</code></li>
+                <li>Make your changes with clear commit messages</li>
+                <li>Ensure tests pass and linting is clean</li>
+                <li>Open a PR against <code>main</code></li>
+            </ol>
+
+            <h2>What We're Looking For</h2>
+            <ul>
+                <li>New provider integrations</li>
+                <li>Improved system prompts for better detection rates</li>
+                <li>Language-specific compression patterns</li>
+                <li>Bug fixes with test coverage</li>
+                <li>Documentation improvements</li>
+            </ul>
+
+            <h2>Reporting Issues</h2>
+            <p>Use <a href="https://github.com/AvixoSec/codesight/issues">GitHub Issues</a>. Include your Python version, OS, reproduction steps, and the full error traceback.</p>
+
+            <h2>Code of Conduct</h2>
+            <p>Be respectful. Be constructive. Full policy: <a href="https://github.com/AvixoSec/codesight/blob/main/CODE_OF_CONDUCT.md">CODE_OF_CONDUCT.md</a></p>
+        </main>
+    </div>
+    <footer class="doc-footer"><div>MIT License · <a href="https://github.com/AvixoSec/codesight">AvixoSec/codesight</a></div></footer>
+</body>
+</html>

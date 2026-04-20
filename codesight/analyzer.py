@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
+from .compression import compress_for_prompt
 from .config import AppConfig, get_provider_config
 from .providers import create_provider
 from .providers.base import BaseLLMProvider, LLMResponse, Message
@@ -156,7 +157,8 @@ class Analyzer:
         source = p.read_text(encoding="utf-8", errors="replace")
         ext = p.suffix
 
-        user_content = f"File: `{file_path}` ({ext})\n\n```{ext.lstrip('.')}\n{source}\n```"
+        display_source = compress_for_prompt(file_path, source)
+        user_content = f"File: `{file_path}` ({ext})\n\n```{ext.lstrip('.')}\n{display_source}\n```"
         if extra_context:
             user_content += f"\n\nAdditional context: {extra_context}"
 

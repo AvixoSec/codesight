@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Templates — CodeSight Docs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="doc-nav">
+        <a href="../" class="logo">code<span>sight</span></a>
+        <div class="nav-links">
+            <a href="./" class="active">Docs</a>
+            <a href="https://github.com/AvixoSec/codesight" target="_blank">GitHub</a>
+        </div>
+    </nav>
+    <div class="doc-layout">
+        <aside class="sidebar">
+            <div class="sb-section">
+                <div class="sb-title">Getting Started</div>
+                <a href="./" class="sb-link">Overview</a>
+                <a href="installation.html" class="sb-link">Installation</a>
+                <a href="quickstart.html" class="sb-link">Quick Start</a>
+            </div>
+            <div class="sb-section">
+                <div class="sb-title">Usage</div>
+                <a href="commands.html" class="sb-link">Commands</a>
+                <a href="providers.html" class="sb-link">Providers</a>
+                <a href="templates.html" class="sb-link active">Custom Templates</a>
+                <a href="ci-cd.html" class="sb-link">CI/CD Integration</a>
+            </div>
+            <div class="sb-section">
+                <div class="sb-title">Reference</div>
+                <a href="benchmarks.html" class="sb-link">Benchmarks</a>
+                <a href="architecture.html" class="sb-link">Architecture</a>
+                <a href="api.html" class="sb-link">Python API</a>
+            </div>
+            <div class="sb-section">
+                <div class="sb-title">Community</div>
+                <a href="contributing.html" class="sb-link">Contributing</a>
+                <a href="security.html" class="sb-link">Security Policy</a>
+            </div>
+        </aside>
+        <main class="doc-content">
+            <h1>Custom Prompt Templates</h1>
+            <p class="lead">Write your own analysis prompts. Reuse them across projects.</p>
+
+            <h2>Built-in Templates</h2>
+            <table>
+                <thead>
+                    <tr><th>Template</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>quick-review</code></td><td>Fast review, critical issues only</td></tr>
+                    <tr><td><code>pr-review</code></td><td>Review formatted for pull request comments</td></tr>
+                    <tr><td><code>security-owasp</code></td><td>OWASP Top 10 (2021) audit</td></tr>
+                    <tr><td><code>api-docs</code></td><td>REST API documentation from route handlers</td></tr>
+                    <tr><td><code>performance</code></td><td>Performance bottleneck analysis</td></tr>
+                </tbody>
+            </table>
+
+            <h2>List Templates</h2>
+            <div class="code-block">
+                <div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> codesight templates list</code></pre>
+            </div>
+
+            <h2>Run a Template</h2>
+            <div class="code-block">
+                <div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> codesight templates run quick-review src/main.py
+<span class="prompt">$</span> codesight templates run performance lib/db.py --provider anthropic</code></pre>
+            </div>
+
+            <h2>Create a Template</h2>
+            <p>Interactive creation:</p>
+            <div class="code-block">
+                <div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> codesight templates add my-review
+  Display name: My Code Review
+  Description: Custom review for our team standards
+  Enter system prompt (end with an empty line):
+  > Review this code for our team standards. Check for:
+  > 1. Missing error handling
+  > 2. Hardcoded config values
+  > 3. Functions longer than 30 lines
+  > For each issue: line number, category, and fix.
+  ></code></pre>
+            </div>
+
+            <p>Or create the JSON file directly in <code>~/.codesight/templates/</code>:</p>
+            <div class="code-block">
+                <div class="code-header">~/.codesight/templates/my-review.json</div>
+                <pre><code>{
+  "name": "My Code Review",
+  "description": "Custom review for our team standards",
+  "system": "Review this code for our team standards..."
+}</code></pre>
+            </div>
+
+            <h2>Delete a Template</h2>
+            <div class="code-block">
+                <div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> codesight templates delete my-review</code></pre>
+            </div>
+            <div class="callout">
+                Built-in templates can't be deleted. Only custom templates stored in <code>~/.codesight/templates/</code> can be removed.
+            </div>
+
+            <h2>Template Tips</h2>
+            <ul>
+                <li>Be specific about output format — the model follows structure better than vague instructions</li>
+                <li>Include severity levels if you want them in the output</li>
+                <li>Reference specific patterns you want caught (e.g. "check for N+1 queries in Django ORM calls")</li>
+                <li>Keep prompts under ~500 words — longer prompts don't improve accuracy</li>
+            </ul>
+        </main>
+    </div>
+    <footer class="doc-footer">
+        <div>MIT License · <a href="https://github.com/AvixoSec/codesight">AvixoSec/codesight</a></div>
+    </footer>
+</body>
+</html>

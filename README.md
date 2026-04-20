@@ -4,9 +4,11 @@
 
 CodeSight sends your code to LLMs (OpenAI, Anthropic, Google Vertex AI) with structured prompts tuned for code review, bug detection, security analysis, documentation, and refactoring. Multi-provider, configurable, works with any language.
 
-![CI](https://github.com/AvixoSec/codesight/actions/workflows/ci.yml/badge.svg)
+[![PyPI](https://img.shields.io/pypi/v/codesight?color=8b5cf6)](https://pypi.org/project/codesight/)
+[![CI](https://github.com/AvixoSec/codesight/actions/workflows/ci.yml/badge.svg)](https://github.com/AvixoSec/codesight/actions)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
-![License: MIT](https://img.shields.io/badge/license-MIT-green)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Docs](https://img.shields.io/badge/docs-codesight.is--a.dev-c084fc)](https://codesight.is-a.dev)
 
 ---
 
@@ -22,27 +24,9 @@ CodeSight sends your code to LLMs (OpenAI, Anthropic, Google Vertex AI) with str
 
 ## Demo
 
-```
-$ codesight review auth/login.py
-
-╭──────────────────────────────────────────────────────────╮
-│  CodeSight  REVIEW  OpenAI (gpt-5.4)                     │
-│                                          1,247 tokens    │
-╰──────────────────────────────────────────────────────────╯
-
-## Summary
-Authentication module with 3 issues found.
-
-## Issues
-[crit] ln 42 — JWT secret is hardcoded: SECRET = "admin123"
-[crit] ln 87 — f-string in SQL query → injection risk
-[warn] ln 15 — hashlib imported but never used
-
-## Suggestions
-- Move JWT secret to environment variable
-- Use parameterized queries for all SQL operations
-- Remove unused import to reduce attack surface
-```
+<p align="center">
+  <img src="docs/demo.svg" alt="CodeSight terminal demo" width="720">
+</p>
 
 ## Quick Start
 
@@ -141,10 +125,12 @@ ruff check codesight/
 - [x] Multi-model pipeline — fast triage + deep verification
 - [x] Cost tracking per query
 - [x] `codesight benchmark` — test LLMs on vulnerable codebases
-- [ ] Context compression — code maps to reduce token usage
-- [ ] Streaming output for large files
-- [ ] Custom prompt templates
-- [ ] Publish to PyPI
+- [x] Context compression — code maps to reduce token usage
+- [x] Streaming output for large files
+- [x] Custom prompt templates
+- [x] Publish to PyPI
+- [ ] VS Code extension
+- [ ] Web dashboard
 
 ## License
 

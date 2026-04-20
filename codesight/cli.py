@@ -23,6 +23,7 @@ from .config import (
 from .cost import estimate_cost, format_cost
 from .pipeline import PipelineConfig, run_pipeline
 from .sarif import parse_findings, to_sarif_json
+from .templates import delete_template, get_template, list_templates, save_template
 
 console = Console(stderr=True)
 out = Console()
@@ -83,6 +84,17 @@ def _build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("config", help="Configure CodeSight interactively")
     sub.add_parser("health", help="Check provider connectivity")
+
+    tmpl = sub.add_parser("templates", help="Manage custom prompt templates")
+    tmpl_sub = tmpl.add_subparsers(dest="tmpl_action")
+    tmpl_sub.add_parser("list", help="List all templates")
+    tmpl_use = tmpl_sub.add_parser("run", help="Run analysis with a template")
+    tmpl_use.add_argument("template", help="Template name")
+    tmpl_use.add_argument("file", help="File to analyze")
+    tmpl_add = tmpl_sub.add_parser("add", help="Create a new template")
+    tmpl_add.add_argument("name", help="Template slug (e.g. my-review)")
+    tmpl_del = tmpl_sub.add_parser("delete", help="Delete a custom template")
+    tmpl_del.add_argument("name", help="Template name to delete")
 
     return parser
 
@@ -442,6 +454,99 @@ def _run_health(args, config: AppConfig) -> None:
         sys.exit(1)
 
 
+def _run_templates(args, config: AppConfig) -> None:
+    action = getattr(args, "tmpl_action", None)
+
+    if action == "list" or action is None:
+        templates = list_templates()
+        if not templates:
+            console.print("[yellow]No templates found.[/]")
+            return
+        console.print(Panel("[bold]Prompt Templates[/]", border_style="cyan"))
+        for slug, tmpl in templates.items():
+            name = tmpl.get("name", slug)
+            desc = tmpl.get("description", "")
+            console.print(f"  [bold cyan]{slug}[/] — {name}")
+            if desc:
+                console.print(f"    [dim]{desc}[/]")
+        console.print()
+
+    elif action == "run":
+        tmpl = get_template(args.template)
+        if not tmpl:
+            console.print(f"[bold red]Template not found:[/] {args.template}")
+            console.print("Run [green]codesight templates list[/] to see available templates.")
+            sys.exit(1)
+
+        file_path = str(Path(args.file).resolve())
+        try:
+            analyzer = Analyzer(config, provider_name=args.provider)
+        except ValueError as exc:
+            console.print(f"[bold red]Config error:[/] {exc}")
+            sys.exit(1)
+
+        p = Path(file_path)
+        source = p.read_text(encoding="utf-8", errors="replace")
+        ext = p.suffix
+
+        from .providers.base import Message as Msg
+        messages = [
+            Msg(role="system", content=tmpl["system"]),
+            Msg(role="user", content=f"File: `{file_path}` ({ext})\n\n```{ext.lstrip('.')}\n{source}\n```"),
+        ]
+
+        with console.status(
+            f"[bold green]Running template[/] [cyan]{args.template}[/] on {p.name}...",
+            spinner="dots",
+        ):
+            try:
+                response = asyncio.run(analyzer._provider.complete(
+                    messages,
+                    max_tokens=config.providers.get(
+                        config.default_provider,
+                        ProviderConfig(provider=config.default_provider),
+                    ).max_tokens,
+                ))
+            except Exception as exc:
+                console.print(f"[bold red]Error:[/] {exc}")
+                sys.exit(1)
+
+        out.print()
+        header = Text()
+        header.append(" CodeSight ", style="bold white on dark_green")
+        header.append(f" {tmpl.get('name', args.template)} ", style="bold")
+        header.append(f" {response.provider} ", style="dim")
+        header.append(f"({response.model})", style="dim")
+        out.print(Panel(header, border_style="green"))
+        out.print(Markdown(response.content))
+        out.print()
+
+    elif action == "add":
+        name = args.name
+        display = console.input(f"  Display name for [cyan]{name}[/]: ").strip() or name
+        desc = console.input("  Description: ").strip()
+        console.print("  Enter system prompt (end with an empty line):")
+        lines = []
+        while True:
+            line = console.input("  > ").rstrip()
+            if not line:
+                break
+            lines.append(line)
+        prompt = "\n".join(lines)
+        if not prompt:
+            console.print("[bold red]Empty prompt, aborting.[/]")
+            sys.exit(1)
+        path = save_template(name, display, desc, prompt)
+        console.print(f"[bold green]Saved:[/] {path}")
+
+    elif action == "delete":
+        if delete_template(args.name):
+            console.print(f"[bold green]Deleted:[/] {args.name}")
+        else:
+            console.print(f"[yellow]Template not found:[/] {args.name}")
+            console.print("[dim]Only custom templates can be deleted, not built-in ones.[/]")
+
+
 def main() -> None:
     parser = _build_parser()
     args = parser.parse_args()
@@ -473,6 +578,8 @@ def main() -> None:
         _run_config()
     elif args.command == "health":
         _run_health(args, config)
+    elif args.command == "templates":
+        _run_templates(args, config)
 
 
 if __name__ == "__main__":

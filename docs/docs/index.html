@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation — CodeSight</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="doc-nav">
+        <a href="../" class="logo">code<span>sight</span></a>
+        <div class="nav-links">
+            <a href="./" class="active">Docs</a>
+            <a href="https://github.com/AvixoSec/codesight" target="_blank">GitHub</a>
+            <a href="https://pypi.org/project/codesight/" target="_blank">PyPI</a>
+        </div>
+    </nav>
+
+    <div class="doc-layout">
+        <aside class="sidebar">
+            <div class="sb-section">
+                <div class="sb-title">Getting Started</div>
+                <a href="./" class="sb-link active">Overview</a>
+                <a href="installation.html" class="sb-link">Installation</a>
+                <a href="quickstart.html" class="sb-link">Quick Start</a>
+            </div>
+            <div class="sb-section">
+                <div class="sb-title">Usage</div>
+                <a href="commands.html" class="sb-link">Commands</a>
+                <a href="providers.html" class="sb-link">Providers</a>
+                <a href="templates.html" class="sb-link">Custom Templates</a>
+                <a href="ci-cd.html" class="sb-link">CI/CD Integration</a>
+            </div>
+            <div class="sb-section">
+                <div class="sb-title">Reference</div>
+                <a href="benchmarks.html" class="sb-link">Benchmarks</a>
+                <a href="architecture.html" class="sb-link">Architecture</a>
+                <a href="api.html" class="sb-link">Python API</a>
+            </div>
+            <div class="sb-section">
+                <div class="sb-title">Community</div>
+                <a href="contributing.html" class="sb-link">Contributing</a>
+                <a href="security.html" class="sb-link">Security Policy</a>
+            </div>
+        </aside>
+
+        <main class="doc-content">
+            <h1>CodeSight Documentation</h1>
+            <p class="lead">AI-powered code analysis and security review CLI. Finds real bugs, not syntax.</p>
+
+            <div class="cards">
+                <a href="installation.html" class="card">
+                    <div class="card-icon">01</div>
+                    <h3>Installation</h3>
+                    <p>pip install, configure your API key, and run your first scan in under a minute.</p>
+                </a>
+                <a href="commands.html" class="card">
+                    <div class="card-icon">02</div>
+                    <h3>Commands</h3>
+                    <p>review, bugs, security, docs, explain, refactor, scan, diff, benchmark — all in one CLI.</p>
+                </a>
+                <a href="providers.html" class="card">
+                    <div class="card-icon">03</div>
+                    <h3>Providers</h3>
+                    <p>OpenAI, Anthropic, Google Vertex AI, or Ollama for fully offline local analysis.</p>
+                </a>
+                <a href="benchmarks.html" class="card">
+                    <div class="card-icon">04</div>
+                    <h3>Benchmarks</h3>
+                    <p>CWE detection rates, comparison with Semgrep and CodeQL, false positive analysis.</p>
+                </a>
+            </div>
+
+            <h2>What CodeSight Does</h2>
+            <p>CodeSight is a command-line tool that sends your source code to large language models with carefully tuned prompts for specific analysis tasks. It's not a linter — it understands what your code is <em>supposed</em> to do and finds where it fails.</p>
+
+            <div class="feature-grid">
+                <div class="feature">
+                    <h4>Code Review</h4>
+                    <p>Severity-tagged issues with line numbers, root cause, and concrete fixes.</p>
+                </div>
+                <div class="feature">
+                    <h4>Security Audit</h4>
+                    <p>CWE IDs, OWASP mapping, proof of concept scenarios, and remediation code.</p>
+                </div>
+                <div class="feature">
+                    <h4>Bug Detection</h4>
+                    <p>Logic errors, race conditions, resource leaks, off-by-ones, and edge cases.</p>
+                </div>
+                <div class="feature">
+                    <h4>Multi-Provider</h4>
+                    <p>Switch between GPT-5.4, Claude 4.6, Gemini 3.1, or local models with one flag.</p>
+                </div>
+                <div class="feature">
+                    <h4>CI/CD Ready</h4>
+                    <p>SARIF output, exit codes, GitHub Action — drops into any pipeline.</p>
+                </div>
+                <div class="feature">
+                    <h4>Cost Tracking</h4>
+                    <p>Token usage and dollar cost per query. No surprises on your API bill.</p>
+                </div>
+            </div>
+
+            <h2>Quick Example</h2>
+            <div class="code-block">
+                <div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> pip install codesight
+<span class="prompt">$</span> export OPENAI_API_KEY="sk-..."
+<span class="prompt">$</span> codesight security src/auth.py
+
+<span class="dim">╭──────────────────────────────────────────────╮</span>
+<span class="dim">│</span> <span class="green">CodeSight</span>  SECURITY  openai (gpt-5.4)        <span class="dim">│</span>
+<span class="dim">╰──────────────────────────────────────────────╯</span>
+
+<span class="red">[CRITICAL]</span> SQL Injection — CWE-89
+  ln 87 — f-string in SQL query
+  Fix: Use parameterized queries
+
+<span class="red">[CRITICAL]</span> Hardcoded Secret — CWE-798
+  ln 42 — JWT_SECRET = "admin123"
+  Fix: Load from environment variable
+
+<span class="yellow">[HIGH]</span> Missing Auth — CWE-862
+  ln 105 — /admin has no auth middleware
+
+<span class="dim">3 findings · 1,247 tokens · $0.003</span></code></pre>
+            </div>
+        </main>
+    </div>
+
+    <footer class="doc-footer">
+        <div>MIT License · <a href="https://github.com/AvixoSec/codesight">AvixoSec/codesight</a></div>
+    </footer>
+</body>
+</html>

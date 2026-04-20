@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Policy — CodeSight Docs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="doc-nav">
+        <a href="../" class="logo">code<span>sight</span></a>
+        <div class="nav-links"><a href="./" class="active">Docs</a><a href="https://github.com/AvixoSec/codesight" target="_blank">GitHub</a></div>
+    </nav>
+    <div class="doc-layout">
+        <aside class="sidebar">
+            <div class="sb-section"><div class="sb-title">Getting Started</div><a href="./" class="sb-link">Overview</a><a href="installation.html" class="sb-link">Installation</a><a href="quickstart.html" class="sb-link">Quick Start</a></div>
+            <div class="sb-section"><div class="sb-title">Usage</div><a href="commands.html" class="sb-link">Commands</a><a href="providers.html" class="sb-link">Providers</a><a href="templates.html" class="sb-link">Custom Templates</a><a href="ci-cd.html" class="sb-link">CI/CD Integration</a></div>
+            <div class="sb-section"><div class="sb-title">Reference</div><a href="benchmarks.html" class="sb-link">Benchmarks</a><a href="architecture.html" class="sb-link">Architecture</a><a href="api.html" class="sb-link">Python API</a></div>
+            <div class="sb-section"><div class="sb-title">Community</div><a href="contributing.html" class="sb-link">Contributing</a><a href="security.html" class="sb-link active">Security Policy</a></div>
+        </aside>
+        <main class="doc-content">
+            <h1>Security Policy</h1>
+            <p class="lead">CodeSight is a defensive security tool. Here's how we handle security for the tool itself.</p>
+
+            <h2>Reporting Vulnerabilities</h2>
+            <p>If you find a security vulnerability in CodeSight, <strong>do not open a public issue</strong>.</p>
+            <p>Email <a href="mailto:AvixoSec@gmail.com">AvixoSec@gmail.com</a> with:</p>
+            <ul>
+                <li>Description of the vulnerability</li>
+                <li>Steps to reproduce</li>
+                <li>Impact assessment</li>
+                <li>Suggested fix (if any)</li>
+            </ul>
+            <p>We'll respond within 48 hours and coordinate disclosure.</p>
+
+            <h2>Scope</h2>
+            <p>CodeSight is strictly a <strong>defensive</strong> cybersecurity tool. It:</p>
+            <ul>
+                <li>Does not execute untrusted code</li>
+                <li>Does not exfiltrate data</li>
+                <li>Has no offensive capabilities</li>
+            </ul>
+
+            <h2>Data Handling</h2>
+            <ul>
+                <li>API keys are stored locally in <code>~/.codesight/config.json</code></li>
+                <li>Source code is sent only to the configured LLM provider API</li>
+                <li>No telemetry, no analytics, no phone-home</li>
+                <li>Ollama mode keeps everything on your machine — zero network calls</li>
+            </ul>
+
+            <h2>Supported Versions</h2>
+            <table>
+                <thead><tr><th>Version</th><th>Supported</th></tr></thead>
+                <tbody>
+                    <tr><td>0.1.x</td><td>Yes</td></tr>
+                </tbody>
+            </table>
+        </main>
+    </div>
+    <footer class="doc-footer"><div>MIT License · <a href="https://github.com/AvixoSec/codesight">AvixoSec/codesight</a></div></footer>
+</body>
+</html>

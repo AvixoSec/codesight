@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture — CodeSight Docs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="doc-nav">
+        <a href="../" class="logo">code<span>sight</span></a>
+        <div class="nav-links"><a href="./" class="active">Docs</a><a href="https://github.com/AvixoSec/codesight" target="_blank">GitHub</a></div>
+    </nav>
+    <div class="doc-layout">
+        <aside class="sidebar">
+            <div class="sb-section"><div class="sb-title">Getting Started</div><a href="./" class="sb-link">Overview</a><a href="installation.html" class="sb-link">Installation</a><a href="quickstart.html" class="sb-link">Quick Start</a></div>
+            <div class="sb-section"><div class="sb-title">Usage</div><a href="commands.html" class="sb-link">Commands</a><a href="providers.html" class="sb-link">Providers</a><a href="templates.html" class="sb-link">Custom Templates</a><a href="ci-cd.html" class="sb-link">CI/CD Integration</a></div>
+            <div class="sb-section"><div class="sb-title">Reference</div><a href="benchmarks.html" class="sb-link">Benchmarks</a><a href="architecture.html" class="sb-link active">Architecture</a><a href="api.html" class="sb-link">Python API</a></div>
+            <div class="sb-section"><div class="sb-title">Community</div><a href="contributing.html" class="sb-link">Contributing</a><a href="security.html" class="sb-link">Security Policy</a></div>
+        </aside>
+        <main class="doc-content">
+            <h1>Architecture</h1>
+            <p class="lead">How CodeSight is structured internally.</p>
+
+            <h2>Module Overview</h2>
+            <div class="code-block"><div class="code-header">Project Structure</div>
+                <pre><code>codesight/
+├── __init__.py          # version, metadata
+├── __main__.py          # python -m codesight entry point
+├── cli.py               # argparse CLI, output formatting
+├── config.py            # AppConfig, ProviderConfig, load/save
+├── analyzer.py          # core analysis engine, system prompts
+├── compression.py       # code map builder, token reduction
+├── streaming.py         # streaming output for all providers
+├── templates.py         # custom prompt template management
+├── cost.py              # token cost estimation per model
+├── pipeline.py          # multi-model triage → verify pipeline
+├── benchmark.py         # LLM benchmark on vulnerable samples
+├── sarif.py             # SARIF output generation
+└── providers/
+    ├── base.py          # BaseLLMProvider, Message, LLMResponse
+    ├── factory.py       # provider registry and instantiation
+    ├── openai_provider.py
+    ├── anthropic_provider.py
+    ├── google_provider.py
+    └── ollama_provider.py</code></pre>
+            </div>
+
+            <h2>Data Flow</h2>
+            <p>Every analysis follows the same path:</p>
+            <ol>
+                <li><strong>CLI</strong> parses the command and loads config</li>
+                <li><strong>Analyzer</strong> reads the source file and validates size</li>
+                <li><strong>Compression</strong> builds a code map if the file exceeds 300 lines</li>
+                <li><strong>System prompt</strong> is selected based on the task (review/bugs/security/etc.)</li>
+                <li><strong>Provider</strong> sends the prompt + code to the LLM API</li>
+                <li><strong>Response</strong> is parsed, formatted (markdown/json/sarif), and printed</li>
+                <li><strong>Cost</strong> is estimated from token usage</li>
+            </ol>
+
+            <h2>Provider Abstraction</h2>
+            <p>All providers implement <code>BaseLLMProvider</code>:</p>
+            <div class="code-block"><div class="code-header">providers/base.py</div>
+                <pre><code>class BaseLLMProvider(ABC):
+    async def complete(messages, max_tokens, temperature) -> LLMResponse
+    async def health_check() -> bool
+    def name -> str</code></pre>
+            </div>
+            <p>Adding a new provider means implementing these three methods and registering it in <code>factory.py</code>.</p>
+
+            <h2>Compression</h2>
+            <p>For files over 300 lines, the compression module extracts:</p>
+            <ul>
+                <li>Import statements</li>
+                <li>Function/class/method signatures</li>
+                <li>Structural outline with line numbers</li>
+            </ul>
+            <p>This typically reduces token usage by 60-80% while preserving enough context for accurate analysis.</p>
+
+            <h2>Multi-Model Pipeline</h2>
+            <p>The pipeline feature chains two models for security analysis:</p>
+            <ol>
+                <li><strong>Triage</strong> — a fast/cheap model (e.g., Llama 3 via Ollama) scans the code and flags suspicious areas</li>
+                <li><strong>Verify</strong> — a strong model (e.g., GPT-5.4) does deep analysis only on flagged sections</li>
+            </ol>
+            <p>This reduces cost by 70-85% compared to running the full code through the expensive model, with minimal accuracy loss.</p>
+
+            <h2>Configuration Hierarchy</h2>
+            <ol>
+                <li>CLI flags (<code>--provider</code>, <code>--output</code>)</li>
+                <li>Environment variables (<code>OPENAI_API_KEY</code>, <code>CODESIGHT_MODEL</code>)</li>
+                <li>Config file (<code>~/.codesight/config.json</code>)</li>
+                <li>Defaults (OpenAI, GPT-5.4, markdown output)</li>
+            </ol>
+        </main>
+    </div>
+    <footer class="doc-footer"><div>MIT License · <a href="https://github.com/AvixoSec/codesight">AvixoSec/codesight</a></div></footer>
+</body>
+</html>

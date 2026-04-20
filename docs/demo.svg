@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 440">
+  <style>
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+    @keyframes t1{0%,5%{opacity:0}6%,100%{opacity:1}}
+    @keyframes t2{0%,14%{opacity:0}15%,100%{opacity:1}}
+    @keyframes t3{0%,24%{opacity:0}25%,100%{opacity:1}}
+    @keyframes t4{0%,32%{opacity:0}33%,100%{opacity:1}}
+    @keyframes t5{0%,40%{opacity:0}41%,100%{opacity:1}}
+    @keyframes t6{0%,48%{opacity:0}49%,100%{opacity:1}}
+    @keyframes t7{0%,55%{opacity:0}56%,100%{opacity:1}}
+    @keyframes t8{0%,62%{opacity:0}63%,100%{opacity:1}}
+    @keyframes t9{0%,70%{opacity:0}71%,100%{opacity:1}}
+    @keyframes t10{0%,78%{opacity:0}79%,100%{opacity:1}}
+    .l1{animation:t1 8s infinite}.l2{animation:t2 8s infinite}.l3{animation:t3 8s infinite}
+    .l4{animation:t4 8s infinite}.l5{animation:t5 8s infinite}.l6{animation:t6 8s infinite}
+    .l7{animation:t7 8s infinite}.l8{animation:t8 8s infinite}.l9{animation:t9 8s infinite}
+    .l10{animation:t10 8s infinite}
+    text{font-family:'JetBrains Mono','Fira Code','SF Mono',monospace;font-size:13px}
+    .cursor{animation:blink 1s step-end infinite;fill:#34d399}
+  </style>
+  <rect width="720" height="440" rx="12" fill="#0e0e18"/>
+  <rect width="720" height="36" rx="12" fill="#1a1a2e"/>
+  <rect y="24" width="720" height="12" fill="#1a1a2e"/>
+  <circle cx="20" cy="18" r="6" fill="#ef4444"/>
+  <circle cx="40" cy="18" r="6" fill="#eab308"/>
+  <circle cx="60" cy="18" r="6" fill="#22c55e"/>
+  <text x="320" y="22" fill="#6b6b82" font-size="11" text-anchor="middle">bash — codesight</text>
+
+  <g class="l1">
+    <text x="20" y="68" fill="#34d399">$</text>
+    <text x="36" y="68" fill="#fff">codesight security</text>
+    <text x="210" y="68" fill="#fbbf24">src/auth.py</text>
+    <text x="330" y="68" fill="#fbbf24">--provider openai</text>
+  </g>
+
+  <g class="l2">
+    <text x="20" y="98" fill="#c084fc">Analyzing src/auth.py (security) with gpt-5.4 ...</text>
+  </g>
+
+  <g class="l3">
+    <text x="20" y="138" fill="#fff" font-weight="600">╭──────────────────────────────────────────────────────────╮</text>
+    <text x="20" y="158" fill="#fff" font-weight="600">│</text>
+    <text x="36" y="158" fill="#34d399" font-weight="700"> CodeSight</text>
+    <text x="140" y="158" fill="#fff" font-weight="600"> SECURITY</text>
+    <text x="250" y="158" fill="#6b6b82"> openai (gpt-5.4)</text>
+    <text x="480" y="158" fill="#06b6d4">1,247 tokens</text>
+    <text x="600" y="158" fill="#eab308">$0.003</text>
+    <text x="20" y="178" fill="#fff" font-weight="600">╰──────────────────────────────────────────────────────────╯</text>
+  </g>
+
+  <g class="l4">
+    <text x="20" y="210" fill="#fff" font-weight="600">## Security Findings</text>
+  </g>
+
+  <g class="l5">
+    <text x="20" y="240" fill="#fb7185" font-weight="700">[CRITICAL]</text>
+    <text x="120" y="240" fill="#fff">SQL Injection — CWE-89</text>
+    <text x="20" y="258" fill="#6b6b82">ln 87 — f-string in SQL query: f"SELECT * FROM users WHERE id={user_id}"</text>
+    <text x="20" y="276" fill="#6b6b82">Fix: Use parameterized queries with cursor.execute(sql, params)</text>
+  </g>
+
+  <g class="l6">
+    <text x="20" y="306" fill="#fb7185" font-weight="700">[CRITICAL]</text>
+    <text x="120" y="306" fill="#fff">Hardcoded Secret — CWE-798</text>
+    <text x="20" y="324" fill="#6b6b82">ln 42 — JWT_SECRET = "admin123" hardcoded in source</text>
+    <text x="20" y="342" fill="#6b6b82">Fix: Load from env var or secrets manager</text>
+  </g>
+
+  <g class="l7">
+    <text x="20" y="372" fill="#fbbf24" font-weight="700">[HIGH]</text>
+    <text x="80" y="372" fill="#fff">Missing Auth Check — CWE-862</text>
+    <text x="20" y="390" fill="#6b6b82">ln 105 — /admin endpoint has no authentication middleware</text>
+  </g>
+
+  <g class="l8">
+    <text x="20" y="420" fill="#6b6b82">3 findings · 2 critical · 1 high · 1,247 tokens · $0.003 · 1.4s</text>
+  </g>
+
+  <rect class="cursor l1" x="520" y="56" width="8" height="16" rx="1"/>
+</svg>
