@@ -1,9 +1,9 @@
 import asyncio
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from codesight.analyzer import Analyzer, AnalysisError, TaskType, SYSTEM_PROMPTS, collect_files
+from codesight.analyzer import SYSTEM_PROMPTS, Analyzer, TaskType, collect_files
 from codesight.config import AppConfig, ProviderConfig
 from codesight.providers.base import LLMResponse
 

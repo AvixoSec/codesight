@@ -9,6 +9,8 @@ CodeSight sends your code to LLMs (OpenAI, Anthropic, Google Vertex AI) with str
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Docs](https://img.shields.io/badge/docs-codesight.is--a.dev-c084fc)](https://codesight.is-a.dev)
+[![Downloads](https://img.shields.io/pypi/dm/codesight?color=blue)](https://pypi.org/project/codesight/)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 ---
 

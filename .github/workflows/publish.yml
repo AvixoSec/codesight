@@ -4,13 +4,11 @@ on:
   release:
     types: [published]
 
-permissions:
-  id-token: write
-
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment: pypi
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
