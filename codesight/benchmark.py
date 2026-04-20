@@ -222,7 +222,10 @@ async def benchmark_model(
 
         messages = [
             Message(role="system", content=BENCHMARK_PROMPT),
-            Message(role="user", content=f"File: `{case.path}`\n\n```{case.language}\n{source}\n```"),
+            Message(
+                role="user",
+                content=f"File: `{case.path}`\n\n```{case.language}\n{source}\n```",
+            ),
         ]
 
         start = time.monotonic()
@@ -288,7 +291,9 @@ def format_benchmark(summary: BenchmarkSummary) -> str:
         exp = ", ".join(r.expected_cwes)
         det = ", ".join(r.detected_cwes) or "none"
         lines.append(
-            f"| {Path(r.file_path).name} | {exp} | {det} | {r.true_positives} | {r.false_negatives} | {r.response_time_ms}ms |"
+            f"| {Path(r.file_path).name} | {exp} | {det} "
+            f"| {r.true_positives} | {r.false_negatives} "
+            f"| {r.response_time_ms}ms |"
         )
 
     return "\n".join(lines)

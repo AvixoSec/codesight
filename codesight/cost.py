@@ -29,7 +29,10 @@ def estimate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> flo
     if prices is None:
         return 0.0
     input_price, output_price = prices
-    cost = (prompt_tokens / 1_000_000) * input_price + (completion_tokens / 1_000_000) * output_price
+    cost = (
+        (prompt_tokens / 1_000_000) * input_price
+        + (completion_tokens / 1_000_000) * output_price
+    )
     return round(cost, 6)
 
 

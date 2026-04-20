@@ -10,7 +10,10 @@ class AnthropicProvider(BaseLLMProvider):
 
     def __init__(self, config: ProviderConfig) -> None:
         if not config.api_key:
-            raise ValueError("Missing Anthropic API key. Set ANTHROPIC_API_KEY or run: codesight config")
+            raise ValueError(
+                "Missing Anthropic API key. "
+                "Set ANTHROPIC_API_KEY or run: codesight config"
+            )
         self._config = config
         self._model = config.model or "claude-opus-4-6-20251101"
         self._headers = {

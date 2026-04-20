@@ -13,7 +13,10 @@ class GoogleVertexProvider(BaseLLMProvider):
         self._model = config.model or "gemini-3.1-pro"
 
         if not self._project:
-            raise ValueError("Missing Google Cloud project ID. Set GOOGLE_CLOUD_PROJECT or run: codesight config")
+            raise ValueError(
+                "Missing Google Cloud project ID. "
+                "Set GOOGLE_CLOUD_PROJECT or run: codesight config"
+            )
 
         self._base_url = (
             f"https://{self._region}-aiplatform.googleapis.com/v1"

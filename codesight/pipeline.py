@@ -74,10 +74,17 @@ async def run_pipeline(
     triage_usage = triage_response.usage
 
     if "NO_FINDINGS" in triage_output.upper():
-        return "## Security Findings\n\nNo vulnerabilities found.\n\n## Summary\n\nCode passed triage screening. No issues detected.", {
-            "prompt_tokens": triage_usage.get("prompt_tokens", 0),
-            "completion_tokens": triage_usage.get("completion_tokens", 0),
-            "triage_tokens": triage_usage.get("prompt_tokens", 0) + triage_usage.get("completion_tokens", 0),
+        clean_msg = (
+            "## Security Findings\n\nNo vulnerabilities found."
+            "\n\n## Summary\n\nCode passed triage screening."
+            " No issues detected."
+        )
+        t_in = triage_usage.get("prompt_tokens", 0)
+        t_out = triage_usage.get("completion_tokens", 0)
+        return clean_msg, {
+            "prompt_tokens": t_in,
+            "completion_tokens": t_out,
+            "triage_tokens": t_in + t_out,
             "verify_tokens": 0,
         }
 

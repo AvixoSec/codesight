@@ -67,7 +67,8 @@ class AnalysisResult:
 SYSTEM_PROMPTS = {
     TaskType.REVIEW: (
         "You are a senior engineer doing a code review. Be direct and specific. "
-        "For every issue: state the line number, severity [crit/warn/info], what's wrong, and how to fix it. "
+        "For every issue: state the line number, severity "
+        "[crit/warn/info], what's wrong, and how to fix it. "
         "Start with a one-line summary. Don't pad with praise. "
         "Sections: ## Summary, ## Issues, ## Suggestions"
     ),

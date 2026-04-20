@@ -329,7 +329,8 @@ def _run_diff(args, config: AppConfig) -> None:
     console.print(f"Found [bold]{len(files)}[/] changed files")
 
     try:
-        analyzer = Analyzer(config, provider_name=args.provider if hasattr(args, "provider") else None)
+        prov = args.provider if hasattr(args, "provider") else None
+        analyzer = Analyzer(config, provider_name=prov)
     except ValueError as exc:
         console.print(f"[bold red]Config error:[/] {exc}")
         sys.exit(1)
@@ -396,7 +397,10 @@ def _run_config() -> None:
         )
     elif provider == "anthropic":
         key = console.input("  Anthropic API Key: ").strip()
-        model = console.input("  Model [dim]\\[claude-opus-4-6-20251101][/]: ").strip() or "claude-opus-4-6-20251101"
+        default_m = "claude-opus-4-6-20251101"
+        model = console.input(
+            f"  Model [dim]\\[{default_m}][/]: "
+        ).strip() or default_m
         config.providers["anthropic"] = ProviderConfig(
             provider="anthropic", api_key=key, model=model,
         )
