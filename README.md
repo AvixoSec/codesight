@@ -1,8 +1,8 @@
 # CodeSight
 
-**Code analysis CLI — reviews, bugs, docs, and refactoring from your terminal.**
+**AI-powered code analysis CLI — reviews, bugs, docs, and refactoring from your terminal.**
 
-CodeSight connects to LLM APIs (OpenAI, Anthropic, Google) for code review, bug hunting, docs, and refactoring. Works with any language.
+CodeSight sends your code to LLMs (OpenAI, Anthropic, Google Vertex AI) with structured prompts tuned for code review, bug detection, security analysis, documentation, and refactoring. Multi-provider, configurable, works with any language.
 
 ![CI](https://github.com/AvixoSec/codesight/actions/workflows/ci.yml/badge.svg)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
@@ -14,6 +14,7 @@ CodeSight connects to LLM APIs (OpenAI, Anthropic, Google) for code review, bug 
 
 - **`codesight review`** — code review with severity-tagged issues (crit/warn/info)
 - **`codesight bugs`** — find logic errors, race conditions, resource leaks
+- **`codesight security`** — security audit with CWE IDs and OWASP mapping
 - **`codesight scan .`** — scan an entire directory with progress bar
 - **`codesight docs`** — auto-generate docstrings and module docs
 - **`codesight explain`** — plain-language breakdown of complex code
@@ -73,6 +74,7 @@ codesight docs utils/helpers.py
 | **OpenAI** | GPT-5.4, GPT-5.3-Codex | `OPENAI_API_KEY` |
 | **Anthropic** | Claude Opus 4.6, Claude Sonnet 4.6 | `ANTHROPIC_API_KEY` |
 | **Google Vertex AI** | Gemini 3.1 Pro, Gemini 3.1 Flash | `GOOGLE_CLOUD_PROJECT` + ADC |
+| **Ollama (local)** | Llama 3, CodeLlama, Mistral, etc. | Just run `ollama serve` |
 
 ## Configuration
 
@@ -96,6 +98,7 @@ Switch providers on the fly:
 codesight review my_file.py --provider anthropic
 codesight bugs my_file.py --provider google
 codesight explain my_file.py --provider openai
+codesight review my_file.py --provider ollama  # fully offline, no data leaves your machine
 ```
 
 ## Architecture
@@ -112,7 +115,8 @@ codesight/
     ├── factory.py
     ├── openai_provider.py
     ├── anthropic_provider.py
-    └── google_provider.py
+    ├── google_provider.py
+    └── ollama_provider.py
 ```
 
 ## Development
@@ -128,12 +132,17 @@ ruff check codesight/
 ## Roadmap
 
 - [x] `codesight scan .` — analyze a whole directory
-- [ ] `codesight diff` — review only git-changed files
+- [x] Ollama support — fully offline analysis with local models
+- [x] `codesight security` — dedicated security audit with CWE IDs and OWASP mapping
+- [x] `codesight diff` — review only git-changed files
+- [x] SARIF output — standard format for GitHub Security tab
+- [x] Exit codes for CI/CD (0 = clean, 1 = warnings, 2 = critical)
+- [x] GitHub Action — auto-scan PRs with SARIF upload
+- [x] Multi-model pipeline — fast triage + deep verification
+- [x] Cost tracking per query
+- [x] `codesight benchmark` — test LLMs on vulnerable codebases
 - [ ] Context compression — code maps to reduce token usage
-- [ ] Exit codes for CI/CD (0 = clean, 1 = warnings, 2 = critical)
 - [ ] Streaming output for large files
-- [ ] Cost tracking per query
-- [ ] GitHub Action
 - [ ] Custom prompt templates
 - [ ] Publish to PyPI
 

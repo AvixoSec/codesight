@@ -19,11 +19,16 @@ class LLMResponse:
 class BaseLLMProvider(ABC):
 
     @abstractmethod
-    async def complete(self, messages, max_tokens=4096, temperature=0.2): ...
+    async def complete(
+        self,
+        messages: list[Message],
+        max_tokens: int = 4096,
+        temperature: float = 0.2,
+    ) -> LLMResponse: ...
 
     @abstractmethod
-    async def health_check(self): ...
+    async def health_check(self) -> bool: ...
 
     @property
     @abstractmethod
-    def name(self): ...
+    def name(self) -> str: ...

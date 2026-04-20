@@ -1,0 +1,23 @@
+name: Security Scan
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  codesight:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: AvixoSec/codesight@main
+        with:
+          provider: openai
+          api-key: ${{ secrets.OPENAI_API_KEY }}
+          task: security
+          output: sarif
+          fail-on-findings: "true"

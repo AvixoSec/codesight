@@ -1,0 +1,89 @@
+name: "CodeSight Security Scan"
+description: "AI-powered security analysis for your code. Finds logic vulnerabilities that pattern-matching tools miss."
+author: "AvixoSec"
+
+branding:
+  icon: "shield"
+  color: "green"
+
+inputs:
+  provider:
+    description: "LLM provider (openai, anthropic, google, ollama)"
+    required: true
+    default: "openai"
+  model:
+    description: "Model to use (e.g. gpt-4o, claude-sonnet-4-20250514, llama3)"
+    required: false
+  api-key:
+    description: "API key for the provider (not needed for ollama)"
+    required: false
+  task:
+    description: "Analysis task (security, review, bugs)"
+    required: false
+    default: "security"
+  path:
+    description: "Directory or file to scan"
+    required: false
+    default: "."
+  output:
+    description: "Output format (markdown, json, sarif)"
+    required: false
+    default: "sarif"
+  fail-on-findings:
+    description: "Fail the workflow if critical/high findings are found"
+    required: false
+    default: "true"
+
+outputs:
+  findings:
+    description: "Number of findings"
+  sarif-file:
+    description: "Path to SARIF output file"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install CodeSight
+      shell: bash
+      run: |
+        pip install codesight
+
+    - name: Run security scan
+      shell: bash
+      env:
+        OPENAI_API_KEY: ${{ inputs.api-key }}
+        ANTHROPIC_API_KEY: ${{ inputs.api-key }}
+        CODESIGHT_MODEL: ${{ inputs.model }}
+      run: |
+        set +e
+        codesight scan ${{ inputs.path }} \
+          --provider ${{ inputs.provider }} \
+          --task ${{ inputs.task }} \
+          --output ${{ inputs.output }} \
+          > codesight-results.sarif 2>&1
+        EXIT_CODE=$?
+        echo "exit_code=$EXIT_CODE" >> $GITHUB_ENV
+
+        if [ -f codesight-results.sarif ]; then
+          echo "sarif-file=codesight-results.sarif" >> $GITHUB_OUTPUT
+        fi
+        echo "Scan complete with exit code $EXIT_CODE"
+
+    - name: Upload SARIF to GitHub Security
+      if: inputs.output == 'sarif' && hashFiles('codesight-results.sarif') != ''
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: codesight-results.sarif
+      continue-on-error: true
+
+    - name: Check findings
+      shell: bash
+      if: inputs.fail-on-findings == 'true'
+      run: |
+        if [ "${{ env.exit_code }}" = "2" ]; then
+          echo "::error::Critical security findings detected"
+          exit 2
+        elif [ "${{ env.exit_code }}" = "1" ]; then
+          echo "::warning::Security warnings detected"
+          exit 1
+        fi

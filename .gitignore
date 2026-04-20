@@ -14,3 +14,9 @@ venv/
 .pytest_cache/
 .codesight/
 GRANT_PLAN.md
+GRANT_PLAN_v2.md
+GRANT_ANSWERS.md
+GRANT_GUIDE_SIMPLE.md
+WHAT_I_GET.md
+gpu_usecase.md
+pitch_*.html

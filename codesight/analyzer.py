@@ -3,30 +3,40 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-from .config import get_provider_config
+from .config import AppConfig, get_provider_config
 from .providers import create_provider
-from .providers.base import Message
+from .providers.base import BaseLLMProvider, LLMResponse, Message
 
-SCAN_EXTENSIONS = {".py", ".js", ".ts", ".go", ".rs", ".java", ".cpp", ".c", ".h"}
-DEFAULT_MAX_SIZE = 500  # KB
+SCAN_EXTENSIONS = {
+    ".py", ".js", ".ts", ".jsx", ".tsx", ".go", ".rs", ".rb",
+    ".java", ".kt", ".cs", ".cpp", ".c", ".h", ".hpp",
+    ".php", ".swift", ".scala", ".sh", ".bash",
+}
 
 
-def collect_files(directory, extensions=None, ignore=None, max_size_kb=DEFAULT_MAX_SIZE):
+def collect_files(
+    directory: str,
+    extensions: set[str] | None = None,
+    ignore: list[str] | None = None,
+    max_size_kb: int = 500,
+) -> list[str]:
     root = Path(directory).resolve()
     if not root.is_dir():
         return []
     exts = extensions or SCAN_EXTENSIONS
-    skip = ignore or []
+    ignore = ignore or []
     found = []
     for p in sorted(root.rglob("*")):
-        if not p.is_file() or p.suffix not in exts:
+        if not p.is_file():
+            continue
+        if p.suffix not in exts:
             continue
         rel = str(p.relative_to(root))
-        if any(fnmatch.fnmatch(rel, pat) or fnmatch.fnmatch(p.name, pat) for pat in skip):
+        if any(fnmatch.fnmatch(rel, pat) or fnmatch.fnmatch(p.name, pat) for pat in ignore):
             continue
-        if any(fnmatch.fnmatch(part, pat) for pat in skip for part in Path(rel).parts):
+        if any(fnmatch.fnmatch(part, pat) for pat in ignore for part in p.relative_to(root).parts):
             continue
-        if any(part.startswith(".") for part in Path(rel).parts):
+        if any(part.startswith(".") for part in p.relative_to(root).parts):
             continue
         if p.stat().st_size / 1024 > max_size_kb:
             continue
@@ -37,6 +47,7 @@ def collect_files(directory, extensions=None, ignore=None, max_size_kb=DEFAULT_M
 class TaskType(Enum):
     REVIEW = "review"
     BUGS = "bugs"
+    SECURITY = "security"
     DOCS = "docs"
     EXPLAIN = "explain"
     REFACTOR = "refactor"
@@ -50,28 +61,61 @@ class AnalysisResult:
     model: str
     provider: str
     tokens_used: int
+    usage: dict = None
 
 
 SYSTEM_PROMPTS = {
     TaskType.REVIEW: (
-        "Code review. Find issues, tag severity [crit/warn/info], suggest fixes. "
-        "Sections: Summary, Issues, Suggestions."
+        "You are a senior engineer doing a code review. Be direct and specific. "
+        "For every issue: state the line number, severity [crit/warn/info], what's wrong, and how to fix it. "
+        "Start with a one-line summary. Don't pad with praise. "
+        "Sections: ## Summary, ## Issues, ## Suggestions"
     ),
     TaskType.BUGS: (
-        "Find runtime bugs: logic errors, null access, resource leaks, races. "
-        "Skip style. Sections: Bugs Found, Risk."
+        "Find bugs in this code. Focus on things that will actually break at runtime: "
+        "logic errors, off-by-ones, null access, unclosed resources, race conditions, "
+        "unhandled edge cases. For each bug: line number, root cause, fix. "
+        "Skip style nitpicks. Sections: ## Bugs Found, ## Risk Assessment"
+    ),
+    TaskType.SECURITY: (
+        "You are a security auditor. Analyze this code for security vulnerabilities. "
+        "For EACH finding, provide:\n"
+        "- Severity: CRITICAL / HIGH / MEDIUM / LOW\n"
+        "- CWE ID (e.g. CWE-89 for SQL injection)\n"
+        "- OWASP category (e.g. A03:2021 Injection)\n"
+        "- Line number(s)\n"
+        "- Description of the vulnerability\n"
+        "- Proof of concept or attack scenario\n"
+        "- Recommended fix with code example\n\n"
+        "Focus on: injection (SQL, command, XSS), broken authentication, "
+        "sensitive data exposure, broken access control, security misconfiguration, "
+        "SSRF, path traversal, deserialization, race conditions (TOCTOU), "
+        "hardcoded secrets, and insecure cryptography.\n\n"
+        "Output format:\n"
+        "## Security Findings\n"
+        "### [SEVERITY] Title — CWE-XXX\n"
+        "**OWASP:** Category\n"
+        "**Location:** file:line\n"
+        "**Description:** ...\n"
+        "**Fix:** ...\n\n"
+        "## Summary\n"
+        "Total findings by severity. Overall risk assessment."
     ),
     TaskType.DOCS: (
-        "Generate docs. Follow language conventions. Document all public APIs. "
-        "Return full file with docs."
+        "Generate documentation for this code. Follow the language conventions "
+        "(Google-style docstrings for Python, JSDoc for JS/TS). "
+        "Document every public function/class. Include param types, return types, "
+        "and a brief description. Return the full file with docs added."
     ),
     TaskType.EXPLAIN: (
-        "Explain this code. What it does, data flow, why structured this way. "
-        "Reference specific lines."
+        "Explain this code to someone seeing it for the first time. "
+        "Cover: what it does, how data flows through it, why it's structured this way, "
+        "and anything non-obvious. Keep it concrete — reference specific lines."
     ),
     TaskType.REFACTOR: (
-        "Suggest refactors. Show before/after. Focus on: extract logic, "
-        "reduce nesting, better names."
+        "Suggest refactoring for this code. Be specific — show before/after diffs. "
+        "Focus on: extracting repeated logic, reducing nesting, better naming, "
+        "splitting large functions. Don't suggest changes that only affect style."
     ),
 }
 
@@ -82,51 +126,77 @@ class AnalysisError(Exception):
 
 class Analyzer:
 
-    def __init__(self, config, provider_name=None):
+    def __init__(self, config: AppConfig, provider_name: str | None = None) -> None:
         pconfig = get_provider_config(config, provider_name)
-        self._provider = create_provider(pconfig)
+        self._provider: BaseLLMProvider = create_provider(pconfig)
         self._max_tokens = pconfig.max_tokens
         self._temperature = pconfig.temperature
-        self._max_size = config.max_file_size_kb
+        self._max_file_size_kb = config.max_file_size_kb
 
-    def _check_file(self, path):
-        p = Path(path)
+    def _validate_file(self, file_path: str) -> Path:
+        p = Path(file_path)
         if not p.is_file():
-            raise AnalysisError(f"Not found: {path}")
-        if p.stat().st_size / 1024 > self._max_size:
-            sz = p.stat().st_size / 1024
-            raise AnalysisError(f"Too big: {sz:.0f}KB (max {self._max_size}KB)")
+            raise AnalysisError(f"File not found: {file_path}")
+        size_kb = p.stat().st_size / 1024
+        if size_kb > self._max_file_size_kb:
+            raise AnalysisError(
+                f"File too large: {size_kb:.0f}KB (limit: {self._max_file_size_kb}KB). "
+                f"Adjust max_file_size_kb in config to override."
+            )
         return p
 
-    async def analyze_file(self, file_path, task, extra_context=None):
-        p = self._check_file(file_path)
-        src = p.read_text(encoding="utf-8", errors="replace")
-        ext = p.suffix.lstrip(".")
+    async def analyze_file(
+        self,
+        file_path: str,
+        task: TaskType,
+        extra_context: str | None = None,
+    ) -> AnalysisResult:
+        p = self._validate_file(file_path)
+        source = p.read_text(encoding="utf-8", errors="replace")
+        ext = p.suffix
 
-        content = f"File: `{file_path}`\n\n```{ext}\n{src}\n```"
+        user_content = f"File: `{file_path}` ({ext})\n\n```{ext.lstrip('.')}\n{source}\n```"
         if extra_context:
-            content += f"\n\nContext: {extra_context}"
+            user_content += f"\n\nAdditional context: {extra_context}"
 
-        msgs = [Message(role="system", content=SYSTEM_PROMPTS[task]),
-                Message(role="user", content=content)]
+        messages = [
+            Message(role="system", content=SYSTEM_PROMPTS[task]),
+            Message(role="user", content=user_content),
+        ]
 
         try:
-            resp = await self._provider.complete(msgs, max_tokens=self._max_tokens,
-                                                  temperature=self._temperature)
-        except Exception as e:
-            raise AnalysisError(f"API failed: {e}") from e
+            response: LLMResponse = await self._provider.complete(
+                messages,
+                max_tokens=self._max_tokens,
+                temperature=self._temperature,
+            )
+        except Exception as exc:
+            raise AnalysisError(
+                f"API call failed: {exc}\n"
+                f"Check your API key and network connection."
+            ) from exc
 
+        usage = response.usage
         return AnalysisResult(
-            task=task, file_path=file_path, content=resp.content,
-            model=resp.model, provider=resp.provider,
-            tokens_used=resp.usage.get("prompt_tokens", 0) + resp.usage.get("completion_tokens", 0)
+            task=task,
+            file_path=file_path,
+            content=response.content,
+            model=response.model,
+            provider=response.provider,
+            tokens_used=usage.get("prompt_tokens", 0)
+            + usage.get("completion_tokens", 0),
+            usage=usage,
         )
 
-    async def analyze_files(self, paths, task):
-        out = []
-        for p in paths:
-            out.append(await self.analyze_file(p, task))
-        return out
+    async def analyze_files(
+        self,
+        file_paths: list[str],
+        task: TaskType,
+    ) -> list[AnalysisResult]:
+        results = []
+        for fp in file_paths:
+            results.append(await self.analyze_file(fp, task))
+        return results
 
-    async def health(self):
+    async def health(self) -> bool:
         return await self._provider.health_check()
