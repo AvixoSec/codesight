@@ -118,12 +118,18 @@ def _build_structure(source: str, language: str) -> str:
         elif language in ("js", "ts", "jsx", "tsx"):
             is_sig = any(
                 content.startswith(kw)
-                for kw in ("class ", "function ", "async function ", "export ", "const ", "let ", "import ")
+                for kw in (
+                    "class ", "function ", "async function ",
+                    "export ", "const ", "let ", "import ",
+                )
             )
         elif language == "go":
             is_sig = content.startswith(("func ", "type ", "import "))
         elif language == "rs":
-            is_sig = content.startswith(("fn ", "pub fn ", "pub async fn ", "struct ", "pub struct ", "impl ", "use "))
+            is_sig = content.startswith((
+                "fn ", "pub fn ", "pub async fn ",
+                "struct ", "pub struct ", "impl ", "use ",
+            ))
         elif language in ("java", "kt"):
             is_sig = any(
                 content.startswith(kw)
@@ -173,7 +179,8 @@ def compress_for_prompt(file_path: str, source: str, max_lines: int = 300) -> st
     code_map = build_code_map(file_path)
 
     parts = [
-        f"[compressed code map — {code_map.original_lines} lines, {code_map.ratio:.0%} reduction]\n",
+        f"[compressed code map — {code_map.original_lines} lines, "
+        f"{code_map.ratio:.0%} reduction]\n",
         "IMPORTS:",
         *code_map.imports,
         "",

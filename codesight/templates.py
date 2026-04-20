@@ -3,7 +3,6 @@ from pathlib import Path
 
 from .config import CONFIG_DIR
 
-
 TEMPLATES_DIR = CONFIG_DIR / "templates"
 
 DEFAULT_TEMPLATES = {

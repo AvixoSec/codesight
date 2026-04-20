@@ -1,6 +1,7 @@
-import httpx
 import json
 from collections.abc import AsyncIterator
+
+import httpx
 
 from .config import AppConfig, get_provider_config
 
@@ -23,25 +24,27 @@ async def stream_openai(
         "temperature": temperature,
         "stream": True,
     }
-    async with httpx.AsyncClient(timeout=120) as client:
-        async with client.stream(
+    async with (
+        httpx.AsyncClient(timeout=120) as client,
+        client.stream(
             "POST",
             "https://api.openai.com/v1/chat/completions",
             headers=headers,
             json=payload,
-        ) as resp:
-            resp.raise_for_status()
-            async for line in resp.aiter_lines():
-                if not line.startswith("data: "):
-                    continue
-                data = line[6:]
-                if data == "[DONE]":
-                    break
-                chunk = json.loads(data)
-                delta = chunk["choices"][0].get("delta", {})
-                text = delta.get("content", "")
-                if text:
-                    yield text
+        ) as resp,
+    ):
+        resp.raise_for_status()
+        async for line in resp.aiter_lines():
+            if not line.startswith("data: "):
+                continue
+            data = line[6:]
+            if data == "[DONE]":
+                break
+            chunk = json.loads(data)
+            delta = chunk["choices"][0].get("delta", {})
+            text = delta.get("content", "")
+            if text:
+                yield text
 
 
 async def stream_anthropic(
@@ -74,22 +77,24 @@ async def stream_anthropic(
     if system_msg:
         payload["system"] = system_msg
 
-    async with httpx.AsyncClient(timeout=120) as client:
-        async with client.stream(
+    async with (
+        httpx.AsyncClient(timeout=120) as client,
+        client.stream(
             "POST",
             "https://api.anthropic.com/v1/messages",
             headers=headers,
             json=payload,
-        ) as resp:
-            resp.raise_for_status()
-            async for line in resp.aiter_lines():
-                if not line.startswith("data: "):
-                    continue
-                chunk = json.loads(line[6:])
-                if chunk.get("type") == "content_block_delta":
-                    text = chunk.get("delta", {}).get("text", "")
-                    if text:
-                        yield text
+        ) as resp,
+    ):
+        resp.raise_for_status()
+        async for line in resp.aiter_lines():
+            if not line.startswith("data: "):
+                continue
+            chunk = json.loads(line[6:])
+            if chunk.get("type") == "content_block_delta":
+                text = chunk.get("delta", {}).get("text", "")
+                if text:
+                    yield text
 
 
 async def stream_ollama(
@@ -102,20 +107,22 @@ async def stream_ollama(
         "messages": messages,
         "stream": True,
     }
-    async with httpx.AsyncClient(timeout=300) as client:
-        async with client.stream(
+    async with (
+        httpx.AsyncClient(timeout=300) as client,
+        client.stream(
             "POST",
             f"{base_url}/api/chat",
             json=payload,
-        ) as resp:
-            resp.raise_for_status()
-            async for line in resp.aiter_lines():
-                if not line.strip():
-                    continue
-                chunk = json.loads(line)
-                text = chunk.get("message", {}).get("content", "")
-                if text:
-                    yield text
+        ) as resp,
+    ):
+        resp.raise_for_status()
+        async for line in resp.aiter_lines():
+            if not line.strip():
+                continue
+            chunk = json.loads(line)
+            text = chunk.get("message", {}).get("content", "")
+            if text:
+                yield text
 
 
 async def stream_analysis(

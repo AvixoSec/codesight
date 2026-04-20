@@ -492,7 +492,11 @@ def _run_templates(args, config: AppConfig) -> None:
         from .providers.base import Message as Msg
         messages = [
             Msg(role="system", content=tmpl["system"]),
-            Msg(role="user", content=f"File: `{file_path}` ({ext})\n\n```{ext.lstrip('.')}\n{source}\n```"),
+            Msg(
+                role="user",
+                content=f"File: `{file_path}` ({ext})\n\n"
+                f"```{ext.lstrip('.')}\n{source}\n```",
+            ),
         ]
 
         with console.status(
