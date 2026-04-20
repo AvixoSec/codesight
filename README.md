@@ -91,11 +91,16 @@ codesight review my_file.py --provider ollama  # fully offline, no data leaves y
 
 ```
 codesight/
-├── __init__.py
-├── __main__.py
-├── cli.py
-├── config.py
-├── analyzer.py
+├── cli.py              # CLI entry point (argparse)
+├── analyzer.py         # Core analysis engine
+├── config.py           # Config management (~/.codesight/)
+├── compression.py      # Context compression / code maps
+├── streaming.py        # Streaming output (OpenAI, Anthropic, Ollama)
+├── templates.py        # Custom prompt templates
+├── pipeline.py         # Multi-model triage → verify pipeline
+├── sarif.py            # SARIF output for CI/CD
+├── benchmark.py        # LLM benchmark runner
+├── cost.py             # Token cost tracking
 └── providers/
     ├── base.py
     ├── factory.py
@@ -131,8 +136,11 @@ ruff check codesight/
 - [x] Streaming output for large files
 - [x] Custom prompt templates
 - [x] Publish to PyPI
-- [ ] VS Code extension
+- [x] VS Code extension (scaffold)
+- [ ] VS Code Marketplace publish
 - [ ] Web dashboard
+- [ ] Pre-commit hook integration
+- [ ] `.codesight.yml` per-project config
 
 ## License
 
