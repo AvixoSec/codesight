@@ -3,6 +3,9 @@ import asyncio
 import json
 import sys
 from pathlib import Path
+from types import SimpleNamespace
+
+import questionary
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -393,65 +396,151 @@ def _run_diff(args, config: AppConfig) -> None:
 
 def _run_config() -> None:
     config = load_config()
-    console.print(Panel("[bold]CodeSight Configuration[/]", border_style="cyan"))
+    console.print()
+    console.print(Panel(
+        "[bold]CodeSight Setup[/]\n[dim]Use arrow keys, Enter to select[/]",
+        border_style="cyan",
+        width=50,
+    ))
+    console.print()
 
-    provider = console.input(
-        f"  Default provider [green]\\[openai/anthropic/google][/] "
-        f"(current: [cyan]{config.default_provider}[/]): "
-    ).strip() or config.default_provider
+    provider = questionary.select(
+        "Select your AI provider:",
+        choices=[
+            questionary.Choice("OpenAI    (GPT-5.4)", value="openai"),
+            questionary.Choice("Anthropic (Claude Opus 4.7)", value="anthropic"),
+            questionary.Choice("Google    (Gemini 3.1 Pro)", value="google"),
+            questionary.Choice("Ollama    (local, free, offline)", value="ollama"),
+        ],
+        default=config.default_provider if config.default_provider in (
+            "openai", "anthropic", "google", "ollama"
+        ) else "openai",
+    ).ask()
+
+    if provider is None:
+        console.print("[yellow]Cancelled.[/]")
+        return
+
     config.default_provider = provider
 
     if provider == "openai":
-        key = console.input("  OpenAI API Key: ").strip()
-        model = console.input("  Model [dim]\\[gpt-5.4][/]: ").strip() or "gpt-5.4"
-        config.providers["openai"] = ProviderConfig(
-            provider="openai", api_key=key, model=model,
-        )
+        key = questionary.password("OpenAI API key (sk-...):").ask() or ""
+        model = questionary.text("Model:", default="gpt-5.4").ask() or "gpt-5.4"
+        config.providers["openai"] = ProviderConfig(provider="openai", api_key=key, model=model)
+
     elif provider == "anthropic":
-        key = console.input("  Anthropic API Key: ").strip()
+        key = questionary.password("Anthropic API key (sk-ant-...):").ask() or ""
         default_m = "claude-opus-4-6-20251101"
-        model = console.input(
-            f"  Model [dim]\\[{default_m}][/]: "
-        ).strip() or default_m
-        config.providers["anthropic"] = ProviderConfig(
-            provider="anthropic", api_key=key, model=model,
-        )
+        model = questionary.text("Model:", default=default_m).ask() or default_m
+        config.providers["anthropic"] = ProviderConfig(provider="anthropic", api_key=key, model=model)
+
     elif provider == "google":
-        project = console.input("  Google Cloud Project ID: ").strip()
-        region = console.input("  Region [dim]\\[us-central1][/]: ").strip() or "us-central1"
-        model = console.input("  Model [dim]\\[gemini-3.1-pro][/]: ").strip() or "gemini-3.1-pro"
+        project = questionary.text("Google Cloud Project ID:").ask() or ""
+        region = questionary.text("Region:", default="us-central1").ask() or "us-central1"
+        model = questionary.text("Model:", default="gemini-3.1-pro").ask() or "gemini-3.1-pro"
         config.providers["google"] = ProviderConfig(
             provider="google", project_id=project, region=region, model=model,
         )
+
     elif provider == "ollama":
-        host = console.input("  Ollama host [dim]\\[http://localhost:11434][/]: ").strip() or "http://localhost:11434"
-        model = console.input("  Model [dim]\\[llama3][/]: ").strip() or "llama3"
-        config.providers["ollama"] = ProviderConfig(
-            provider="ollama", base_url=host, model=model,
-        )
-    else:
-        console.print(f"[bold red]Unknown provider:[/] {provider}")
-        sys.exit(1)
+        def _validate_url(val: str) -> bool | str:
+            if not val.strip().startswith("http"):
+                return "Must start with http:// or https://"
+            return True
+
+        host = questionary.text(
+            "Ollama host:",
+            default="http://localhost:11434",
+            validate=_validate_url,
+        ).ask() or "http://localhost:11434"
+        model = questionary.text(
+            "Model (must be pulled in Ollama):",
+            default="llama3",
+        ).ask() or "llama3"
+        config.providers["ollama"] = ProviderConfig(provider="ollama", base_url=host, model=model)
+        console.print(f"\n  [dim]Start Ollama:  [green]ollama serve[/][/]")
+        console.print(f"  [dim]Pull model:    [green]ollama pull {model}[/][/]")
 
     save_config(config)
-    console.print(f"\n[bold green]✓[/] Configuration saved to [cyan]{CONFIG_FILE}[/]")
+    console.print(f"\n[bold green]✓[/] Saved to [cyan]{CONFIG_FILE}[/]")
+
+    run_check = questionary.confirm("Run health check now?", default=True).ask()
+    if run_check:
+        _run_health(SimpleNamespace(provider=None), config)
 
 
 def _run_health(args, config: AppConfig) -> None:
+    from .config import get_provider_config
+
+    provider_name = getattr(args, "provider", None) or config.default_provider
+    console.print()
+    console.print(f"  Provider: [bold cyan]{provider_name}[/]")
+
     try:
-        analyzer = Analyzer(config, provider_name=args.provider)
+        pconf = get_provider_config(config, provider_name)
     except ValueError as exc:
         console.print(f"[bold red]Config error:[/] {exc}")
         sys.exit(1)
 
-    with console.status("[bold green]Checking provider...", spinner="dots"):
+    if provider_name == "ollama":
+        host = pconf.base_url or "http://localhost:11434"
+        console.print(f"  Host:     [dim]{host}[/]")
+        console.print(f"  Model:    [dim]{pconf.model}[/]")
+    elif provider_name == "openai":
+        key = pconf.api_key or ""
+        masked = f"sk-...{key[-4:]}" if len(key) > 8 else "[red]NOT SET[/]"
+        console.print(f"  API key:  [dim]{masked}[/]")
+        console.print(f"  Model:    [dim]{pconf.model}[/]")
+    elif provider_name == "anthropic":
+        key = pconf.api_key or ""
+        masked = f"sk-ant-...{key[-4:]}" if len(key) > 8 else "[red]NOT SET[/]"
+        console.print(f"  API key:  [dim]{masked}[/]")
+        console.print(f"  Model:    [dim]{pconf.model}[/]")
+    elif provider_name == "google":
+        proj = pconf.project_id or "[red]NOT SET[/]"
+        console.print(f"  Project:  [dim]{proj}[/]")
+        console.print(f"  Model:    [dim]{pconf.model}[/]")
+
+    console.print()
+
+    try:
+        analyzer = Analyzer(config, provider_name=getattr(args, "provider", None))
+    except ValueError as exc:
+        console.print(f"[bold red]Config error:[/] {exc}")
+        sys.exit(1)
+
+    with console.status("[bold]Testing connection...[/]", spinner="dots"):
         ok = asyncio.run(analyzer.health())
 
     if ok:
-        console.print("[bold green]✓[/] Provider is reachable and healthy.")
-    else:
-        console.print("[bold red]✗[/] Could not reach the provider. Check your credentials.")
-        sys.exit(1)
+        console.print("[bold green]✓[/] Connection OK")
+        return
+
+    console.print("[bold red]✗[/] Connection failed\n")
+    if provider_name == "ollama":
+        host = pconf.base_url or "http://localhost:11434"
+        console.print("  [yellow]Ollama is not running or model not found.[/]")
+        console.print(f"  1. Start server:  [green]ollama serve[/]")
+        console.print(f"  2. Pull model:    [green]ollama pull {pconf.model}[/]")
+        console.print(f"  3. Check host:    {host}")
+    elif provider_name == "openai":
+        if not (pconf.api_key or ""):
+            console.print("  [yellow]API key is not set.[/]")
+            console.print("  Run [green]codesight config[/] or set [green]OPENAI_API_KEY=sk-...[/]")
+        else:
+            console.print("  [yellow]API key may be invalid or OpenAI is unreachable.[/]")
+            console.print("  Check: https://platform.openai.com/account/api-keys")
+    elif provider_name == "anthropic":
+        if not (pconf.api_key or ""):
+            console.print("  [yellow]API key is not set.[/]")
+            console.print("  Run [green]codesight config[/] or set [green]ANTHROPIC_API_KEY=sk-ant-...[/]")
+        else:
+            console.print("  [yellow]API key may be invalid.[/]")
+            console.print("  Check: https://console.anthropic.com/settings/keys")
+    elif provider_name == "google":
+        console.print("  [yellow]Google Cloud auth failed.[/]")
+        console.print("  Run: [green]gcloud auth application-default login[/]")
+    sys.exit(1)
 
 
 def _run_templates(args, config: AppConfig) -> None:
@@ -551,19 +640,83 @@ def _run_templates(args, config: AppConfig) -> None:
             console.print("[dim]Only custom templates can be deleted, not built-in ones.[/]")
 
 
+def _run_interactive(config: AppConfig) -> None:
+    console.print()
+    console.print(Panel(
+        f"[bold]CodeSight[/] [dim]v{__version__}[/]\n"
+        f"[dim]Provider: {config.default_provider}[/]",
+        border_style="green",
+        width=48,
+    ))
+    console.print()
+
+    action = questionary.select(
+        "What do you want to do?",
+        choices=[
+            questionary.Choice("review    — code review", value="review"),
+            questionary.Choice("bugs      — find logic errors & race conditions", value="bugs"),
+            questionary.Choice("security  — security audit (CWE / OWASP)", value="security"),
+            questionary.Choice("scan      — scan a whole directory", value="scan"),
+            questionary.Choice("diff      — review git-changed files", value="diff"),
+            questionary.Choice("explain   — plain-language code breakdown", value="explain"),
+            questionary.Choice("refactor  — refactoring suggestions", value="refactor"),
+            questionary.Separator(),
+            questionary.Choice("config    — setup API keys / provider", value="config"),
+            questionary.Choice("health    — test provider connection", value="health"),
+            questionary.Choice("quit", value="quit"),
+        ],
+    ).ask()
+
+    if action is None or action == "quit":
+        return
+
+    if action == "config":
+        _run_config()
+        return
+
+    if action == "health":
+        _run_health(SimpleNamespace(provider=None), config)
+        return
+
+    if action == "diff":
+        _run_diff(SimpleNamespace(task="security", staged=False, provider=None), config)
+        return
+
+    if action == "scan":
+        directory = questionary.path(
+            "Directory to scan:", default=".", only_directories=True,
+        ).ask() or "."
+        task = questionary.select(
+            "Analysis type:",
+            choices=[
+                questionary.Choice("security  — find vulnerabilities", value="security"),
+                questionary.Choice("bugs      — find logic errors", value="bugs"),
+                questionary.Choice("review    — general code review", value="review"),
+            ],
+        ).ask() or "security"
+        _run_scan(SimpleNamespace(dir=directory, task=task, ext=None, provider=None), config)
+        return
+
+    file_path = questionary.path(
+        f"File to {action}:",
+        validate=lambda p: Path(p).is_file() or "File not found",
+    ).ask()
+    if not file_path:
+        return
+
+    _run_analysis(
+        SimpleNamespace(command=action, file=file_path, context=None, provider=None, pipeline=None),
+        config,
+    )
+
+
 def main() -> None:
     parser = _build_parser()
     args = parser.parse_args()
 
     if not args.command:
-        console.print(
-            Panel(
-                "[bold]CodeSight[/] — AI-powered code analysis and review\n\n"
-                f"Version: [cyan]{__version__}[/]\n"
-                "Run [green]codesight --help[/] for usage.",
-                border_style="green",
-            )
-        )
+        config = load_config()
+        _run_interactive(config)
         sys.exit(0)
 
     config = load_config()
