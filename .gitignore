@@ -24,6 +24,10 @@ vscode-extension/node_modules/
 # Design experiments - local only
 previews/
 
+# Personal boom reports
+boom_report.md
+boom_*.md
+
 # Private grant files - keep local only
 GRANTS.md
 GRANTS_BACKUP.md
