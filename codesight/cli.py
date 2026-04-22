@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import contextlib
 import json
 import re
 import subprocess
@@ -9,10 +10,8 @@ from types import SimpleNamespace
 
 if sys.platform == "win32":
     for _stream in (sys.stdout, sys.stderr):
-        try:
+        with contextlib.suppress(AttributeError, OSError):
             _stream.reconfigure(encoding="utf-8", errors="replace")
-        except (AttributeError, OSError):
-            pass
 
 import questionary
 from questionary import Choice
