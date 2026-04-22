@@ -21,6 +21,9 @@ vscode-extension/node_modules/
 /package.json
 /package-lock.json
 
+# Design experiments - local only
+previews/
+
 # Private grant files - keep local only
 GRANTS.md
 GRANTS_BACKUP.md

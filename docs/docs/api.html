@@ -1,32 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python API — CodeSight Docs</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python API - CodeSight Docs</title>
+<meta name="description" content="Use CodeSight programmatically in your Python code: Analyzer, TaskType, AnalysisResult, configuration, compression, templates, streaming, cost.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <nav class="doc-nav">
-        <a href="../" class="logo">code<span>sight</span></a>
-        <div class="nav-links"><a href="./" class="active">Docs</a><a href="https://github.com/AvixoSec/codesight" target="_blank">GitHub</a></div>
-    </nav>
-    <div class="doc-layout">
-        <aside class="sidebar">
-            <div class="sb-section"><div class="sb-title">Getting Started</div><a href="./" class="sb-link">Overview</a><a href="installation.html" class="sb-link">Installation</a><a href="quickstart.html" class="sb-link">Quick Start</a></div>
-            <div class="sb-section"><div class="sb-title">Usage</div><a href="commands.html" class="sb-link">Commands</a><a href="providers.html" class="sb-link">Providers</a><a href="templates.html" class="sb-link">Custom Templates</a><a href="ci-cd.html" class="sb-link">CI/CD Integration</a></div>
-            <div class="sb-section"><div class="sb-title">Reference</div><a href="benchmarks.html" class="sb-link">Benchmarks</a><a href="architecture.html" class="sb-link">Architecture</a><a href="api.html" class="sb-link active">Python API</a></div>
-            <div class="sb-section"><div class="sb-title">Community</div><a href="contributing.html" class="sb-link">Contributing</a><a href="security.html" class="sb-link">Security Policy</a></div>
-        </aside>
-        <main class="doc-content">
-            <h1>Python API</h1>
-            <p class="lead">Use CodeSight programmatically in your Python code.</p>
+<div class="grain" aria-hidden="true"></div>
+<div class="progress" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
 
-            <h2>Basic Usage</h2>
-            <div class="code-block"><div class="code-header">Python</div>
-                <pre><code>import asyncio
+<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme">
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="4"/>
+    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+  </svg>
+</button>
+
+<nav class="doc-nav">
+  <a href="../" class="brand"><span class="mark"></span>CodeSight</a>
+  <div class="nav-links">
+    <a href="./" class="active">Docs</a>
+    <a href="https://github.com/AvixoSec/codesight" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://pypi.org/project/codesight/" target="_blank" rel="noopener">PyPI</a>
+  </div>
+</nav>
+
+<div class="doc-layout">
+  <aside class="sidebar">
+    <div class="sb-section">
+      <div class="sb-title">Getting Started</div>
+      <a href="./" class="sb-link">Overview</a>
+      <a href="installation.html" class="sb-link">Installation</a>
+      <a href="quickstart.html" class="sb-link">Quick Start</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Usage</div>
+      <a href="commands.html" class="sb-link">Commands</a>
+      <a href="providers.html" class="sb-link">Providers</a>
+      <a href="templates.html" class="sb-link">Custom Templates</a>
+      <a href="ci-cd.html" class="sb-link">CI/CD Integration</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Reference</div>
+      <a href="benchmarks.html" class="sb-link">Benchmarks</a>
+      <a href="architecture.html" class="sb-link">Architecture</a>
+      <a href="api.html" class="sb-link active">Python API</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Community</div>
+      <a href="contributing.html" class="sb-link">Contributing</a>
+      <a href="security.html" class="sb-link">Security Policy</a>
+    </div>
+  </aside>
+
+  <main class="doc-content">
+    <h1>Python API</h1>
+    <p class="lead">Use CodeSight programmatically in your Python code.</p>
+
+    <h2>Basic Usage</h2>
+    <div class="code-block">
+      <div class="code-header"><span>Python</span></div>
+      <pre><code>import asyncio
 from codesight.config import load_config
 from codesight.analyzer import Analyzer, TaskType
 
@@ -41,31 +83,34 @@ result = asyncio.run(analyzer.analyze_file(
 print(result.content)
 print(f"Tokens: {result.tokens_used}")
 print(f"Model: {result.model}")</code></pre>
-            </div>
+    </div>
 
-            <h2>Analyzer</h2>
-            <div class="code-block"><div class="code-header">codesight.analyzer</div>
-                <pre><code>class Analyzer:
+    <h2>Analyzer</h2>
+    <div class="code-block">
+      <div class="code-header"><span>codesight.analyzer</span></div>
+      <pre><code>class Analyzer:
     def __init__(config: AppConfig, provider_name: str | None = None)
-    async def analyze_file(file_path: str, task: TaskType, extra_context: str | None = None) -> AnalysisResult
-    async def analyze_files(file_paths: list[str], task: TaskType) -> list[AnalysisResult]
-    async def health() -> bool</code></pre>
-            </div>
+    async def analyze_file(file_path: str, task: TaskType, extra_context: str | None = None) -&gt; AnalysisResult
+    async def analyze_files(file_paths: list[str], task: TaskType) -&gt; list[AnalysisResult]
+    async def health() -&gt; bool</code></pre>
+    </div>
 
-            <h2>TaskType</h2>
-            <div class="code-block"><div class="code-header">codesight.analyzer</div>
-                <pre><code>class TaskType(Enum):
+    <h2>TaskType</h2>
+    <div class="code-block">
+      <div class="code-header"><span>codesight.analyzer</span></div>
+      <pre><code>class TaskType(Enum):
     REVIEW = "review"
     BUGS = "bugs"
     SECURITY = "security"
     DOCS = "docs"
     EXPLAIN = "explain"
     REFACTOR = "refactor"</code></pre>
-            </div>
+    </div>
 
-            <h2>AnalysisResult</h2>
-            <div class="code-block"><div class="code-header">codesight.analyzer</div>
-                <pre><code>@dataclass
+    <h2>AnalysisResult</h2>
+    <div class="code-block">
+      <div class="code-header"><span>codesight.analyzer</span></div>
+      <pre><code>@dataclass
 class AnalysisResult:
     task: TaskType
     file_path: str
@@ -74,11 +119,12 @@ class AnalysisResult:
     provider: str      # provider name (e.g. "OpenAI")
     tokens_used: int   # total tokens (prompt + completion)
     usage: dict        # {"prompt_tokens": N, "completion_tokens": N}</code></pre>
-            </div>
+    </div>
 
-            <h2>Configuration</h2>
-            <div class="code-block"><div class="code-header">Python</div>
-                <pre><code>from codesight.config import AppConfig, ProviderConfig, load_config, save_config
+    <h2>Configuration</h2>
+    <div class="code-block">
+      <div class="code-header"><span>Python</span></div>
+      <pre><code>from codesight.config import AppConfig, ProviderConfig, load_config, save_config
 
 config = AppConfig(
     default_provider="openai",
@@ -92,11 +138,12 @@ config = AppConfig(
 )
 
 save_config(config)</code></pre>
-            </div>
+    </div>
 
-            <h2>Compression</h2>
-            <div class="code-block"><div class="code-header">Python</div>
-                <pre><code>from codesight.compression import build_code_map, compress_for_prompt
+    <h2>Compression</h2>
+    <div class="code-block">
+      <div class="code-header"><span>Python</span></div>
+      <pre><code>from codesight.compression import build_code_map, compress_for_prompt
 
 code_map = build_code_map("src/main.py")
 print(f"Language: {code_map.language}")
@@ -105,11 +152,12 @@ print(f"Compression: {code_map.ratio:.0%}")
 
 compressed = compress_for_prompt("src/main.py", source_code)
 print(compressed)</code></pre>
-            </div>
+    </div>
 
-            <h2>Templates</h2>
-            <div class="code-block"><div class="code-header">Python</div>
-                <pre><code>from codesight.templates import list_templates, get_template, save_template
+    <h2>Templates</h2>
+    <div class="code-block">
+      <div class="code-header"><span>Python</span></div>
+      <pre><code>from codesight.templates import list_templates, get_template, save_template
 
 templates = list_templates()
 for name, t in templates.items():
@@ -121,11 +169,12 @@ save_template(
     "Custom security check for Django apps",
     "You are auditing a Django application. Focus on...",
 )</code></pre>
-            </div>
+    </div>
 
-            <h2>Streaming</h2>
-            <div class="code-block"><div class="code-header">Python</div>
-                <pre><code>import asyncio
+    <h2>Streaming</h2>
+    <div class="code-block">
+      <div class="code-header"><span>Python</span></div>
+      <pre><code>import asyncio
 from codesight.config import load_config
 from codesight.streaming import stream_analysis
 
@@ -140,17 +189,23 @@ async def main():
         print(chunk, end="", flush=True)
 
 asyncio.run(main())</code></pre>
-            </div>
+    </div>
 
-            <h2>Cost Estimation</h2>
-            <div class="code-block"><div class="code-header">Python</div>
-                <pre><code>from codesight.cost import estimate_cost, format_cost
+    <h2>Cost Estimation</h2>
+    <div class="code-block">
+      <div class="code-header"><span>Python</span></div>
+      <pre><code>from codesight.cost import estimate_cost, format_cost
 
 cost = estimate_cost("gpt-5.4", prompt_tokens=800, completion_tokens=400)
 print(format_cost(cost))</code></pre>
-            </div>
-        </main>
     </div>
-    <footer class="doc-footer"><div>MIT License · <a href="https://github.com/AvixoSec/codesight">AvixoSec/codesight</a></div></footer>
+  </main>
+</div>
+
+<footer class="doc-footer">
+  <div>MIT License &middot; <a href="https://github.com/AvixoSec/codesight">AvixoSec/codesight</a></div>
+</footer>
+
+<script src="script.js" defer></script>
 </body>
 </html>
