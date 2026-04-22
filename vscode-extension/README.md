@@ -1,6 +1,6 @@
 # CodeSight for VS Code
 
-AI-powered code analysis and security review, right in your editor.
+Code analysis and security review inside VS Code.
 
 ## Requirements
 

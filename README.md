@@ -1,8 +1,8 @@
 # CodeSight
 
-**AI-powered code analysis CLI — reviews, bugs, docs, and refactoring from your terminal.**
+**Code analysis CLI — reviews, bugs, docs, and refactoring from your terminal.**
 
-CodeSight sends your code to LLMs (OpenAI, Anthropic, Google Vertex AI) with structured prompts tuned for code review, bug detection, security analysis, documentation, and refactoring. Multi-provider, configurable, works with any language.
+CodeSight sends your code to LLMs (OpenAI, Anthropic, Google Vertex AI) with structured prompts for code review, bug detection, security analysis, documentation, and refactoring. Multi-provider, configurable, works with any language.
 
 [![PyPI](https://img.shields.io/pypi/v/codesight?color=8b5cf6)](https://pypi.org/project/codesight/)
 [![CI](https://github.com/AvixoSec/codesight/actions/workflows/ci.yml/badge.svg)](https://github.com/AvixoSec/codesight/actions)

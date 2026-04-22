@@ -6,7 +6,7 @@ long_description = (Path(__file__).parent / "README.md").read_text(encoding="utf
 setup(
     name="codesight",
     version="0.1.0",
-    description="Code analysis and review CLI tool",
+    description="Code analysis and review CLI",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="MIT",

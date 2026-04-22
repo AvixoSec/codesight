@@ -49,7 +49,6 @@ KNOWN_PRESETS: dict[str, tuple[str, str]] = {
 
 
 class CustomProvider(BaseLLMProvider):
-    """OpenAI-compatible provider."""
 
     def __init__(self, config: ProviderConfig) -> None:
         if not config.base_url:

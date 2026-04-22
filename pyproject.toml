@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "codesight"
 version = "0.2.0"
-description = "AI-powered code analysis and security review CLI"
+description = "Code analysis and security review CLI for LLMs"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"

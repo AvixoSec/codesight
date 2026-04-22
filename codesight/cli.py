@@ -189,7 +189,7 @@ async def _analyze_batch(
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="codesight",
-        description="AI-powered code analysis and review tool",
+        description="Code analysis and review tool using LLMs",
     )
     parser.add_argument("-v", "--version", action="version", version=f"codesight {__version__}")
     parser.add_argument(
@@ -442,7 +442,7 @@ def _run_scan(args, config: AppConfig) -> None:
 
     if errors:
         for fp, err in errors:
-            console.print(f"  [red]✗[/] {fp}: {err}")
+            console.print(f"  [red]FAIL[/] {fp}: {err}")
     exit_code = _batch_exit_code(results, errors)
     if exit_code:
         sys.exit(exit_code)
@@ -562,7 +562,7 @@ def _run_diff(args, config: AppConfig) -> None:
 
     if errors:
         for fp, err in errors:
-            console.print(f"  [red]✗[/] {fp}: {err}")
+            console.print(f"  [red]FAIL[/] {fp}: {err}")
 
     exit_code = _batch_exit_code(results, errors)
     if exit_code:
@@ -585,7 +585,7 @@ def _run_config() -> None:
         return True
 
     provider = questionary.select(
-        "Select your AI provider:",
+        "Select a provider:",
         choices=[
             questionary.Choice("OpenAI        (GPT-5.4)", value="openai"),
             questionary.Choice("Anthropic     (Claude Opus 4.6)", value="anthropic"),
@@ -664,8 +664,8 @@ def _run_config() -> None:
         console.print("  [dim]Azure AI Foundry → Claude models via Anthropic API[/]")
         console.print("  [dim]Find your resource at: https://ai.azure.com/[/]")
         console.print(
-            "  [dim]You can paste the resource root, full endpoint, "
-            "or /api/projects/... URL — it will be normalized.[/]"
+            "  [dim]Accepts resource root, full endpoint, "
+            "or /api/projects/... URL (normalized automatically).[/]"
         )
         console.print()
         resource = questionary.text(
@@ -773,7 +773,7 @@ def _run_config() -> None:
             f"  [dim]Use with: [green]codesight -p {label} review file.py[/][/]")
 
     save_config(config)
-    console.print(f"\n[bold green]✓[/] Saved to [cyan]{CONFIG_FILE}[/]")
+    console.print(f"\n[bold green]Saved to[/] [cyan]{CONFIG_FILE}[/]")
 
     run_check = questionary.confirm("Run health check now?", default=True).ask()
     if run_check:
@@ -849,10 +849,10 @@ def _run_health(args, config: AppConfig) -> None:
         ok = asyncio.run(analyzer.health())
 
     if ok:
-        console.print("[bold green]✓[/] Connection OK")
+        console.print("[bold green]Connection OK[/]")
         return
 
-    console.print("[bold red]✗[/] Connection failed\n")
+    console.print("[bold red]Connection failed[/]\n")
     if provider_type == "ollama":
         host = pconf.base_url or "http://localhost:11434"
         console.print("  [yellow]Ollama is not running or model not found.[/]")

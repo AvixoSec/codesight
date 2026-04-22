@@ -1,7 +1,7 @@
 {
   "name": "codesight",
   "displayName": "CodeSight",
-  "description": "AI-powered code analysis and security review",
+  "description": "Code analysis and security review via LLMs",
   "version": "0.1.0",
   "publisher": "AvixoSec",
   "license": "MIT",
