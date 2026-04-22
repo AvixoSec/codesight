@@ -1,5 +1,5 @@
 name: "CodeSight Security Scan"
-description: "AI-powered security analysis for your code. Finds logic vulnerabilities that pattern-matching tools miss."
+description: "Security analysis for code through LLMs. Finds logic vulnerabilities that pattern-matching tools miss."
 author: "AvixoSec"
 
 branding:

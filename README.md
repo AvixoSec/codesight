@@ -1,6 +1,6 @@
 # CodeSight
 
-**Code analysis CLI — reviews, bugs, docs, and refactoring from your terminal.**
+**Code analysis CLI - reviews, bugs, docs, and refactoring from your terminal.**
 
 CodeSight sends your code to LLMs (OpenAI, Anthropic, Google Vertex AI, Ollama, or any OpenAI-compatible endpoint) with structured prompts for code review, bug detection, security analysis, documentation, and refactoring. Multi-provider, configurable, works with any language.
 
@@ -16,13 +16,13 @@ CodeSight sends your code to LLMs (OpenAI, Anthropic, Google Vertex AI, Ollama, 
 
 ## What it does
 
-- **`codesight review`** — code review with severity-tagged issues (crit/warn/info)
-- **`codesight bugs`** — find logic errors, race conditions, resource leaks
-- **`codesight security`** — security audit with CWE IDs and OWASP mapping
-- **`codesight scan .`** — scan an entire directory with progress bar
-- **`codesight docs`** — auto-generate docstrings and module docs
-- **`codesight explain`** — plain-language breakdown of complex code
-- **`codesight refactor`** — refactoring suggestions with before/after diffs
+- **`codesight review`** - code review with severity-tagged issues (crit/warn/info)
+- **`codesight bugs`** - find logic errors, race conditions, resource leaks
+- **`codesight security`** - security audit with CWE IDs and OWASP mapping
+- **`codesight scan .`** - scan an entire directory with progress bar
+- **`codesight docs`** - auto-generate docstrings and module docs
+- **`codesight explain`** - plain-language breakdown of complex code
+- **`codesight refactor`** - refactoring suggestions with before/after diffs
 
 ## Demo
 
@@ -134,17 +134,17 @@ ruff check codesight/
 
 ## Roadmap
 
-- [x] `codesight scan .` — analyze a whole directory
-- [x] Ollama support — fully offline analysis with local models
-- [x] `codesight security` — dedicated security audit with CWE IDs and OWASP mapping
-- [x] `codesight diff` — review only git-changed files
-- [x] SARIF output — standard format for GitHub Security tab
+- [x] `codesight scan .` - analyze a whole directory
+- [x] Ollama support - fully offline analysis with local models
+- [x] `codesight security` - dedicated security audit with CWE IDs and OWASP mapping
+- [x] `codesight diff` - review only git-changed files
+- [x] SARIF output - standard format for GitHub Security tab
 - [x] Exit codes for CI/CD (0 = clean, 1 = warnings, 2 = critical)
-- [x] GitHub Action — auto-scan PRs with SARIF upload
-- [x] Multi-model pipeline — fast triage + deep verification
+- [x] GitHub Action - auto-scan PRs with SARIF upload
+- [x] Multi-model pipeline - fast triage + deep verification
 - [x] Cost tracking per query
-- [x] `codesight benchmark` — test LLMs on vulnerable codebases
-- [x] Context compression — code maps to reduce token usage
+- [x] `codesight benchmark` - test LLMs on vulnerable codebases
+- [x] Context compression - code maps to reduce token usage
 - [x] Streaming output for large files
 - [x] Custom prompt templates
 - [x] OpenAI-compatible providers (OpenRouter, Groq, Azure, 10+ presets)
@@ -157,4 +157,4 @@ ruff check codesight/
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT - see [LICENSE](LICENSE).
