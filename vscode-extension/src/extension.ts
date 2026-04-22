@@ -159,6 +159,7 @@ async function runAnalysis(task: Task): Promise<void> {
 }
 
 const SAFE_PYTHON_PATH = /^[A-Za-z0-9_./:\\ -]+$/;
+const UNSAFE_PATH_CHARS = /[`"'$!|&;<>\r\n]/;
 
 async function scanDirectory(): Promise<void> {
     const uri = await vscode.window.showOpenDialog({
@@ -171,6 +172,13 @@ async function scanDirectory(): Promise<void> {
     if (!uri || uri.length === 0) { return; }
 
     const dirPath = uri[0].fsPath;
+    if (UNSAFE_PATH_CHARS.test(dirPath)) {
+        vscode.window.showErrorMessage(
+            'Selected directory path contains characters that are unsafe in a shell context.',
+        );
+        return;
+    }
+
     const config = vscode.workspace.getConfiguration('codesight');
     const pythonPath = config.get<string>('pythonPath', 'python');
     if (!SAFE_PYTHON_PATH.test(pythonPath)) {
@@ -193,8 +201,15 @@ async function scanDirectory(): Promise<void> {
     if (!picked) { return; }
     const task = pickAllowed(picked, scanTasks, 'review');
 
-    const quotedPy = pythonPath.includes(' ') ? `"${pythonPath}"` : pythonPath;
-    const cmd = `${quotedPy} -m codesight -p ${provider} scan "${dirPath}" -t ${task}`;
+    const quote = (s: string): string => s.includes(' ') ? `"${s}"` : s;
+    const cmd = [
+        quote(pythonPath),
+        '-m', 'codesight',
+        '-p', provider,
+        'scan',
+        quote(dirPath),
+        '-t', task,
+    ].join(' ');
 
     const terminal = vscode.window.createTerminal('CodeSight Scan');
     terminal.show();

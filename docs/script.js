@@ -30,6 +30,34 @@
   const doc = document.documentElement;
   const body = document.body;
 
+  /* HTML sanitiser: strips <script>, event handlers and javascript: URLs
+     before an innerHTML assignment. Content here is authored by us, but
+     defence-in-depth guards against a future dynamic source. */
+  function sanitizeHtml(html){
+    const tpl = document.createElement('template');
+    tpl.innerHTML = String(html);
+    const walker = document.createTreeWalker(tpl.content, NodeFilter.SHOW_ELEMENT);
+    const remove = [];
+    let node = walker.nextNode();
+    while (node){
+      const tag = node.tagName;
+      if (tag === 'SCRIPT' || tag === 'IFRAME' || tag === 'OBJECT' || tag === 'EMBED'){
+        remove.push(node);
+      } else {
+        for (const attr of Array.from(node.attributes)){
+          const n = attr.name.toLowerCase();
+          const v = (attr.value || '').trim().toLowerCase();
+          if (n.startsWith('on') || ((n === 'href' || n === 'src' || n === 'xlink:href') && v.startsWith('javascript:'))){
+            node.removeAttribute(attr.name);
+          }
+        }
+      }
+      node = walker.nextNode();
+    }
+    remove.forEach(n => n.remove());
+    return tpl.innerHTML;
+  }
+
   /* ==================================================================
      I18N - RU / EN (persisted)
      ==================================================================*/
@@ -158,7 +186,7 @@
     const attr = 'data-i18n-' + lang;
     document.querySelectorAll('[' + attr + ']').forEach(el => {
       const v = el.getAttribute(attr);
-      if (v !== null) el.innerHTML = v;
+      if (v !== null) el.innerHTML = sanitizeHtml(v);
     });
 
     // special attrs: aria-label, title, placeholder
@@ -619,7 +647,7 @@
     function showTip(){
       const note = fn.getAttribute('data-note');
       if (!note || !tip) return;
-      tip.innerHTML = note;
+      tip.innerHTML = sanitizeHtml(note);
       const r = fn.getBoundingClientRect();
       const tipW = tip.offsetWidth || 200;
       const left = Math.min(window.innerWidth - tipW - 12, Math.max(12, r.left));

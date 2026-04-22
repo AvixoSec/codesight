@@ -1,5 +1,6 @@
 import ipaddress
 import os
+import socket
 from urllib.parse import urlparse
 
 import httpx
@@ -9,6 +10,18 @@ from .base import BaseLLMProvider, LLMResponse, Message
 
 _ALLOWED_SCHEMES = {"http", "https"}
 _PRIVATE_ENV = "CODESIGHT_ALLOW_PRIVATE_URLS"
+_LOCALHOST_NAMES = {"localhost", "ip6-localhost", "ip6-loopback", "localhost.localdomain"}
+
+
+def _is_public_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    return not (
+        ip.is_private
+        or ip.is_loopback
+        or ip.is_link_local
+        or ip.is_reserved
+        or ip.is_multicast
+        or ip.is_unspecified
+    )
 
 
 def _validate_base_url(base_url: str) -> None:
@@ -24,20 +37,37 @@ def _validate_base_url(base_url: str) -> None:
     if os.environ.get(_PRIVATE_ENV) == "1":
         return
 
-    if host.lower() in {"localhost", "ip6-localhost"}:
+    if host.lower() in _LOCALHOST_NAMES:
         raise ValueError(
             f"base_url points at localhost ({host}). "
             f"Set {_PRIVATE_ENV}=1 to allow it."
         )
+
     try:
-        ip = ipaddress.ip_address(host)
+        literal = ipaddress.ip_address(host)
     except ValueError:
-        return
-    if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+        literal = None
+    if literal is not None and not _is_public_ip(literal):
         raise ValueError(
             f"base_url points at a non-public address ({host}). "
             f"Set {_PRIVATE_ENV}=1 to allow it."
         )
+
+    try:
+        infos = socket.getaddrinfo(host, None, proto=socket.IPPROTO_TCP)
+    except OSError:
+        return
+    for info in infos:
+        addr = info[4][0]
+        try:
+            ip = ipaddress.ip_address(addr)
+        except ValueError:
+            continue
+        if not _is_public_ip(ip):
+            raise ValueError(
+                f"base_url host {host} resolves to non-public address {addr}. "
+                f"Set {_PRIVATE_ENV}=1 to allow it."
+            )
 
 KNOWN_PRESETS: dict[str, tuple[str, str]] = {
     "OpenRouter": (
