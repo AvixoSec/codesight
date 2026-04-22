@@ -2,11 +2,13 @@ import argparse
 import asyncio
 import contextlib
 import json
+import os
 import re
 import subprocess
 import sys
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 if sys.platform == "win32":
     for _stream in (sys.stdout, sys.stderr):
@@ -243,6 +245,25 @@ def _build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("config", help="Configure CodeSight interactively")
     sub.add_parser("health", help="Check provider connectivity")
+
+    boom = sub.add_parser(
+        "boom",
+        help="All-in-one: review + bugs + security (+ docs/explain/refactor with --deep)",
+    )
+    boom.add_argument("path", nargs="?", default=".", help="File or directory to analyze")
+    boom.add_argument(
+        "--deep",
+        action="store_true",
+        help="Also run docs, explain, refactor (slower, more tokens)",
+    )
+    boom.add_argument("--ext", nargs="*", help="File extensions for directory scan (e.g. .py .js)")
+    boom.add_argument("--save", metavar="FILE", help="Save full report to a markdown file")
+    boom.add_argument(
+        "-j", "--parallel",
+        type=int,
+        default=4,
+        help="Max concurrent LLM calls (default: 4)",
+    )
 
     tmpl = sub.add_parser("templates", help="Manage custom prompt templates")
     tmpl_sub = tmpl.add_subparsers(dest="tmpl_action")
@@ -1102,6 +1123,140 @@ def _run_interactive(config: AppConfig, provider_name: str | None = None) -> Non
             pass
 
 
+BOOM_BASE_TASKS = [TaskType.REVIEW, TaskType.BUGS, TaskType.SECURITY]
+BOOM_DEEP_TASKS = [TaskType.DOCS, TaskType.EXPLAIN, TaskType.REFACTOR]
+
+
+def _run_boom(args, config: AppConfig) -> None:
+    path = Path(args.path).resolve()
+    if path.is_dir():
+        ext_set = set(args.ext) if args.ext else None
+        files = collect_files(
+            str(path),
+            extensions=ext_set,
+            ignore=config.ignore_patterns,
+            max_size_kb=config.max_file_size_kb,
+        )
+    elif path.is_file():
+        files = [str(path)]
+    else:
+        console.print(f"[red]Path not found:[/] {args.path}")
+        sys.exit(2)
+
+    if not files:
+        console.print("[yellow]No files matched. Nothing to do.[/]")
+        return
+
+    tasks = list(BOOM_BASE_TASKS)
+    if args.deep:
+        tasks += BOOM_DEEP_TASKS
+
+    total = len(files) * len(tasks)
+    console.print(
+        f"[bold]boom[/] — {len(files)} file(s) x {len(tasks)} task(s) = {total} LLM calls "
+        f"(parallel: {args.parallel})"
+    )
+    console.print()
+
+    analyzer = Analyzer(config, provider_name=args.provider)
+    sem = asyncio.Semaphore(max(1, args.parallel))
+
+    async def one(fp: str, task: TaskType):
+        async with sem:
+            try:
+                return task, fp, await analyzer.analyze_file(fp, task)
+            except (AnalysisError, Exception) as exc:  # noqa: BLE001
+                return task, fp, exc
+
+    async def run_all():
+        coros = [one(fp, t) for fp in files for t in tasks]
+        results: list[tuple[TaskType, str, Any]] = []
+        completed = 0
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            MofNCompleteColumn(),
+            transient=True,
+        ) as progress:
+            bar = progress.add_task("analysing", total=len(coros))
+            for fut in asyncio.as_completed(coros):
+                task, fp, res = await fut
+                results.append((task, fp, res))
+                completed += 1
+                rel = os.path.relpath(fp, path if path.is_dir() else path.parent)
+                progress.update(bar, advance=1, description=f"{task.value}  {rel}")
+        return results
+
+    raw = asyncio.run(run_all())
+
+    # Group by file
+    by_file: dict[str, dict[TaskType, Any]] = {}
+    for t, fp, res in raw:
+        by_file.setdefault(fp, {})[t] = res
+
+    total_tokens = 0
+    total_cost = 0.0
+    ok = err = 0
+    out_lines: list[str] = []
+    out_lines.append("# CodeSight boom report\n")
+    out_lines.append(f"_Analyzed {len(files)} file(s), {len(tasks)} task(s) per file._\n")
+    out_lines.append("")
+
+    for fp in files:
+        rel = os.path.relpath(fp, path if path.is_dir() else path.parent)
+        out_lines.append(f"## `{rel}`")
+        for t in tasks:
+            res = by_file.get(fp, {}).get(t)
+            out_lines.append(f"### {t.value}")
+            if isinstance(res, Exception):
+                err += 1
+                out_lines.append(f"> error: `{res}`")
+            elif res is None:
+                err += 1
+                out_lines.append("> skipped")
+            else:
+                ok += 1
+                usage = res.usage or {}
+                pt = usage.get("prompt_tokens", 0)
+                ct = usage.get("completion_tokens", 0)
+                total_tokens += pt + ct
+                cost = estimate_cost(res.model, pt, ct)
+                total_cost += cost
+                out_lines.append(
+                    f"_{res.provider} · {res.model} · "
+                    f"{res.tokens_used:,} tokens · {format_cost(cost)}_\n"
+                )
+                out_lines.append(res.content.strip())
+            out_lines.append("")
+        out_lines.append("")
+
+    footer = (
+        f"\n---\n"
+        f"**Totals:** {ok} ok, {err} failed · "
+        f"{total_tokens:,} tokens · {format_cost(total_cost)}\n"
+    )
+    out_lines.append(footer)
+
+    report = "\n".join(out_lines)
+
+    if args.save:
+        Path(args.save).write_text(report, encoding="utf-8")
+        console.print(f"[green]Saved[/] {args.save}  ({ok} ok, {err} failed)")
+    else:
+        sys.stdout.write(report + "\n")
+
+    console.print()
+    console.print(
+        f"[bold]done[/] · {ok} ok · {err} failed · "
+        f"{total_tokens:,} tokens · {format_cost(total_cost)}"
+    )
+
+    exit_code = 2 if err and not ok else (1 if err else 0)
+    if exit_code:
+        sys.exit(exit_code)
+
+
 def main() -> None:
     parser = _build_parser()
     args = parser.parse_args()
@@ -1128,6 +1283,8 @@ def main() -> None:
         _run_health(args, config)
     elif args.command == "templates":
         _run_templates(args, config)
+    elif args.command == "boom":
+        _run_boom(args, config)
     else:
         parser.error(f"Unhandled command: {args.command}")
 
