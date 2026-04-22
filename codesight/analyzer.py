@@ -15,6 +15,8 @@ SCAN_EXTENSIONS = {
     ".sol", ".vy",
 }
 
+PROMPT_COMPRESSION_MAX_LINES = 1200
+
 
 def collect_files(
     directory: str,
@@ -186,8 +188,19 @@ class Analyzer:
         source = p.read_text(encoding="utf-8", errors="replace")
         ext = p.suffix
 
-        display_source = compress_for_prompt(file_path, source)
+        display_source = compress_for_prompt(
+            file_path,
+            source,
+            max_lines=PROMPT_COMPRESSION_MAX_LINES,
+        )
+        is_compressed = display_source != source
         user_content = f"File: `{file_path}` ({ext})\n\n```{ext.lstrip('.')}\n{display_source}\n```"
+        if is_compressed:
+            user_content += (
+                "\n\nNOTE: This file was compressed into a code map because it is large. "
+                "Only make high-confidence observations based on the visible structure. "
+                "Do not invent line-specific issues for code bodies that are not shown."
+            )
         if extra_context:
             user_content += f"\n\nAdditional context: {extra_context}"
 
@@ -207,6 +220,22 @@ class Analyzer:
                 temperature=self._temperature,
             )
         except Exception as exc:
+            error_text = str(exc)
+            if ".services.ai.azure.com" in error_text and "PermissionDenied" in error_text:
+                raise AnalysisError(
+                    f"API call failed: {exc}\n"
+                    "Azure Foundry rejected the request. Check these 3 things:\n"
+                    "1. Use the resource root only (for example `https://your-resource.services.ai.azure.com`)\n"
+                    "2. Do not use `/api/projects/...` or paste the full "
+                    "`/anthropic/v1/messages` path\n"
+                    "3. The API key must come from Foundry → Endpoints & keys"
+                ) from exc
+            if ".services.ai.azure.com" in error_text and "DeploymentNotFound" in error_text:
+                raise AnalysisError(
+                    f"API call failed: {exc}\n"
+                    "Azure Foundry could not find that deployment. "
+                    "Check the exact deployment name in the portal."
+                ) from exc
             raise AnalysisError(
                 f"API call failed: {exc}\n"
                 f"Check your API key and network connection."
@@ -233,6 +262,18 @@ class Analyzer:
         for fp in file_paths:
             results.append(await self.analyze_file(fp, task))
         return results
+
+    async def complete_messages(
+        self,
+        messages: list[Message],
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+    ) -> LLMResponse:
+        return await self._provider.complete(
+            messages,
+            max_tokens=self._max_tokens if max_tokens is None else max_tokens,
+            temperature=self._temperature if temperature is None else temperature,
+        )
 
     async def health(self) -> bool:
         return await self._provider.health_check()

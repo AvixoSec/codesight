@@ -27,14 +27,6 @@
     "cwe",
     "owasp"
   ],
-  "activationEvents": [
-    "onCommand:codesight.review",
-    "onCommand:codesight.bugs",
-    "onCommand:codesight.security",
-    "onCommand:codesight.docs",
-    "onCommand:codesight.explain",
-    "onCommand:codesight.refactor"
-  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [

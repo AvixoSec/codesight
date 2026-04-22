@@ -17,8 +17,13 @@ node_modules/
 vscode-extension/out/
 vscode-extension/node_modules/
 
+.claude/
+/package.json
+/package-lock.json
+
 # Private grant files - keep local only
 GRANTS.md
+GRANTS_BACKUP.md
 GRANT_PLAN.md
 GRANT_PLAN_v2.md
 GRANT_ANSWERS.md

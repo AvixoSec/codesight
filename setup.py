@@ -9,9 +9,9 @@ setup(
     description="Code analysis and review CLI tool",
     long_description=long_description,
     long_description_content_type="text/markdown",
+    license="MIT",
     author="AvixoSec",
     url="https://github.com/AvixoSec/codesight",
-    license="MIT",
     packages=find_packages(),
     python_requires=">=3.10",
     install_requires=[

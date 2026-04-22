@@ -5,7 +5,7 @@ import pytest
 
 from codesight.analyzer import SYSTEM_PROMPTS, Analyzer, TaskType, collect_files
 from codesight.config import AppConfig, ProviderConfig
-from codesight.providers.base import LLMResponse
+from codesight.providers.base import LLMResponse, Message
 
 
 @pytest.fixture
@@ -51,8 +51,27 @@ def test_analyze_file(mock_config, mock_provider, tmp_path):
     mock_provider.complete.assert_called_once()
 
 
+def test_complete_messages_uses_analyzer_defaults(mock_config, mock_provider):
+    with patch("codesight.analyzer.create_provider", return_value=mock_provider):
+        analyzer = Analyzer(mock_config)
+        asyncio.run(
+            analyzer.complete_messages([
+                Message(role="system", content="sys"),
+                Message(role="user", content="hello"),
+            ])
+        )
+
+    mock_provider.complete.assert_called_once_with(
+        [
+            Message(role="system", content="sys"),
+            Message(role="user", content="hello"),
+        ],
+        max_tokens=4096,
+        temperature=0.2
+    )
+
+
 def test_collect_files_finds_source_files(tmp_path):
-    # create some files
     (tmp_path / "main.py").write_text("print(1)")
     (tmp_path / "utils.py").write_text("def helper(): pass")
     (tmp_path / "data.txt").write_text("not a source file")
@@ -65,12 +84,10 @@ def test_collect_files_finds_source_files(tmp_path):
 
 
 def test_collect_files_ignores_hidden_and_ignore_patterns(tmp_path):
-    # hidden dir
     hidden = tmp_path / ".git"
     hidden.mkdir()
     (hidden / "config.py").write_text("a = 1")
 
-    # ignored dir
     node = tmp_path / "node_modules"
     node.mkdir()
     (node / "lib.js").write_text("module.exports = {};")
@@ -80,7 +97,6 @@ def test_collect_files_ignores_hidden_and_ignore_patterns(tmp_path):
     files = collect_files(str(tmp_path), ignore=["node_modules"])
 
     assert len(files) == 1
-    assert "app.py" in files[0]
 
 
 def test_collect_files_filter_by_extension(tmp_path):

@@ -1,23 +1,45 @@
 import * as vscode from 'vscode';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 const TASKS = ['review', 'bugs', 'security', 'docs', 'explain', 'refactor'] as const;
 type Task = typeof TASKS[number];
 
+const PROVIDERS = ['openai', 'anthropic', 'google', 'ollama'] as const;
+const OUTPUT_FORMATS = ['markdown', 'json', 'plain', 'sarif'] as const;
+
+function pickAllowed<T extends string>(value: string, allowed: readonly T[], fallback: T): T {
+    return (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
+}
+
 async function runCodesight(task: Task, filePath: string): Promise<string> {
     const config = vscode.workspace.getConfiguration('codesight');
     const pythonPath = config.get<string>('pythonPath', 'python');
-    const provider = config.get<string>('provider', 'openai');
-    const outputFormat = config.get<string>('outputFormat', 'markdown');
+    const provider = pickAllowed(
+        config.get<string>('provider', 'openai'),
+        PROVIDERS,
+        'openai',
+    );
+    const outputFormat = pickAllowed(
+        config.get<string>('outputFormat', 'markdown'),
+        OUTPUT_FORMATS,
+        'markdown',
+    );
 
-    const cmd = `${pythonPath} -m codesight ${task} "${filePath}" --provider ${provider} -o ${outputFormat}`;
+    const args = [
+        '-m', 'codesight',
+        '-p', provider,
+        '-o', outputFormat,
+        task,
+        filePath,
+    ];
 
-    const { stdout, stderr } = await execAsync(cmd, {
+    const { stdout, stderr } = await execFileAsync(pythonPath, args, {
         maxBuffer: 1024 * 1024 * 10,
         timeout: 120_000,
+        shell: false,
     });
 
     if (stderr && !stdout) {
@@ -40,6 +62,7 @@ function createOutputPanel(task: string, filePath: string, content: string): voi
     panel.webview.html = `<!DOCTYPE html>
 <html>
 <head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline';">
 <style>
     body {
         font-family: var(--vscode-font-family);
@@ -90,8 +113,8 @@ function createOutputPanel(task: string, filePath: string, content: string): voi
 </head>
 <body>
     <div class="header">
-        <span class="badge badge-task">${task}</span>
-        <span class="file">${fileName}</span>
+        <span class="badge badge-task">${escapeHtml(task)}</span>
+        <span class="file">${escapeHtml(fileName)}</span>
     </div>
     <div>${escapeHtml(content)}</div>
 </body>
@@ -103,6 +126,8 @@ function escapeHtml(text: string): string {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
         .replace(/\n/g, '<br>');
 }
 
@@ -133,6 +158,8 @@ async function runAnalysis(task: Task): Promise<void> {
     );
 }
 
+const SAFE_PYTHON_PATH = /^[A-Za-z0-9_./:\\ -]+$/;
+
 async function scanDirectory(): Promise<void> {
     const uri = await vscode.window.showOpenDialog({
         canSelectFolders: true,
@@ -146,15 +173,28 @@ async function scanDirectory(): Promise<void> {
     const dirPath = uri[0].fsPath;
     const config = vscode.workspace.getConfiguration('codesight');
     const pythonPath = config.get<string>('pythonPath', 'python');
-    const provider = config.get<string>('provider', 'openai');
+    if (!SAFE_PYTHON_PATH.test(pythonPath)) {
+        vscode.window.showErrorMessage(
+            'codesight.pythonPath contains unsafe characters; update workspace settings.',
+        );
+        return;
+    }
+    const provider = pickAllowed(
+        config.get<string>('provider', 'openai'),
+        PROVIDERS,
+        'openai',
+    );
 
-    const task = await vscode.window.showQuickPick(
-        ['review', 'bugs', 'security'],
+    const scanTasks = ['review', 'bugs', 'security'] as const;
+    const picked = await vscode.window.showQuickPick(
+        scanTasks as readonly string[],
         { placeHolder: 'Analysis type' },
     );
-    if (!task) { return; }
+    if (!picked) { return; }
+    const task = pickAllowed(picked, scanTasks, 'review');
 
-    const cmd = `${pythonPath} -m codesight scan "${dirPath}" --task ${task} --provider ${provider}`;
+    const quotedPy = pythonPath.includes(' ') ? `"${pythonPath}"` : pythonPath;
+    const cmd = `${quotedPy} -m codesight -p ${provider} scan "${dirPath}" -t ${task}`;
 
     const terminal = vscode.window.createTerminal('CodeSight Scan');
     terminal.show();

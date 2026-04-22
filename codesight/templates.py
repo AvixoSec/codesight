@@ -1,9 +1,22 @@
 import json
+import re
 from pathlib import Path
 
 from .config import CONFIG_DIR
 
 TEMPLATES_DIR = CONFIG_DIR / "templates"
+
+_VALID_NAME = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
+
+
+def _safe_template_path(name: str) -> Path:
+    if not _VALID_NAME.match(name):
+        raise ValueError(f"Invalid template name: {name!r}")
+    path = (TEMPLATES_DIR / f"{name}.json").resolve()
+    root = TEMPLATES_DIR.resolve()
+    if not path.is_relative_to(root):
+        raise ValueError(f"Path traversal detected in template name: {name!r}")
+    return path
 
 DEFAULT_TEMPLATES = {
     "quick-review": {
@@ -77,11 +90,22 @@ def list_templates() -> dict[str, dict]:
 
     if TEMPLATES_DIR.exists():
         for f in TEMPLATES_DIR.glob("*.json"):
+            if f.is_symlink() or not _VALID_NAME.match(f.stem):
+                continue
+            if f.stem in DEFAULT_TEMPLATES:
+                continue
             try:
                 data = json.loads(f.read_text(encoding="utf-8"))
-                templates[f.stem] = data
-            except (json.JSONDecodeError, KeyError):
+            except (OSError, json.JSONDecodeError):
                 continue
+            if not isinstance(data, dict):
+                continue
+            required = {"name", "description", "system"}
+            if not required.issubset(data) or not all(
+                isinstance(data[k], str) for k in required
+            ):
+                continue
+            templates[f.stem] = {k: data[k] for k in required}
 
     return templates
 
@@ -93,19 +117,19 @@ def get_template(name: str) -> dict | None:
 
 def save_template(name: str, display_name: str, description: str, system_prompt: str) -> Path:
     _ensure_dir()
+    path = _safe_template_path(name)
     data = {
         "name": display_name,
         "description": description,
         "system": system_prompt,
     }
-    path = TEMPLATES_DIR / f"{name}.json"
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
     return path
 
 
 def delete_template(name: str) -> bool:
-    path = TEMPLATES_DIR / f"{name}.json"
-    if path.exists():
+    path = _safe_template_path(name)
+    if path.exists() and not path.is_symlink():
         path.unlink()
         return True
     return False

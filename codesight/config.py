@@ -6,13 +6,17 @@ from typing import Any
 
 CONFIG_DIR = Path.home() / ".codesight"
 CONFIG_FILE = CONFIG_DIR / "config.json"
+DEFAULT_OPENAI_MODEL = "gpt-5.4"
+DEFAULT_ANTHROPIC_MODEL = "claude-opus-4-6-20251101"
+DEFAULT_GOOGLE_MODEL = "gemini-3.1-pro"
+DEFAULT_OLLAMA_MODEL = "llama3"
 
 
 @dataclass
 class ProviderConfig:
     provider: str
     api_key: str | None = None
-    model: str = "gpt-5.4"
+    model: str = DEFAULT_OPENAI_MODEL
     project_id: str | None = None
     region: str | None = None
     base_url: str | None = None
@@ -65,26 +69,28 @@ def get_provider_config(config: AppConfig, provider_name: str | None = None) -> 
         return ProviderConfig(
             provider="openai",
             api_key=os.environ.get("OPENAI_API_KEY"),
-            model=os.environ.get("CODESIGHT_MODEL", "gpt-5.4"),
+            model=os.environ.get("CODESIGHT_MODEL", DEFAULT_OPENAI_MODEL),
         )
     elif name == "anthropic":
         return ProviderConfig(
             provider="anthropic",
             api_key=os.environ.get("ANTHROPIC_API_KEY"),
-            model=os.environ.get("CODESIGHT_MODEL", "claude-opus-4-6-20251101"),
+            model=os.environ.get("CODESIGHT_MODEL", DEFAULT_ANTHROPIC_MODEL),
         )
     elif name == "google":
         return ProviderConfig(
             provider="google",
             project_id=os.environ.get("GOOGLE_CLOUD_PROJECT"),
             region=os.environ.get("GOOGLE_CLOUD_REGION", "us-central1"),
-            model=os.environ.get("CODESIGHT_MODEL", "gemini-3.1-pro"),
+            model=os.environ.get("CODESIGHT_MODEL", DEFAULT_GOOGLE_MODEL),
         )
     elif name == "ollama":
         return ProviderConfig(
             provider="ollama",
             base_url=os.environ.get("OLLAMA_HOST", "http://localhost:11434"),
-            model=os.environ.get("CODESIGHT_MODEL", "llama3"),
+            model=os.environ.get("CODESIGHT_MODEL", DEFAULT_OLLAMA_MODEL),
         )
     else:
-        raise ValueError(f"Unknown provider: {name}")
+        raise ValueError(
+            f"Unknown provider: '{name}'. Run 'codesight config' to set it up."
+        )

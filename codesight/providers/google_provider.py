@@ -1,7 +1,13 @@
+import re
+
 import httpx
 
-from ..config import ProviderConfig
+from ..config import DEFAULT_GOOGLE_MODEL, ProviderConfig
 from .base import BaseLLMProvider, LLMResponse, Message
+
+_REGION_RE = re.compile(r"^[a-z]+-[a-z]+[0-9]+$")
+_PROJECT_RE = re.compile(r"^[a-z][a-z0-9-]{5,29}$")
+_MODEL_RE = re.compile(r"^[a-zA-Z0-9._-]+$")
 
 
 class GoogleVertexProvider(BaseLLMProvider):
@@ -10,13 +16,19 @@ class GoogleVertexProvider(BaseLLMProvider):
         self._config = config
         self._project = config.project_id
         self._region = config.region or "us-central1"
-        self._model = config.model or "gemini-3.1-pro"
+        self._model = config.model or DEFAULT_GOOGLE_MODEL
 
         if not self._project:
             raise ValueError(
                 "Missing Google Cloud project ID. "
                 "Set GOOGLE_CLOUD_PROJECT or run: codesight config"
             )
+        if not _PROJECT_RE.match(self._project):
+            raise ValueError(f"Invalid Google Cloud project ID: {self._project!r}")
+        if not _REGION_RE.match(self._region):
+            raise ValueError(f"Invalid Google Cloud region: {self._region!r}")
+        if not _MODEL_RE.match(self._model):
+            raise ValueError(f"Invalid Google model name: {self._model!r}")
 
         self._base_url = (
             f"https://{self._region}-aiplatform.googleapis.com/v1"

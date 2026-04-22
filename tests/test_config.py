@@ -1,6 +1,13 @@
 from unittest.mock import patch
 
-from codesight.config import AppConfig, ProviderConfig, load_config, save_config
+from codesight.config import (
+    DEFAULT_ANTHROPIC_MODEL,
+    DEFAULT_OPENAI_MODEL,
+    AppConfig,
+    ProviderConfig,
+    load_config,
+    save_config,
+)
 
 
 def test_default_config():
@@ -17,7 +24,7 @@ def test_round_trip_serialization():
             "anthropic": ProviderConfig(
                 provider="anthropic",
                 api_key="test-key",
-                model="claude-opus-4-6-20251101",
+                model=DEFAULT_ANTHROPIC_MODEL,
             )
         },
     )
@@ -43,6 +50,6 @@ def test_save_and_load(tmp_path):
 
 def test_provider_config_defaults():
     pc = ProviderConfig(provider="openai")
-    assert pc.model == "gpt-5.4"
+    assert pc.model == DEFAULT_OPENAI_MODEL
     assert pc.max_tokens == 4096
     assert pc.temperature == 0.2
