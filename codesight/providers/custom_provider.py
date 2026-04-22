@@ -1,7 +1,43 @@
+import ipaddress
+import os
+from urllib.parse import urlparse
+
 import httpx
 
 from ..config import ProviderConfig
 from .base import BaseLLMProvider, LLMResponse, Message
+
+_ALLOWED_SCHEMES = {"http", "https"}
+_PRIVATE_ENV = "CODESIGHT_ALLOW_PRIVATE_URLS"
+
+
+def _validate_base_url(base_url: str) -> None:
+    parsed = urlparse(base_url)
+    if parsed.scheme not in _ALLOWED_SCHEMES:
+        raise ValueError(
+            f"base_url must use http or https, got: {parsed.scheme or '(none)'}"
+        )
+    host = (parsed.hostname or "").strip()
+    if not host:
+        raise ValueError(f"base_url has no hostname: {base_url}")
+
+    if os.environ.get(_PRIVATE_ENV) == "1":
+        return
+
+    if host.lower() in {"localhost", "ip6-localhost"}:
+        raise ValueError(
+            f"base_url points at localhost ({host}). "
+            f"Set {_PRIVATE_ENV}=1 to allow it."
+        )
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        return
+    if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+        raise ValueError(
+            f"base_url points at a non-public address ({host}). "
+            f"Set {_PRIVATE_ENV}=1 to allow it."
+        )
 
 KNOWN_PRESETS: dict[str, tuple[str, str]] = {
     "OpenRouter": (
@@ -55,6 +91,7 @@ class CustomProvider(BaseLLMProvider):
             raise ValueError(
                 "Custom provider requires a base_url. Run: codesight config"
             )
+        _validate_base_url(config.base_url)
         self._config = config
         self._base_url = config.base_url.rstrip("/")
         self._headers: dict[str, str] = {"Content-Type": "application/json"}

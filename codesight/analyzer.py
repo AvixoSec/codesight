@@ -24,7 +24,7 @@ def collect_files(
     ignore: list[str] | None = None,
     max_size_kb: int = 500,
 ) -> list[str]:
-    root = Path(directory).resolve()
+    root = Path(directory).resolve(strict=False)
     if not root.is_dir():
         return []
     exts = extensions or SCAN_EXTENSIONS
@@ -33,18 +33,29 @@ def collect_files(
     for p in sorted(root.rglob("*")):
         if not p.is_file():
             continue
+        if p.is_symlink():
+            continue
+        try:
+            real = p.resolve(strict=True)
+        except (OSError, RuntimeError):
+            continue
+        try:
+            real.relative_to(root)
+        except ValueError:
+            continue
         if p.suffix not in exts:
             continue
+        rel_parts = p.relative_to(root).parts
         rel = str(p.relative_to(root))
         if any(fnmatch.fnmatch(rel, pat) or fnmatch.fnmatch(p.name, pat) for pat in ignore):
             continue
-        if any(fnmatch.fnmatch(part, pat) for pat in ignore for part in p.relative_to(root).parts):
+        if any(fnmatch.fnmatch(part, pat) for pat in ignore for part in rel_parts):
             continue
-        if any(part.startswith(".") for part in p.relative_to(root).parts):
+        if any(part.startswith(".") for part in rel_parts):
             continue
         if p.stat().st_size / 1024 > max_size_kb:
             continue
-        found.append(str(p))
+        found.append(str(real))
     return found
 
 

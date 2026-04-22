@@ -39,6 +39,7 @@ dependencies = [
     "google-auth>=2.29",
     "rich>=13.7",
     "questionary>=2.0",
+    "keyring>=24",
 ]
 
 [project.optional-dependencies]
