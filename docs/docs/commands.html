@@ -74,7 +74,7 @@
 <span class="prompt">$</span> codesight review src/main.py -c "This handles user uploads"</code></pre>
     </div>
     <p>Output sections: <strong>Summary</strong>, <strong>Issues</strong> (crit/warn/info), <strong>Suggestions</strong>.</p>
-    <p>The <code>-c, --context</code> flag is also available on <code>bugs</code>, <code>security</code>, <code>docs</code>, <code>explain</code>, and <code>refactor</code>. Use it to give the model extra information (purpose of the file, threat model, constraints) before analysis.</p>
+    <p>The <code>-c, --context</code> flag is also available on <code>bugs</code>, <code>security</code>, <code>docs</code>, <code>explain</code>, and <code>refactor</code>. Passes extra context to the model (purpose of the file, threat model, constraints) before analysis.</p>
 
     <h2>bugs</h2>
     <p>Focused bug detection - logic errors, race conditions, resource leaks, edge cases.</p>
@@ -93,7 +93,7 @@
 <span class="prompt">$</span> codesight security src/auth.py --pipeline ollama/llama3:openai/gpt-5.4</code></pre>
     </div>
     <h3>--pipeline TRIAGE:VERIFY</h3>
-    <p>Security-only flag. Runs a two-stage analysis: a fast/cheap <em>triage</em> model flags suspicious regions, then a stronger <em>verify</em> model does deep analysis only on those flagged sections. Typical savings: 70-85% vs. running the strong model on the whole file.</p>
+    <p>Security-only flag. Two-stage run: a fast/cheap <em>triage</em> model flags suspicious regions, then a stronger <em>verify</em> model analyses only the flagged sections. Typical savings: 70-85% vs. running the strong model on the whole file.</p>
     <p>Format: <code>provider/model:provider/model</code></p>
     <div class="code-block">
       <div class="code-header"><span>Pipeline examples</span></div>
@@ -164,12 +164,12 @@
     </div>
 
     <h2>config</h2>
-    <p>Interactive provider setup. Arrow-key menu walks you through picking a provider, entering credentials, and saving them to <code>~/.codesight/config.json</code>.</p>
+    <p>Interactive provider setup. Arrow-key menu: pick a provider, enter credentials, save to <code>~/.codesight/config.json</code>.</p>
     <div class="code-block">
       <div class="code-header"><span>Terminal</span></div>
       <pre><code><span class="prompt">$</span> codesight config</code></pre>
     </div>
-    <p>Supports OpenAI, Anthropic, Azure AI Foundry (Claude), Google Vertex AI, Ollama, and a <em>Custom</em> entry with presets for OpenRouter, Groq, Together, Mistral, xAI, Fireworks, DeepSeek, Perplexity, Cerebras, Cohere, and any OpenAI-compatible URL. Running the wizard offers to run <code>health</code> immediately after saving.</p>
+    <p>Supports OpenAI, Anthropic, Azure AI Foundry (Claude), Google Vertex AI, Ollama, and a <em>Custom</em> entry with presets for OpenRouter, Groq, Together, Mistral, xAI, Fireworks, DeepSeek, Perplexity, Cerebras, Cohere, and any OpenAI-compatible URL. After saving, the wizard offers to run <code>health</code>.</p>
 
     <h2>health</h2>
     <p>Check provider connectivity. Prints the active provider, masked credentials, and runs a lightweight connection test.</p>

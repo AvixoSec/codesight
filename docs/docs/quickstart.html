@@ -83,7 +83,7 @@
       <div class="code-header"><span>Terminal</span></div>
       <pre><code><span class="prompt">$</span> codesight review src/main.py</code></pre>
     </div>
-    <p>You'll get a structured report with severity-tagged issues, line numbers, and fixes.</p>
+    <p>Structured report with severity-tagged issues, line numbers, and fixes.</p>
 
     <h2>4. Run a security audit</h2>
     <div class="code-block">
@@ -97,7 +97,7 @@
       <div class="code-header"><span>Terminal</span></div>
       <pre><code><span class="prompt">$</span> codesight scan . --task security</code></pre>
     </div>
-    <p>Scans all source files in the directory with a progress bar. Outputs a summary with token count and total cost.</p>
+    <p>Scans every source file in the directory with a progress bar. Summary includes token count and total cost.</p>
 
     <h2>6. Try different providers</h2>
     <div class="code-block">
@@ -106,7 +106,7 @@
 <span class="prompt">$</span> codesight review file.py --provider ollama       <span class="comment"># offline, no data leaves your machine</span>
 <span class="prompt">$</span> codesight review file.py --provider openrouter   <span class="comment"># custom label saved via `codesight config`</span></code></pre>
     </div>
-    <p>OpenAI-compatible endpoints (OpenRouter, Groq, Together, Mistral, xAI, Azure AI Foundry, and more) are set up through <code>codesight config</code>. Pick <em>Custom</em> in the wizard, choose a preset or enter your own base URL, and save under any label you like.</p>
+    <p>OpenAI-compatible endpoints (OpenRouter, Groq, Together, Mistral, xAI, Azure AI Foundry, and more) are set up via <code>codesight config</code>. Pick <em>Custom</em> in the wizard, choose a preset or enter a base URL, save under any label.</p>
 
     <h2>Next steps</h2>
     <ul>

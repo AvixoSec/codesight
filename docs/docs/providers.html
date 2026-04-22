@@ -63,7 +63,7 @@
 
   <main class="doc-content">
     <h1>Providers</h1>
-    <p class="lead">CodeSight ships four first-class providers plus a generic OpenAI-compatible adapter with presets for OpenRouter, Groq, Together AI, Mistral, xAI, DeepSeek, Azure AI Foundry, and more. Switch between them with a single flag.</p>
+    <p class="lead">Four first-class providers plus a generic OpenAI-compatible adapter with presets for OpenRouter, Groq, Together AI, Mistral, xAI, DeepSeek, Azure AI Foundry, and more. Switch between them with a single flag.</p>
 
     <h2>Overview</h2>
     <table>
@@ -113,7 +113,7 @@
 <span class="prompt">$</span> codesight review file.py --provider ollama
 <span class="prompt">$</span> codesight review file.py --provider openrouter   <span class="comment"># any custom label you saved in config</span></code></pre>
     </div>
-    <p>The <code>--provider</code> flag accepts any label saved in <code>~/.codesight/config.json</code>. After running <code>codesight config</code> and choosing a custom provider, you pick the label (e.g. <code>openrouter</code>, <code>groq</code>, <code>azure</code>) and use it as the provider name.</p>
+    <p>The <code>--provider</code> flag accepts any label saved in <code>~/.codesight/config.json</code>. After <code>codesight config</code> picks a custom provider, the label you chose (e.g. <code>openrouter</code>, <code>groq</code>, <code>azure</code>) becomes the provider name.</p>
 
     <h2>OpenAI</h2>
     <p>Best overall accuracy for code analysis. Default provider.</p>
@@ -142,7 +142,7 @@
     </div>
 
     <h2>Ollama (Local / Offline)</h2>
-    <p>No API key needed. No data leaves your machine. Ideal for sensitive codebases.</p>
+    <p>No API key. No data leaves your machine. Fits sensitive codebases.</p>
     <div class="code-block">
       <div class="code-header"><span>Setup</span></div>
       <pre><code><span class="prompt">$</span> ollama serve
@@ -150,14 +150,14 @@
 <span class="prompt">$</span> codesight review file.py --provider ollama</code></pre>
     </div>
     <div class="callout">
-      <strong>Air-gapped environments:</strong> Ollama runs entirely locally. You can pre-download models and use CodeSight on machines with no internet access.
+      <strong>Air-gapped environments:</strong> Ollama runs entirely locally. Pre-download models and run CodeSight on machines with no internet access.
     </div>
 
     <h2>Custom / OpenAI-Compatible Providers</h2>
-    <p>CodeSight works with any endpoint that speaks the OpenAI Chat Completions API. That covers a lot of the ecosystem: OpenRouter's model aggregator, ultra-fast inference on Groq and Cerebras, Azure AI Foundry deployments, and open-source hosts like Together, Fireworks, DeepSeek, Perplexity, and Mistral.</p>
+    <p>Works with any endpoint that speaks the OpenAI Chat Completions API. That covers most of the ecosystem: OpenRouter's model aggregator, fast inference on Groq and Cerebras, Azure AI Foundry deployments, and open-source hosts like Together, Fireworks, DeepSeek, Perplexity, and Mistral.</p>
 
     <h3>Built-in Presets</h3>
-    <p>The <code>codesight config</code> wizard has ready-made entries for these providers:</p>
+    <p>The <code>codesight config</code> wizard ships ready-made entries for:</p>
     <table>
       <thead>
         <tr><th>Preset</th><th>Base URL</th><th>Default Model</th></tr>
@@ -201,7 +201,7 @@
     </div>
 
     <h3>Config File Example</h3>
-    <p>Saved entries end up in <code>~/.codesight/config.json</code>. You can also edit the file directly:</p>
+    <p>Saved entries land in <code>~/.codesight/config.json</code>. Edit the file directly if needed:</p>
     <div class="code-block">
       <div class="code-header"><span>~/.codesight/config.json</span></div>
       <pre><code>{
@@ -223,16 +223,16 @@
 }</code></pre>
     </div>
     <div class="callout">
-      <strong>Azure AI Foundry:</strong> The wizard has a dedicated <em>Azure Foundry</em> entry for Claude models served through Microsoft Azure's Anthropic-compatible endpoint. Pick that rather than <em>Custom</em> if you're using Azure for Claude deployments.
+      <strong>Azure AI Foundry:</strong> The wizard has a dedicated <em>Azure Foundry</em> entry for Claude models served through Microsoft Azure's Anthropic-compatible endpoint. Pick that instead of <em>Custom</em> for Azure Claude deployments.
     </div>
 
     <h2>Multi-Model Pipeline</h2>
-    <p>For security analysis, you can chain two models - a fast local model for triage, then a cloud model for deep verification:</p>
+    <p>Security analysis can chain two models - a fast local model for triage, then a cloud model for deep verification:</p>
     <div class="code-block">
       <div class="code-header"><span>Terminal</span></div>
       <pre><code><span class="prompt">$</span> codesight security src/auth.py --pipeline ollama/llama3:openai/gpt-5.4</code></pre>
     </div>
-    <p>The triage model flags potential issues quickly. Only those flagged areas are sent to the verification model, reducing cost and latency.</p>
+    <p>Triage flags potential issues fast. Only flagged areas go to the verifier, cutting cost and latency.</p>
 
     <h2>Configuration File</h2>
     <p>Provider settings are stored in <code>~/.codesight/config.json</code>:</p>

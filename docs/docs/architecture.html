@@ -63,7 +63,7 @@
 
   <main class="doc-content">
     <h1>Architecture</h1>
-    <p class="lead">How CodeSight is structured internally.</p>
+    <p class="lead">Internal structure of CodeSight.</p>
 
     <h2>Module Overview</h2>
     <div class="code-block">
@@ -112,7 +112,7 @@
     async def health_check() -&gt; bool
     def name -&gt; str</code></pre>
     </div>
-    <p>Adding a new provider means implementing these three methods and registering it in <code>factory.py</code>. The <code>custom_provider.py</code> module handles any OpenAI-compatible endpoint: <code>factory.create_provider</code> falls back to <code>CustomProvider</code> when a <code>ProviderConfig</code> carries a <code>base_url</code> but an unknown provider name, which is how OpenRouter, Groq, Together, xAI, Azure AI Foundry and others work without dedicated modules.</p>
+    <p>A new provider = three methods + registration in <code>factory.py</code>. The <code>custom_provider.py</code> module handles any OpenAI-compatible endpoint: <code>factory.create_provider</code> falls back to <code>CustomProvider</code> when a <code>ProviderConfig</code> has a <code>base_url</code> but an unknown provider name. That is how OpenRouter, Groq, Together, xAI, Azure AI Foundry and others run without dedicated modules.</p>
 
     <h2>Compression</h2>
     <p>For files over 300 lines, the compression module extracts:</p>
@@ -121,7 +121,7 @@
       <li>Function/class/method signatures</li>
       <li>Structural outline with line numbers</li>
     </ul>
-    <p>This typically reduces token usage by 60-80% while preserving enough context for accurate analysis.</p>
+    <p>Cuts token usage by 60-80% while keeping enough context for accurate analysis.</p>
 
     <h2>Multi-Model Pipeline</h2>
     <p>The pipeline feature chains two models for security analysis:</p>
@@ -129,7 +129,7 @@
       <li><strong>Triage</strong> - a fast/cheap model (e.g., Llama 3 via Ollama) scans the code and flags suspicious areas</li>
       <li><strong>Verify</strong> - a strong model (e.g., GPT-5.4) does deep analysis only on flagged sections</li>
     </ol>
-    <p>This reduces cost by 70-85% compared to running the full code through the expensive model, with minimal accuracy loss.</p>
+    <p>Cuts cost 70-85% vs running the full code through the expensive model, with minimal accuracy loss.</p>
 
     <h2>Configuration Hierarchy</h2>
     <ol>
