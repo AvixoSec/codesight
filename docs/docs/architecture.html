@@ -40,12 +40,13 @@
 ├── benchmark.py         # LLM benchmark on vulnerable samples
 ├── sarif.py             # SARIF output generation
 └── providers/
-    ├── base.py          # BaseLLMProvider, Message, LLMResponse
-    ├── factory.py       # provider registry and instantiation
+    ├── base.py              # BaseLLMProvider, Message, LLMResponse
+    ├── factory.py           # provider registry and instantiation
     ├── openai_provider.py
     ├── anthropic_provider.py
     ├── google_provider.py
-    └── ollama_provider.py</code></pre>
+    ├── ollama_provider.py
+    └── custom_provider.py   # OpenAI-compatible adapter (OpenRouter, Groq, Azure, etc.)</code></pre>
             </div>
 
             <h2>Data Flow</h2>
@@ -68,7 +69,7 @@
     async def health_check() -> bool
     def name -> str</code></pre>
             </div>
-            <p>Adding a new provider means implementing these three methods and registering it in <code>factory.py</code>.</p>
+            <p>Adding a new provider means implementing these three methods and registering it in <code>factory.py</code>. The <code>custom_provider.py</code> module handles any OpenAI-compatible endpoint: <code>factory.create_provider</code> falls back to <code>CustomProvider</code> when a <code>ProviderConfig</code> carries a <code>base_url</code> but an unknown provider name, which is how OpenRouter, Groq, Together, xAI, Azure AI Foundry and others work without dedicated modules.</p>
 
             <h2>Compression</h2>
             <p>For files over 300 lines, the compression module extracts:</p>

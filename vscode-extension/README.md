@@ -1,12 +1,12 @@
 # CodeSight for VS Code
 
-Code analysis and security review inside VS Code.
+Code analysis and security review inside VS Code. Backed by the `codesight` CLI, with support for OpenAI, Anthropic, Google Vertex AI, Ollama (offline), and any OpenAI-compatible endpoint (OpenRouter, Groq, Azure AI Foundry, and more).
 
 ## Requirements
 
 - Python 3.10+
 - `pip install codesight`
-- At least one configured provider (or Ollama for offline)
+- At least one configured provider (run `codesight config`, or use Ollama for offline)
 
 ## Features
 
@@ -31,9 +31,11 @@ Code analysis and security review inside VS Code.
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `codesight.provider` | `openai` | LLM provider |
+| `codesight.provider` | `openai` | LLM provider (or any custom label from `~/.codesight/config.json`) |
 | `codesight.pythonPath` | `python` | Python path with codesight |
 | `codesight.outputFormat` | `markdown` | Output format |
+
+Custom OpenAI-compatible providers (OpenRouter, Groq, Together, Mistral, xAI, Fireworks, DeepSeek, Perplexity, Cerebras, Cohere, Azure AI Foundry) are configured via the CLI: `codesight config`. The label you pick there (e.g. `openrouter`) can be used as the `codesight.provider` setting.
 
 ## Development
 

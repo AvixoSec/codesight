@@ -45,7 +45,7 @@
         </aside>
         <main class="doc-content">
             <h1>Providers</h1>
-            <p class="lead">CodeSight supports four LLM providers. Switch between them with a single flag.</p>
+            <p class="lead">CodeSight ships four first-class providers plus a generic OpenAI-compatible adapter with presets for OpenRouter, Groq, Together AI, Mistral, xAI, DeepSeek, Azure AI Foundry, and more. Switch between them with a single flag.</p>
 
             <h2>Overview</h2>
             <table>
@@ -77,6 +77,12 @@
                         <td>None (local)</td>
                         <td>Yes</td>
                     </tr>
+                    <tr>
+                        <td><strong>Custom (OpenAI-compatible)</strong></td>
+                        <td>Any OpenAI-compatible endpoint — presets for OpenRouter, Groq, Together, Mistral, xAI, Fireworks, DeepSeek, Perplexity, Cerebras, Cohere, Azure AI Foundry</td>
+                        <td><code>base_url</code> + API key</td>
+                        <td>No</td>
+                    </tr>
                 </tbody>
             </table>
 
@@ -86,8 +92,10 @@
                 <pre><code><span class="prompt">$</span> codesight review file.py --provider openai
 <span class="prompt">$</span> codesight review file.py --provider anthropic
 <span class="prompt">$</span> codesight review file.py --provider google
-<span class="prompt">$</span> codesight review file.py --provider ollama</code></pre>
+<span class="prompt">$</span> codesight review file.py --provider ollama
+<span class="prompt">$</span> codesight review file.py --provider openrouter   <span class="comment"># any custom label you saved in config</span></code></pre>
             </div>
+            <p>The <code>--provider</code> flag accepts any label saved in <code>~/.codesight/config.json</code>. After running <code>codesight config</code> and choosing a custom provider, you pick the label (e.g. <code>openrouter</code>, <code>groq</code>, <code>azure</code>) and use it as the provider name.</p>
 
             <h2>OpenAI</h2>
             <p>Best overall accuracy for code analysis. Default provider.</p>
@@ -127,6 +135,79 @@
                 <strong>Air-gapped environments:</strong> Ollama runs entirely locally. You can pre-download models and use CodeSight on machines with no internet access.
             </div>
 
+            <h2>Custom / OpenAI-Compatible Providers</h2>
+            <p>CodeSight works with any endpoint that speaks the OpenAI Chat Completions API. That covers a lot of the ecosystem: OpenRouter's model aggregator, ultra-fast inference on Groq and Cerebras, Azure AI Foundry deployments, and open-source hosts like Together, Fireworks, DeepSeek, Perplexity, and Mistral.</p>
+
+            <h3>Built-in Presets</h3>
+            <p>The <code>codesight config</code> wizard has ready-made entries for these providers:</p>
+            <table>
+                <thead>
+                    <tr><th>Preset</th><th>Base URL</th><th>Default Model</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>OpenRouter</strong></td><td><code>https://openrouter.ai/api/v1</code></td><td><code>meta-llama/llama-4-maverick</code></td></tr>
+                    <tr><td><strong>Groq</strong></td><td><code>https://api.groq.com/openai/v1</code></td><td><code>llama-3.3-70b-versatile</code></td></tr>
+                    <tr><td><strong>Together AI</strong></td><td><code>https://api.together.xyz/v1</code></td><td><code>meta-llama/Llama-3-70b-chat-hf</code></td></tr>
+                    <tr><td><strong>Mistral</strong></td><td><code>https://api.mistral.ai/v1</code></td><td><code>mistral-large-latest</code></td></tr>
+                    <tr><td><strong>xAI (Grok)</strong></td><td><code>https://api.x.ai/v1</code></td><td><code>grok-3</code></td></tr>
+                    <tr><td><strong>Fireworks AI</strong></td><td><code>https://api.fireworks.ai/inference/v1</code></td><td><code>llama-v3p1-70b-instruct</code></td></tr>
+                    <tr><td><strong>DeepSeek</strong></td><td><code>https://api.deepseek.com</code></td><td><code>deepseek-chat</code></td></tr>
+                    <tr><td><strong>Perplexity</strong></td><td><code>https://api.perplexity.ai</code></td><td><code>llama-3.1-sonar-large-128k-online</code></td></tr>
+                    <tr><td><strong>Cerebras</strong></td><td><code>https://api.cerebras.ai/v1</code></td><td><code>llama3.1-70b</code></td></tr>
+                    <tr><td><strong>Cohere</strong></td><td><code>https://api.cohere.ai/compatibility/v1</code></td><td><code>command-r-plus</code></td></tr>
+                    <tr><td><strong>Azure AI Foundry</strong></td><td>Your resource URL</td><td>Your deployment name</td></tr>
+                    <tr><td><strong>Custom URL</strong></td><td>Anything OpenAI-compatible</td><td>Any model ID</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Interactive Setup</h3>
+            <p>Run the config wizard and pick <em>Custom</em>:</p>
+            <div class="code-block">
+                <div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> codesight config
+  Select a provider: Custom (OpenRouter / Groq / Together / any OpenAI-compat)
+  Pick a provider:   OpenRouter
+  Base URL:          https://openrouter.ai/api/v1
+  API key:           sk-or-v1-...
+  Model name:        meta-llama/llama-4-maverick
+  Config label:      openrouter</code></pre>
+            </div>
+            <p>The label you pick (e.g. <code>openrouter</code>) becomes the provider name you pass to <code>--provider</code>.</p>
+
+            <h3>Example Usage</h3>
+            <div class="code-block">
+                <div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> codesight review file.py --provider openrouter
+<span class="prompt">$</span> codesight security src/auth.py --provider groq
+<span class="prompt">$</span> codesight bugs lib/parser.py --provider azure</code></pre>
+            </div>
+
+            <h3>Config File Example</h3>
+            <p>Saved entries end up in <code>~/.codesight/config.json</code>. You can also edit the file directly:</p>
+            <div class="code-block">
+                <div class="code-header">~/.codesight/config.json</div>
+                <pre><code>{
+  "default_provider": "openrouter",
+  "providers": {
+    "openrouter": {
+      "provider": "custom",
+      "api_key": "sk-or-v1-...",
+      "base_url": "https://openrouter.ai/api/v1",
+      "model": "meta-llama/llama-4-maverick"
+    },
+    "groq": {
+      "provider": "custom",
+      "api_key": "gsk_...",
+      "base_url": "https://api.groq.com/openai/v1",
+      "model": "llama-3.3-70b-versatile"
+    }
+  }
+}</code></pre>
+            </div>
+            <div class="callout">
+                <strong>Azure AI Foundry:</strong> The wizard has a dedicated <em>Azure Foundry</em> entry for Claude models served through Microsoft Azure's Anthropic-compatible endpoint. Pick that rather than <em>Custom</em> if you're using Azure for Claude deployments.
+            </div>
+
             <h2>Multi-Model Pipeline</h2>
             <p>For security analysis, you can chain two models — a fast local model for triage, then a cloud model for deep verification:</p>
             <div class="code-block">
@@ -148,6 +229,12 @@
       "model": "gpt-5.4",
       "max_tokens": 4096,
       "temperature": 0.2
+    },
+    "openrouter": {
+      "provider": "custom",
+      "api_key": "sk-or-v1-...",
+      "base_url": "https://openrouter.ai/api/v1",
+      "model": "meta-llama/llama-4-maverick"
     }
   }
 }</code></pre>

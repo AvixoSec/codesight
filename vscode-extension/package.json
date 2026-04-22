@@ -16,6 +16,7 @@
   "categories": [
     "Linters",
     "Programming Languages",
+    "Testing",
     "Other"
   ],
   "keywords": [
@@ -25,7 +26,14 @@
     "llm",
     "vulnerability",
     "cwe",
-    "owasp"
+    "owasp",
+    "openai",
+    "anthropic",
+    "claude",
+    "ollama",
+    "openrouter",
+    "groq",
+    "azure"
   ],
   "main": "./out/extension.js",
   "contributes": {

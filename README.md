@@ -2,7 +2,7 @@
 
 **Code analysis CLI — reviews, bugs, docs, and refactoring from your terminal.**
 
-CodeSight sends your code to LLMs (OpenAI, Anthropic, Google Vertex AI) with structured prompts for code review, bug detection, security analysis, documentation, and refactoring. Multi-provider, configurable, works with any language.
+CodeSight sends your code to LLMs (OpenAI, Anthropic, Google Vertex AI, Ollama, or any OpenAI-compatible endpoint) with structured prompts for code review, bug detection, security analysis, documentation, and refactoring. Multi-provider, configurable, works with any language.
 
 [![PyPI](https://img.shields.io/pypi/v/codesight?color=8b5cf6)](https://pypi.org/project/codesight/)
 [![CI](https://github.com/AvixoSec/codesight/actions/workflows/ci.yml/badge.svg)](https://github.com/AvixoSec/codesight/actions)
@@ -61,6 +61,7 @@ codesight docs utils/helpers.py
 | **Anthropic** | Claude Opus 4.6, Claude Sonnet 4.6 | `ANTHROPIC_API_KEY` |
 | **Google Vertex AI** | Gemini 3.1 Pro, Gemini 3.1 Flash | `GOOGLE_CLOUD_PROJECT` + ADC |
 | **Ollama (local)** | Llama 3, CodeLlama, Mistral, etc. | Just run `ollama serve` |
+| **Custom (OpenAI-compatible)** | OpenRouter, Groq, Together AI, Mistral, xAI (Grok), Fireworks, DeepSeek, Perplexity, Cerebras, Cohere, Azure AI Foundry, or any OpenAI-compatible URL | `codesight config` -> Custom, or `base_url` + API key in `~/.codesight/config.json` |
 
 ## Configuration
 
@@ -84,7 +85,17 @@ Switch providers on the fly:
 codesight review my_file.py --provider anthropic
 codesight bugs my_file.py --provider google
 codesight explain my_file.py --provider openai
-codesight review my_file.py --provider ollama  # fully offline, no data leaves your machine
+codesight review my_file.py --provider ollama      # fully offline, no data leaves your machine
+codesight review my_file.py --provider openrouter  # any OpenAI-compatible endpoint you saved in config
+```
+
+Custom OpenAI-compatible providers (OpenRouter, Groq, Together, Mistral, xAI, Fireworks, DeepSeek, Perplexity, Cerebras, Cohere, Azure AI Foundry) are set up through the wizard:
+
+```bash
+codesight config
+# Select: Custom (OpenRouter / Groq / Together / any OpenAI-compat)
+# Pick a preset or enter a custom base URL, save under a label (e.g. "openrouter")
+codesight review my_file.py --provider openrouter
 ```
 
 ## Architecture
@@ -107,7 +118,8 @@ codesight/
     ├── openai_provider.py
     ├── anthropic_provider.py
     ├── google_provider.py
-    └── ollama_provider.py
+    ├── ollama_provider.py
+    └── custom_provider.py    # OpenAI-compatible adapter (OpenRouter, Groq, Azure, etc.)
 ```
 
 ## Development
@@ -135,6 +147,7 @@ ruff check codesight/
 - [x] Context compression — code maps to reduce token usage
 - [x] Streaming output for large files
 - [x] Custom prompt templates
+- [x] OpenAI-compatible providers (OpenRouter, Groq, Azure, 10+ presets)
 - [x] Publish to PyPI
 - [x] VS Code extension (scaffold)
 - [ ] VS Code Marketplace publish

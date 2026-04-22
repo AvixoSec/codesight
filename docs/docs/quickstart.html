@@ -56,13 +56,15 @@
             <h2>6. Try different providers</h2>
             <div class="code-block"><div class="code-header">Terminal</div>
                 <pre><code><span class="prompt">$</span> codesight review file.py --provider anthropic
-<span class="prompt">$</span> codesight review file.py --provider ollama   <span class="comment"># offline, no data leaves your machine</span></code></pre>
+<span class="prompt">$</span> codesight review file.py --provider ollama       <span class="comment"># offline, no data leaves your machine</span>
+<span class="prompt">$</span> codesight review file.py --provider openrouter   <span class="comment"># custom label saved via `codesight config`</span></code></pre>
             </div>
+            <p>OpenAI-compatible endpoints (OpenRouter, Groq, Together, Mistral, xAI, Azure AI Foundry, and more) are set up through <code>codesight config</code>. Pick <em>Custom</em> in the wizard, choose a preset or enter your own base URL, and save under any label you like.</p>
 
             <h2>Next steps</h2>
             <ul>
                 <li><a href="commands.html">All commands</a> — full reference</li>
-                <li><a href="providers.html">Provider setup</a> — OpenAI, Anthropic, Google, Ollama</li>
+                <li><a href="providers.html">Provider setup</a> — OpenAI, Anthropic, Google, Ollama, and OpenAI-compatible presets</li>
                 <li><a href="templates.html">Custom templates</a> — write your own analysis prompts</li>
                 <li><a href="ci-cd.html">CI/CD</a> — GitHub Actions, GitLab CI, pre-commit hooks</li>
             </ul>

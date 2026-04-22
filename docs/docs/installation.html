@@ -66,7 +66,7 @@
             <div class="code-block">
                 <div class="code-header">Terminal</div>
                 <pre><code><span class="prompt">$</span> codesight --version
-<span class="dim">codesight 0.1.0</span></code></pre>
+<span class="dim">codesight 0.2.0</span></code></pre>
             </div>
 
             <h2>Provider Setup</h2>
@@ -106,6 +106,20 @@
             <div class="callout">
                 <strong>No data leaves your machine</strong> when using Ollama. Everything runs locally.
             </div>
+
+            <h3>OpenAI-Compatible Providers (OpenRouter, Groq, Azure, etc.)</h3>
+            <p>For any endpoint that speaks the OpenAI Chat Completions API — OpenRouter, Groq, Together, Mistral, xAI, Fireworks, DeepSeek, Perplexity, Cerebras, Cohere, Azure AI Foundry — use the config wizard:</p>
+            <div class="code-block">
+                <div class="code-header">Terminal</div>
+                <pre><code><span class="prompt">$</span> codesight config
+  Select a provider: Custom (OpenRouter / Groq / Together / any OpenAI-compat)
+  Pick a provider:   OpenRouter
+  API key:           sk-or-v1-...
+  Config label:      openrouter
+
+<span class="prompt">$</span> codesight review file.py --provider openrouter</code></pre>
+            </div>
+            <p>See the <a href="providers.html">Providers page</a> for the full preset list and config file format.</p>
 
             <h2>Check Connectivity</h2>
             <div class="code-block">
