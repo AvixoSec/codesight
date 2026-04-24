@@ -52,8 +52,14 @@ async def stream_openai(
     ):
         resp.raise_for_status()
         async for data in _iter_sse_data(resp):
-            chunk = json.loads(data)
-            delta = chunk["choices"][0].get("delta", {})
+            try:
+                chunk = json.loads(data)
+            except json.JSONDecodeError:
+                continue
+            choices = chunk.get("choices") or []
+            if not choices:
+                continue
+            delta = choices[0].get("delta") or {}
             text = delta.get("content", "")
             if text:
                 yield text
@@ -100,9 +106,12 @@ async def stream_anthropic(
     ):
         resp.raise_for_status()
         async for data in _iter_sse_data(resp):
-            chunk = json.loads(data)
+            try:
+                chunk = json.loads(data)
+            except json.JSONDecodeError:
+                continue
             if chunk.get("type") == "content_block_delta":
-                text = chunk.get("delta", {}).get("text", "")
+                text = (chunk.get("delta") or {}).get("text", "")
                 if text:
                     yield text
 
@@ -179,13 +188,16 @@ async def stream_google(
     ):
         resp.raise_for_status()
         async for data in _iter_sse_data(resp):
-            chunk = json.loads(data)
+            try:
+                chunk = json.loads(data)
+            except json.JSONDecodeError:
+                continue
             candidates = chunk.get("candidates") or []
             if not candidates:
                 continue
             parts = (candidates[0].get("content") or {}).get("parts") or []
             for part in parts:
-                text = part.get("text", "")
+                text = part.get("text", "") if isinstance(part, dict) else ""
                 if text:
                     yield text
 
@@ -213,8 +225,11 @@ async def stream_ollama(
         async for line in resp.aiter_lines():
             if not line.strip():
                 continue
-            chunk = json.loads(line)
-            text = chunk.get("message", {}).get("content", "")
+            try:
+                chunk = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            text = (chunk.get("message") or {}).get("content", "")
             if text:
                 yield text
 

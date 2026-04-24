@@ -148,7 +148,15 @@ class AnthropicProvider(BaseLLMProvider):
 
         data = await self._post_messages(payload)
 
-        content = data["content"][0]["text"]
+        # Anthropic returns a list of content blocks; tool_use / refusals can
+        # leave it empty or have no "text" entry, so skip non-text blocks
+        # instead of crashing on [0]["text"].
+        content_blocks = data.get("content") or []
+        content = "".join(
+            block.get("text", "")
+            for block in content_blocks
+            if isinstance(block, dict) and block.get("type") == "text"
+        )
         usage = data.get("usage", {})
 
         return LLMResponse(

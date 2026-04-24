@@ -43,6 +43,7 @@ class GoogleVertexProvider(BaseLLMProvider):
         self._client: httpx.AsyncClient | None = None
         self._token: str | None = None
         self._token_fetched_at: float = 0.0
+        self._token_lock = asyncio.Lock()
 
     @property
     def name(self) -> str:
@@ -75,13 +76,18 @@ class GoogleVertexProvider(BaseLLMProvider):
     async def _get_access_token(self) -> str:
         # google.auth.refresh() does blocking network I/O; offload to a thread
         # and cache the result so parallel requests don't each refresh.
+        # Lock guarantees single-flight: concurrent callers wait for one refresh.
         now = time.monotonic()
         if self._token and (now - self._token_fetched_at) < _TOKEN_CACHE_SECS:
             return self._token
-        token = await asyncio.to_thread(self._fetch_access_token_sync)
-        self._token = token
-        self._token_fetched_at = now
-        return token
+        async with self._token_lock:
+            now = time.monotonic()
+            if self._token and (now - self._token_fetched_at) < _TOKEN_CACHE_SECS:
+                return self._token
+            token = await asyncio.to_thread(self._fetch_access_token_sync)
+            self._token = token
+            self._token_fetched_at = now
+            return token
 
     async def complete(
         self,
@@ -124,7 +130,14 @@ class GoogleVertexProvider(BaseLLMProvider):
         resp.raise_for_status()
         data = resp.json()
 
-        candidate = data["candidates"][0]["content"]["parts"][0]["text"]
+        # Blocked / safety-filtered responses omit parts. Default to empty.
+        candidates = data.get("candidates") or []
+        parts = []
+        if candidates:
+            parts = (candidates[0].get("content") or {}).get("parts") or []
+        candidate = "".join(
+            p.get("text", "") for p in parts if isinstance(p, dict)
+        )
         usage_meta = data.get("usageMetadata", {})
 
         return LLMResponse(
