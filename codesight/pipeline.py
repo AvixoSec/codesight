@@ -131,7 +131,7 @@ async def run_pipeline(
     )
     verify_provider = create_provider(verify_pconfig)
 
-    verify_system = VERIFY_PROMPT.format(triage_output=triage_output)
+    verify_system = VERIFY_PROMPT.replace("{triage_output}", triage_output)
     verify_messages = [
         Message(role="system", content=verify_system),
         Message(role="user", content=_wrap_source(file_path, source)),

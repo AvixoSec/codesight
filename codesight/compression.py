@@ -176,11 +176,12 @@ def _build_structure(source: str, language: str) -> str:
     return "\n".join(structure_lines)
 
 
-def build_code_map(file_path: str) -> CodeMap:
+def build_code_map(file_path: str, source: str | None = None) -> CodeMap:
     p = Path(file_path)
     ext = p.suffix
     language = EXT_TO_LANG.get(ext, ext.lstrip("."))
-    source = p.read_text(encoding="utf-8", errors="replace")
+    if source is None:
+        source = p.read_text(encoding="utf-8", errors="replace")
     original_lines = len(source.splitlines())
 
     patterns = LANG_PATTERNS.get(language, {})
@@ -207,7 +208,7 @@ def compress_for_prompt(file_path: str, source: str, max_lines: int = 300) -> st
     if len(lines) <= max_lines:
         return source
 
-    code_map = build_code_map(file_path)
+    code_map = build_code_map(file_path, source=source)
 
     parts = [
         f"[compressed code map - {code_map.original_lines} lines, "
