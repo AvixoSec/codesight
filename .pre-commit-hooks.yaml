@@ -1,0 +1,32 @@
+- id: codesight-security
+  name: codesight security (staged)
+  description: Security scan with CWE and OWASP mapping on staged files
+  entry: codesight diff -t security --staged
+  language: python
+  language_version: python3
+  pass_filenames: false
+  stages: [pre-commit]
+  require_serial: true
+  minimum_pre_commit_version: '2.15.0'
+
+- id: codesight-review
+  name: codesight review (staged)
+  description: Code review with severity-tagged issues on staged files
+  entry: codesight diff -t review --staged
+  language: python
+  language_version: python3
+  pass_filenames: false
+  stages: [pre-commit]
+  require_serial: true
+  minimum_pre_commit_version: '2.15.0'
+
+- id: codesight-bugs
+  name: codesight bugs (staged)
+  description: Bug and logic-error detection on staged files
+  entry: codesight diff -t bugs --staged
+  language: python
+  language_version: python3
+  pass_filenames: false
+  stages: [pre-commit]
+  require_serial: true
+  minimum_pre_commit_version: '2.15.0'

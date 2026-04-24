@@ -122,6 +122,41 @@ codesight/
     └── custom_provider.py    # OpenAI-compatible adapter (OpenRouter, Groq, Azure, etc.)
 ```
 
+## Per-project config
+
+Drop a `.codesight.toml` (or `.codesight.json`) in your repo root to share settings across the team:
+
+```toml
+default_provider = "anthropic"
+max_file_size_kb = 1000
+ignore_patterns = ["build/", "migrations/", "*.generated.ts"]
+
+[providers.anthropic]
+model = "claude-opus-4-7"
+```
+
+Project config overrides values from `~/.codesight/config.json` but never touches API keys - those stay in your keyring.
+
+## Pre-commit integration
+
+Add CodeSight to your `.pre-commit-config.yaml`:
+
+```yaml
+repos:
+  - repo: https://github.com/AvixoSec/codesight
+    rev: v0.3.0
+    hooks:
+      - id: codesight-security   # or codesight-review / codesight-bugs
+```
+
+Then:
+
+```bash
+pre-commit install
+```
+
+CodeSight will run on staged files before every commit. It needs an API key already configured (`codesight config`) or an env var like `OPENAI_API_KEY` available at commit time.
+
 ## Development
 
 ```bash
@@ -150,10 +185,13 @@ ruff check codesight/
 - [x] OpenAI-compatible providers (OpenRouter, Groq, Azure, 10+ presets)
 - [x] Publish to PyPI
 - [x] VS Code extension (scaffold)
+- [x] Pre-commit hook integration
+- [x] Per-project config (`.codesight.toml`)
+- [x] Gemini streaming via Vertex AI
+- [x] Cost pre-estimate (`codesight scan . --estimate`)
+- [x] i18n (English, Russian via `--lang ru` or `CODESIGHT_LANG=ru`)
 - [ ] VS Code Marketplace publish
 - [ ] Web dashboard
-- [ ] Pre-commit hook integration
-- [ ] `.codesight.yml` per-project config
 
 ## License
 

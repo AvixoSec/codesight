@@ -1,9 +1,15 @@
+import asyncio
 import json
+import re
 from collections.abc import AsyncIterator
 
 import httpx
 
-from .config import AppConfig, get_provider_config
+from .config import DEFAULT_GOOGLE_MODEL, AppConfig, get_provider_config
+
+_GOOGLE_REGION_RE = re.compile(r"^[a-z]+-[a-z]+[0-9]+$")
+_GOOGLE_PROJECT_RE = re.compile(r"^[a-z][a-z0-9-]{5,29}$")
+_GOOGLE_MODEL_RE = re.compile(r"^[a-zA-Z0-9._-]+$")
 
 
 async def _iter_sse_data(resp: httpx.Response) -> AsyncIterator[str]:
@@ -101,6 +107,89 @@ async def stream_anthropic(
                     yield text
 
 
+async def stream_google(
+    messages: list[dict],
+    project_id: str,
+    region: str,
+    model: str,
+    max_tokens: int = 4096,
+    temperature: float = 0.2,
+) -> AsyncIterator[str]:
+    if not project_id or not _GOOGLE_PROJECT_RE.match(project_id):
+        raise ValueError(f"Invalid Google Cloud project ID: {project_id!r}")
+    if not _GOOGLE_REGION_RE.match(region):
+        raise ValueError(f"Invalid Google Cloud region: {region!r}")
+    model = model or DEFAULT_GOOGLE_MODEL
+    if not _GOOGLE_MODEL_RE.match(model):
+        raise ValueError(f"Invalid Google model name: {model!r}")
+
+    try:
+        import google.auth
+        import google.auth.transport.requests
+    except ImportError as err:
+        raise ImportError(
+            "google-auth is required for Vertex AI streaming. "
+            "Install: pip install google-auth"
+        ) from err
+
+    def _token() -> str:
+        credentials, _ = google.auth.default()
+        credentials.refresh(google.auth.transport.requests.Request())
+        return str(credentials.token)
+
+    token = await asyncio.to_thread(_token)
+
+    system_instruction = None
+    contents: list[dict] = []
+    for m in messages:
+        if m["role"] == "system":
+            system_instruction = {"parts": [{"text": m["content"]}]}
+        else:
+            role = "user" if m["role"] == "user" else "model"
+            contents.append({"role": role, "parts": [{"text": m["content"]}]})
+
+    payload: dict = {
+        "contents": contents,
+        "generationConfig": {
+            "maxOutputTokens": max_tokens,
+            "temperature": temperature,
+        },
+    }
+    if system_instruction:
+        payload["systemInstruction"] = system_instruction
+
+    base_url = (
+        f"https://{region}-aiplatform.googleapis.com/v1"
+        f"/projects/{project_id}/locations/{region}"
+        f"/publishers/google/models/{model}"
+    )
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+
+    async with (
+        httpx.AsyncClient(timeout=120) as client,
+        client.stream(
+            "POST",
+            f"{base_url}:streamGenerateContent?alt=sse",
+            headers=headers,
+            json=payload,
+        ) as resp,
+    ):
+        resp.raise_for_status()
+        async for data in _iter_sse_data(resp):
+            chunk = json.loads(data)
+            candidates = chunk.get("candidates") or []
+            if not candidates:
+                continue
+            parts = (candidates[0].get("content") or {}).get("parts") or []
+            for part in parts:
+                text = part.get("text", "")
+                if text:
+                    yield text
+
+
 async def stream_ollama(
     messages: list[dict],
     model: str,
@@ -153,6 +242,12 @@ async def stream_analysis(
     elif name == "ollama":
         async for chunk in stream_ollama(
             messages, pconfig.model, pconfig.base_url,
+        ):
+            yield chunk
+    elif name == "google":
+        async for chunk in stream_google(
+            messages, pconfig.project_id, pconfig.region or "us-central1",
+            pconfig.model, pconfig.max_tokens, pconfig.temperature,
         ):
             yield chunk
     else:

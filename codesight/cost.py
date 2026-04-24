@@ -38,3 +38,24 @@ def format_cost(cost: float) -> str:
     if cost < 0.01:
         return f"${cost:.4f}"
     return f"${cost:.2f}"
+
+
+# ~4 chars per token is a well-known rough heuristic for English/code mixes.
+# Good enough for a pre-flight guardrail; real usage is reported by the API.
+_CHARS_PER_TOKEN = 4
+
+
+def estimate_tokens(text: str) -> int:
+    if not text:
+        return 0
+    return max(1, len(text) // _CHARS_PER_TOKEN)
+
+
+def estimate_call_cost(
+    model: str,
+    prompt_text: str,
+    expected_output_tokens: int = 1024,
+) -> tuple[int, int, float]:
+    prompt_tokens = estimate_tokens(prompt_text)
+    cost = estimate_cost(model, prompt_tokens, expected_output_tokens)
+    return prompt_tokens, expected_output_tokens, cost

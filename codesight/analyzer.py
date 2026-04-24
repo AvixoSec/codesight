@@ -172,6 +172,7 @@ class Analyzer:
 
     def __init__(self, config: AppConfig, provider_name: str | None = None) -> None:
         pconfig = get_provider_config(config, provider_name)
+        self.provider_config = pconfig
         self._provider: BaseLLMProvider = create_provider(pconfig)
         self._max_tokens = pconfig.max_tokens
         self._temperature = pconfig.temperature

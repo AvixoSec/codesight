@@ -10,6 +10,7 @@ from typing import Any
 
 CONFIG_DIR = Path.home() / ".codesight"
 CONFIG_FILE = CONFIG_DIR / "config.json"
+PROJECT_CONFIG_NAMES = (".codesight.toml", ".codesight.json")
 DEFAULT_OPENAI_MODEL = "gpt-5.4"
 DEFAULT_ANTHROPIC_MODEL = "claude-opus-4-6-20251101"
 DEFAULT_GOOGLE_MODEL = "gemini-3.1-pro"
@@ -127,17 +128,109 @@ def _atomic_write_secret(path: Path, payload: str) -> None:
 
 
 def load_config() -> AppConfig:
-    if not CONFIG_FILE.exists():
-        return AppConfig()
-    try:
-        with open(CONFIG_FILE, encoding="utf-8") as f:
-            raw = json.load(f)
-    except (OSError, json.JSONDecodeError) as exc:
-        raise ValueError(f"Config file is unreadable or malformed: {exc}") from exc
+    if CONFIG_FILE.exists():
+        try:
+            with open(CONFIG_FILE, encoding="utf-8") as f:
+                raw = json.load(f)
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ValueError(f"Config file is unreadable or malformed: {exc}") from exc
+        cfg = AppConfig.from_dict(raw)
+    else:
+        cfg = AppConfig()
 
-    cfg = AppConfig.from_dict(raw)
     _hydrate_secrets(cfg)
+
+    project = _load_project_config()
+    if project is not None:
+        _apply_project_config(cfg, project)
     return cfg
+
+
+def _find_project_config_file(start: Path | None = None) -> Path | None:
+    # Walk from current dir up to root, return first .codesight.{toml,json}.
+    cur = (start or Path.cwd()).resolve()
+    for path in [cur, *cur.parents]:
+        for name in PROJECT_CONFIG_NAMES:
+            candidate = path / name
+            if candidate.is_file():
+                return candidate
+    return None
+
+
+def _load_project_config() -> dict[str, Any] | None:
+    path = _find_project_config_file()
+    if path is None:
+        return None
+    try:
+        data = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        warnings.warn(f"Failed to read {path}: {exc}", stacklevel=2)
+        return None
+
+    if path.suffix == ".toml":
+        try:
+            import tomllib  # Python 3.11+
+        except ImportError:
+            try:
+                import tomli as tomllib  # Python 3.10 fallback
+            except ImportError:
+                warnings.warn(
+                    f"Found {path.name} but tomllib is unavailable; "
+                    "upgrade to Python 3.11+ or `pip install tomli`.",
+                    stacklevel=2,
+                )
+                return None
+        try:
+            return tomllib.loads(data)
+        except Exception as exc:
+            warnings.warn(f"Malformed TOML in {path}: {exc}", stacklevel=2)
+            return None
+
+    if path.suffix == ".json":
+        try:
+            return json.loads(data)
+        except json.JSONDecodeError as exc:
+            warnings.warn(f"Malformed JSON in {path}: {exc}", stacklevel=2)
+            return None
+
+    return None
+
+
+# Fields that a project .codesight.toml/json is allowed to override on AppConfig.
+# We deliberately exclude allow_plaintext_keys so a hostile repo cannot flip
+# the plaintext-secret gate on.
+_PROJECT_ALLOWED_APP_FIELDS = {
+    "default_provider",
+    "output_format",
+    "language",
+    "max_file_size_kb",
+    "ignore_patterns",
+}
+
+
+def _apply_project_config(cfg: AppConfig, data: dict[str, Any]) -> None:
+    for key in _PROJECT_ALLOWED_APP_FIELDS:
+        if key in data:
+            setattr(cfg, key, data[key])
+
+    # Provider overrides: project can pin model, base_url, project_id, region
+    # for any provider. api_key is NEVER taken from project config to keep
+    # secrets out of committable files.
+    project_providers = data.get("providers")
+    if isinstance(project_providers, dict):
+        for label, pdata in project_providers.items():
+            if not isinstance(pdata, dict):
+                continue
+            pdata = {k: v for k, v in pdata.items() if k != "api_key"}
+            existing = cfg.providers.get(label)
+            if existing is None:
+                cfg.providers[label] = ProviderConfig.from_dict(
+                    {"provider": pdata.get("provider", label), **pdata}
+                )
+            else:
+                for k, v in pdata.items():
+                    if k in {f.name for f in fields(ProviderConfig)}:
+                        setattr(existing, k, v)
 
 
 def _hydrate_secrets(cfg: AppConfig) -> None:

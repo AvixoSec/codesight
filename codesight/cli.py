@@ -42,7 +42,8 @@ from .config import (
     load_config,
     save_config,
 )
-from .cost import estimate_cost, format_cost
+from .cost import estimate_call_cost, estimate_cost, format_cost
+from .i18n import resolve_language, set_language, t
 from .pipeline import PipelineConfig, run_pipeline
 from .providers.anthropic_provider import is_azure_url, normalize_azure_base_url
 from .providers.base import Message
@@ -204,6 +205,12 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Output format",
     )
+    parser.add_argument(
+        "--lang",
+        choices=["en", "ru"],
+        default=None,
+        help="Language for CLI messages (also: CODESIGHT_LANG env var)",
+    )
 
     sub = parser.add_subparsers(dest="command")
 
@@ -227,6 +234,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Analysis type (default: review)",
     )
     scan.add_argument("--ext", nargs="*", help="File extensions to include (e.g. .py .js)")
+    scan.add_argument(
+        "--estimate",
+        action="store_true",
+        help="Show token and cost estimate without calling the API",
+    )
 
     diff = sub.add_parser("diff", help="Review only git-changed files")
     diff.add_argument(
@@ -385,6 +397,38 @@ def _run_analysis(args, config: AppConfig) -> None:
     _format_output(result, config.output_format)
 
 
+def _print_cost_estimate(analyzer, files: list[str], scan_root: Path, task: str) -> None:
+    # Dry-run: per-file token + cost estimate, no API call.
+    provider_cfg = analyzer.provider_config
+    model = provider_cfg.model
+    expected_output = 800 if task == "security" else 600
+    total_prompt = 0
+    total_output = 0
+    total_cost = 0.0
+    lines = []
+    for fp in files:
+        try:
+            source = Path(fp).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        pt, ot, cost = estimate_call_cost(model, source, expected_output)
+        total_prompt += pt
+        total_output += ot
+        total_cost += cost
+        rel = _safe_relative_path(fp, scan_root)
+        lines.append(f"  {rel}: ~{pt:,} in + {ot:,} out = {format_cost(cost)}")
+    for line in lines[:20]:
+        console.print(line, style="dim")
+    if len(lines) > 20:
+        console.print(f"  ... {len(lines) - 20} more", style="dim")
+    console.print(
+        f"\n[bold]Estimate[/] {len(files)} files, "
+        f"~{total_prompt:,} in + ~{total_output:,} out tokens, "
+        f"total ~{format_cost(total_cost)} on [cyan]{model}[/]"
+    )
+    console.print("[dim]No API call made. Drop --estimate to run for real.[/]")
+
+
 def _run_scan(args, config: AppConfig) -> None:
     task_map = {"review": TaskType.REVIEW, "bugs": TaskType.BUGS, "security": TaskType.SECURITY}
     task = task_map[args.task]
@@ -392,7 +436,7 @@ def _run_scan(args, config: AppConfig) -> None:
     scan_root = Path(args.dir).resolve()
 
     if not scan_root.is_dir():
-        console.print(f"[bold red]Error:[/] Directory not found: {scan_root}")
+        console.print(f"[bold red]Error:[/] {t('directory_not_found', path=scan_root)}")
         sys.exit(1)
 
     files = collect_files(
@@ -403,16 +447,20 @@ def _run_scan(args, config: AppConfig) -> None:
     )
 
     if not files:
-        console.print("[yellow]No source files found.[/]")
+        console.print(f"[yellow]{t('no_source_files')}[/]")
         sys.exit(0)
 
-    console.print(f"Found [bold]{len(files)}[/] files in [cyan]{scan_root}[/]")
+    console.print(t("found_files", count=f"[bold]{len(files)}[/]", dir=f"[cyan]{scan_root}[/]"))
 
     try:
         analyzer = Analyzer(config, provider_name=args.provider)
     except ValueError as exc:
-        console.print(f"[bold red]Config error:[/] {exc}")
+        console.print(f"[bold red]{t('config_error', error=exc)}[/]")
         sys.exit(1)
+
+    if getattr(args, "estimate", False):
+        _print_cost_estimate(analyzer, files, scan_root, args.task)
+        sys.exit(0)
 
     batch_files = [(_safe_relative_path(fp, scan_root), fp) for fp in files]
 
@@ -433,11 +481,11 @@ def _run_scan(args, config: AppConfig) -> None:
         _format_output(r, config.output_format)
 
     summary = Text()
-    summary.append(f"\n{len(results)} files analyzed", style="bold")
+    summary.append(f"\n{t('files_analyzed', count=len(results))}", style="bold")
     if errors:
-        summary.append(f", {len(errors)} failed", style="bold red")
-    summary.append(f" - {total_tokens:,} tokens total", style="dim")
-    out.print(Panel(summary, border_style="green", title="Scan Complete"))
+        summary.append(t("files_failed", count=len(errors)), style="bold red")
+    summary.append(t("tokens_total", tokens=f"{total_tokens:,}"), style="dim")
+    out.print(Panel(summary, border_style="green", title=t("scan_complete")))
 
     if errors:
         for fp, err in errors:
@@ -1106,6 +1154,9 @@ def main() -> None:
     parser = _build_parser()
     args = parser.parse_args()
     config = load_config()
+
+    lang_arg = getattr(args, "lang", None)
+    set_language(lang_arg or resolve_language(config.language))
 
     if not args.command:
         _run_interactive(config, provider_name=args.provider)
