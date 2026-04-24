@@ -1,5 +1,6 @@
 import json
 import re
+import warnings
 from dataclasses import dataclass
 
 
@@ -14,6 +15,18 @@ class Finding:
     fix: str
 
 
+class SarifParseError(ValueError):
+    """Raised in strict mode when parse_findings encounters unparseable sections."""
+
+    def __init__(self, errors: list[str]):
+        self.errors = errors
+        super().__init__(
+            f"SARIF parser rejected {len(errors)} section(s): "
+            + "; ".join(errors[:5])
+            + (" ..." if len(errors) > 5 else "")
+        )
+
+
 SEVERITY_TO_SARIF = {
     "CRITICAL": "error",
     "HIGH": "error",
@@ -21,28 +34,55 @@ SEVERITY_TO_SARIF = {
     "LOW": "note",
 }
 
+# Anchored so narrative [HIGH] text mid-section cannot match.
+# [-—] accepts both hyphen and em-dash (LLMs emit either).
+_HEADER_RE = re.compile(
+    r"^\s*\[?(CRITICAL|HIGH|MEDIUM|LOW)\]?\s*(.{1,500}?)(?:\s*[-—]\s*(CWE-\d{1,6}))?\s*$"
+)
 
-def parse_findings(content: str, file_path: str) -> list[Finding]:
-    findings = []
+
+def parse_findings(
+    content: str,
+    file_path: str,
+    *,
+    strict: bool = False,
+) -> list[Finding]:
+    # strict=True raises SarifParseError with every rejected section.
+    # strict=False warns and returns what parsed (legacy behavior).
+    findings: list[Finding] = []
+    errors: list[str] = []
     blocks = re.split(r"###\s+", content)
-    for block in blocks[1:]:
+    for idx, block in enumerate(blocks[1:], start=1):
         lines = block.strip().split("\n")
         if not lines:
+            errors.append(f"section {idx}: empty block")
             continue
-        header = lines[0]
-        sev_pat = r"\[?(CRITICAL|HIGH|MEDIUM|LOW)\]?\s*(.+?)(?:\s*[-—]\s*(CWE-\d+))?$"
-        sev_match = re.match(sev_pat, header)
+        header = lines[0].strip()
+        if not header:
+            errors.append(f"section {idx}: empty header line")
+            continue
+
+        # Non-finding sections (Summary, False Positives) get skipped without error.
+        if not re.match(r"^\s*\[?(CRITICAL|HIGH|MEDIUM|LOW)\b", header, re.IGNORECASE):
+            continue
+
+        sev_match = _HEADER_RE.match(header)
         if not sev_match:
+            errors.append(
+                f"section {idx}: header looks like a finding but did not match: {header!r}"
+            )
             continue
-        severity = sev_match.group(1)
+
+        severity = sev_match.group(1).upper()
         title = sev_match.group(2).strip()
         cwe_id = sev_match.group(3)
+
         body = "\n".join(lines[1:])
-        line_match = re.search(r"(?:line|ln|:)\s*(\d+)", body, re.IGNORECASE)
+        line_match = re.search(r"(?:line|ln|:)\s*(\d{1,9})", body, re.IGNORECASE)
         line_num = int(line_match.group(1)) if line_match else 1
-        fix_match = re.search(r"\*\*Fix:\*\*\s*(.*?)(?:\n\n|\Z)", body, re.DOTALL)
+        fix_match = re.search(r"\*\*Fix:\*\*\s*(.{1,4000}?)(?:\n\n|\Z)", body, re.DOTALL)
         fix = fix_match.group(1).strip() if fix_match else ""
-        desc_match = re.search(r"\*\*Description:\*\*\s*(.*?)(?:\n\*\*|\Z)", body, re.DOTALL)
+        desc_match = re.search(r"\*\*Description:\*\*\s*(.{1,4000}?)(?:\n\*\*|\Z)", body, re.DOTALL)
         description = desc_match.group(1).strip() if desc_match else title
 
         findings.append(Finding(
@@ -54,6 +94,16 @@ def parse_findings(content: str, file_path: str) -> list[Finding]:
             description=description,
             fix=fix,
         ))
+
+    if errors:
+        if strict:
+            raise SarifParseError(errors)
+        warnings.warn(
+            f"SARIF parser skipped {len(errors)} section(s); "
+            "re-run with strict=True to fail loudly. "
+            f"First issue: {errors[0]}",
+            stacklevel=2,
+        )
     return findings
 
 

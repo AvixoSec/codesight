@@ -1,8 +1,22 @@
+import re
 from dataclasses import dataclass
 
 from .config import AppConfig, ProviderConfig, get_provider_config
 from .providers import create_provider
 from .providers.base import Message
+
+_NO_FINDINGS_LINE = re.compile(r"(?mi)^\s*NO_FINDINGS\s*$")
+
+
+def _is_no_findings(text: str) -> bool:
+    # Match only standalone NO_FINDINGS, not substrings inside narrative
+    # (e.g. "ruled out NO_FINDINGS for the SQL query" is not clean).
+    stripped = text.strip()
+    if not stripped:
+        return False
+    if stripped.upper() == "NO_FINDINGS":
+        return True
+    return _NO_FINDINGS_LINE.search(stripped) is not None
 
 
 @dataclass
@@ -34,7 +48,7 @@ VERIFY_PROMPT = (
     "Pre-screening flags:\n{triage_output}\n\n"
     "Output format:\n"
     "## Security Findings\n"
-    "### [SEVERITY] Title — CWE-XXX\n"
+    "### [SEVERITY] Title - CWE-XXX\n"
     "**OWASP:** Category\n"
     "**Location:** file:line\n"
     "**Description:** ...\n"
@@ -73,7 +87,7 @@ async def run_pipeline(
     triage_output = triage_response.content.strip()
     triage_usage = triage_response.usage
 
-    if "NO_FINDINGS" in triage_output.upper():
+    if _is_no_findings(triage_output):
         clean_msg = (
             "## Security Findings\n\nNo vulnerabilities found."
             "\n\n## Summary\n\nCode passed triage screening."

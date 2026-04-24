@@ -24,7 +24,7 @@ def _is_public_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
     )
 
 
-def _validate_base_url(base_url: str) -> None:
+def _host_of(base_url: str) -> str:
     parsed = urlparse(base_url)
     if parsed.scheme not in _ALLOWED_SCHEMES:
         raise ValueError(
@@ -33,6 +33,13 @@ def _validate_base_url(base_url: str) -> None:
     host = (parsed.hostname or "").strip()
     if not host:
         raise ValueError(f"base_url has no hostname: {base_url}")
+    return host
+
+
+def _validate_base_url(base_url: str) -> None:
+    # Fails closed on DNS error. Previous version returned silently, which
+    # effectively disabled the guard when the resolver misbehaved.
+    host = _host_of(base_url)
 
     if os.environ.get(_PRIVATE_ENV) == "1":
         return
@@ -52,17 +59,29 @@ def _validate_base_url(base_url: str) -> None:
             f"base_url points at a non-public address ({host}). "
             f"Set {_PRIVATE_ENV}=1 to allow it."
         )
+    if literal is not None:
+        return
 
     try:
         infos = socket.getaddrinfo(host, None, proto=socket.IPPROTO_TCP)
-    except OSError:
-        return
+    except OSError as exc:
+        raise ValueError(
+            f"DNS resolution failed for base_url host {host!r}: {exc}. "
+            "Refusing to send request to unverifiable target. "
+            f"Set {_PRIVATE_ENV}=1 only if you trust this environment."
+        ) from exc
+    if not infos:
+        raise ValueError(
+            f"No addresses returned for host {host!r}; refusing to proceed."
+        )
     for info in infos:
         addr = info[4][0]
         try:
             ip = ipaddress.ip_address(addr)
         except ValueError:
-            continue
+            raise ValueError(
+                f"Unparseable address {addr!r} returned for {host}; refusing."
+            ) from None
         if not _is_public_ip(ip):
             raise ValueError(
                 f"base_url host {host} resolves to non-public address {addr}. "
@@ -124,8 +143,10 @@ class CustomProvider(BaseLLMProvider):
         _validate_base_url(config.base_url)
         self._config = config
         self._base_url = config.base_url.rstrip("/")
+        self._host = _host_of(self._base_url)
         self._headers: dict[str, str] = {"Content-Type": "application/json"}
         self._api_version: str | None = None
+        self._client: httpx.AsyncClient | None = None
 
         if ".services.ai.azure.com" in self._base_url or ".openai.azure.com" in self._base_url:
             self._chat_path = "/models/chat/completions"
@@ -152,26 +173,43 @@ class CustomProvider(BaseLLMProvider):
             url += f"?api-version={self._api_version}"
         return url
 
+    def _get_client(self) -> httpx.AsyncClient:
+        if self._client is None:
+            self._client = httpx.AsyncClient(timeout=None)
+        return self._client
+
+    async def aclose(self) -> None:
+        if self._client is not None:
+            await self._client.aclose()
+            self._client = None
+
+    def _revalidate_host(self) -> None:
+        # Re-check before each request to catch DNS rebinding between init
+        # and send (e.g. a TTL-0 record flipping to 169.254.169.254).
+        _validate_base_url(self._base_url)
+
     async def complete(
         self,
         messages: list[Message],
         max_tokens: int = 4096,
         temperature: float = 0.2,
     ) -> LLMResponse:
+        self._revalidate_host()
         payload = {
             "model": self._config.model,
             "messages": [{"role": m.role, "content": m.content} for m in messages],
             "max_tokens": max_tokens,
             "temperature": temperature,
         }
-        async with httpx.AsyncClient(timeout=120) as client:
-            resp = await client.post(
-                self._url(self._chat_path),
-                headers=self._headers,
-                json=payload,
-            )
-            resp.raise_for_status()
-            data = resp.json()
+        client = self._get_client()
+        resp = await client.post(
+            self._url(self._chat_path),
+            headers=self._headers,
+            json=payload,
+            timeout=120,
+        )
+        resp.raise_for_status()
+        data = resp.json()
 
         choice = data["choices"][0]["message"]
         usage = data.get("usage", {})
@@ -187,11 +225,13 @@ class CustomProvider(BaseLLMProvider):
 
     async def health_check(self) -> bool:
         try:
-            async with httpx.AsyncClient(timeout=10) as client:
-                resp = await client.get(
-                    self._url(self._models_path),
-                    headers=self._headers,
-                )
-                return resp.status_code in (200, 404)
+            self._revalidate_host()
+            client = self._get_client()
+            resp = await client.get(
+                self._url(self._models_path),
+                headers=self._headers,
+                timeout=10,
+            )
+            return resp.status_code in (200, 404)
         except Exception:
             return False

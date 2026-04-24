@@ -16,31 +16,3 @@ venv/
 node_modules/
 vscode-extension/out/
 vscode-extension/node_modules/
-
-.claude/
-/package.json
-/package-lock.json
-
-# Design experiments - local only
-previews/
-
-# Personal boom reports
-boom_report.md
-boom_*.md
-
-# Private grant files - keep local only
-GRANTS.md
-GRANTS_BACKUP.md
-GRANT_PLAN.md
-GRANT_PLAN_v2.md
-GRANT_ANSWERS.md
-GRANTS_TRACKER.md
-GRANT_GUIDE_SIMPLE.md
-WHAT_I_GET.md
-gpu_usecase.md
-sovereign_tech_application.md
-pitch_*.html
-
-# Paper utility scripts (contain API integrations)
-paper/convert_to_pdf.py
-paper/upload_to_zenodo.py

@@ -16,10 +16,22 @@ class OpenAIProvider(BaseLLMProvider):
             "Authorization": f"Bearer {config.api_key}",
             "Content-Type": "application/json",
         }
+        self._client: httpx.AsyncClient | None = None
 
     @property
     def name(self) -> str:
         return "OpenAI"
+
+    def _get_client(self) -> httpx.AsyncClient:
+        if self._client is None:
+            # timeout=None so short health probes don't cap long completions
+            self._client = httpx.AsyncClient(timeout=None)
+        return self._client
+
+    async def aclose(self) -> None:
+        if self._client is not None:
+            await self._client.aclose()
+            self._client = None
 
     async def complete(
         self,
@@ -33,14 +45,15 @@ class OpenAIProvider(BaseLLMProvider):
             "max_tokens": max_tokens,
             "temperature": temperature,
         }
-        async with httpx.AsyncClient(timeout=120) as client:
-            resp = await client.post(
-                f"{self.API_BASE}/chat/completions",
-                headers=self._headers,
-                json=payload,
-            )
-            resp.raise_for_status()
-            data = resp.json()
+        client = self._get_client()
+        resp = await client.post(
+            f"{self.API_BASE}/chat/completions",
+            headers=self._headers,
+            json=payload,
+            timeout=120,
+        )
+        resp.raise_for_status()
+        data = resp.json()
 
         choice = data["choices"][0]["message"]
         usage = data.get("usage", {})
@@ -56,11 +69,12 @@ class OpenAIProvider(BaseLLMProvider):
 
     async def health_check(self) -> bool:
         try:
-            async with httpx.AsyncClient(timeout=10) as client:
-                resp = await client.get(
-                    f"{self.API_BASE}/models",
-                    headers=self._headers,
-                )
-                return resp.status_code == 200
+            client = self._get_client()
+            resp = await client.get(
+                f"{self.API_BASE}/models",
+                headers=self._headers,
+                timeout=10,
+            )
+            return resp.status_code == 200
         except Exception:
             return False

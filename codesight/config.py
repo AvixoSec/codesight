@@ -16,6 +16,11 @@ DEFAULT_GOOGLE_MODEL = "gemini-3.1-pro"
 DEFAULT_OLLAMA_MODEL = "llama3"
 
 KEYRING_SERVICE = "codesight"
+ALLOW_PLAINTEXT_ENV = "CODESIGHT_ALLOW_PLAINTEXT_KEYS"
+
+
+class KeyringUnavailableError(RuntimeError):
+    """Raised when keyring is unavailable and plaintext fallback is not opted in."""
 
 
 def _keyring():
@@ -80,6 +85,9 @@ class AppConfig:
     ignore_patterns: list = field(default_factory=lambda: [
         "*.pyc", "__pycache__", ".git", "node_modules", ".env"
     ])
+    # Opt-in to plaintext fallback when keyring is unavailable.
+    # Env override: CODESIGHT_ALLOW_PLAINTEXT_KEYS=1
+    allow_plaintext_keys: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -145,7 +153,9 @@ def save_config(config: AppConfig) -> None:
     _secure_dir(CONFIG_DIR)
 
     keyring_available = _keyring() is not None
+    allow_plaintext = config.allow_plaintext_keys or os.environ.get(ALLOW_PLAINTEXT_ENV) == "1"
     dump = config.to_dict()
+    has_secrets = any(p.api_key for p in config.providers.values())
 
     for label, pconf in config.providers.items():
         pd = dump["providers"].get(label, {})
@@ -153,11 +163,27 @@ def save_config(config: AppConfig) -> None:
             pd["api_key"] = None
         dump["providers"][label] = pd
 
-    if not keyring_available and any(p.api_key for p in config.providers.values()):
+    residual_plaintext = any(
+        (pd.get("api_key") is not None)
+        for pd in dump.get("providers", {}).values()
+    )
+
+    if residual_plaintext and not allow_plaintext:
+        raise KeyringUnavailableError(
+            "Cannot persist API keys: keyring is unavailable and plaintext "
+            "fallback is not enabled. To opt in, either set "
+            "CODESIGHT_ALLOW_PLAINTEXT_KEYS=1 or AppConfig.allow_plaintext_keys=True. "
+            "Recommended: install a working keyring backend (pip install keyring "
+            "on most systems, or brew install keyring on macOS; "
+            "secret-tool / gnome-keyring on Linux)."
+        )
+
+    if not keyring_available and has_secrets and allow_plaintext:
         warnings.warn(
-            "python-keyring is not installed or unavailable; API keys will be "
-            "saved to ~/.codesight/config.json with owner-only permissions. "
-            "Install with: pip install keyring",
+            "python-keyring is unavailable; API keys are being saved to "
+            "~/.codesight/config.json with owner-only permissions because "
+            f"{ALLOW_PLAINTEXT_ENV}=1 (or allow_plaintext_keys=True). "
+            "Install a keyring backend to stop writing plaintext secrets.",
             stacklevel=2,
         )
 

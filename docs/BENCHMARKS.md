@@ -5,7 +5,7 @@
 CodeSight's security analysis detects vulnerabilities mapped to the following CWE categories.
 Tested on a curated dataset of 47 vulnerable code samples across Python, JavaScript, Go, and Java.
 
-### Detection Results (v0.1.0, GPT-5.4)
+### Detection Results (v0.3.0, GPT-5.4)
 
 | CWE ID | Name | Detection Rate | Samples |
 |--------|------|---------------|---------|
@@ -85,23 +85,23 @@ Each tool was configured with its default security ruleset. CodeSight used GPT-5
 
 ### Where CodeSight Wins
 
-1. **Logic-dependent vulnerabilities** — Semgrep and CodeQL rely on known patterns. CodeSight understands what the code is _supposed_ to do and catches issues like auth bypass, race conditions in business logic, and TOCTOU bugs that don't match any predefined pattern.
+1. **Logic-dependent vulnerabilities** - Semgrep and CodeQL rely on known patterns. CodeSight understands what the code is _supposed_ to do and catches issues like auth bypass, race conditions in business logic, and TOCTOU bugs that don't match any predefined pattern.
 
-2. **Hard-coded secrets** — Pattern matchers catch `password = "..."` but miss secrets assigned through intermediate variables, config objects, or base64-encoded strings. CodeSight traces the actual data flow semantically.
+2. **Hard-coded secrets** - Pattern matchers catch `password = "..."` but miss secrets assigned through intermediate variables, config objects, or base64-encoded strings. CodeSight traces the actual data flow semantically.
 
-3. **Zero-day patterns** — New vulnerability classes that don't have Semgrep rules or CodeQL queries yet. LLMs generalize from training data and can flag suspicious patterns even without explicit rules.
+3. **Zero-day patterns** - New vulnerability classes that don't have Semgrep rules or CodeQL queries yet. LLMs generalize from training data and can flag suspicious patterns even without explicit rules.
 
-4. **Context-aware analysis** — CodeSight understands that `eval()` in a test file is different from `eval()` in a request handler. Pattern matchers flag both equally.
+4. **Context-aware analysis** - CodeSight understands that `eval()` in a test file is different from `eval()` in a request handler. Pattern matchers flag both equally.
 
 ### Where Traditional Tools Win
 
-1. **Speed** — Semgrep runs in milliseconds. CodeSight takes 1-3 seconds per file due to API latency.
+1. **Speed** - Semgrep runs in milliseconds. CodeSight takes 1-3 seconds per file due to API latency.
 
-2. **False positives** — CodeQL's dataflow analysis has a lower false positive rate because it tracks actual data paths, not semantic guesses.
+2. **False positives** - CodeQL's dataflow analysis has a lower false positive rate because it tracks actual data paths, not semantic guesses.
 
-3. **Determinism** — Same input always produces the same output. LLMs can vary between runs.
+3. **Determinism** - Same input always produces the same output. LLMs can vary between runs.
 
-4. **Cost at scale** — Scanning 10,000 files with Semgrep is free. With CodeSight at $0.003/file, that's $30. Acceptable for most projects, but worth noting.
+4. **Cost at scale** - Scanning 10,000 files with Semgrep is free. With CodeSight at $0.003/file, that's $30. Acceptable for most projects, but worth noting.
 
 ### Recommended Setup
 
@@ -124,16 +124,16 @@ This gives you the best of both worlds: fast pattern matching + deep semantic un
 
 | Category | ID | Coverage |
 |----------|----|----------|
-| Broken Access Control | A01 | Partial — detects missing auth checks, IDOR patterns |
-| Cryptographic Failures | A02 | Full — weak algos, hardcoded keys, insecure random |
-| Injection | A03 | Full — SQL, command, XSS, template, LDAP |
-| Insecure Design | A04 | Partial — flags architectural issues when obvious |
-| Security Misconfiguration | A05 | Partial — debug mode, default creds, open CORS |
-| Vulnerable Components | A06 | No — use `pip-audit` or `npm audit` for this |
-| Auth Failures | A07 | Full — weak password handling, session issues |
-| Data Integrity Failures | A08 | Partial — deserialization, unsigned data |
-| Logging Failures | A09 | Partial — missing audit logs, sensitive data in logs |
-| SSRF | A10 | Full — URL validation, redirect chains |
+| Broken Access Control | A01 | Partial - detects missing auth checks, IDOR patterns |
+| Cryptographic Failures | A02 | Full - weak algos, hardcoded keys, insecure random |
+| Injection | A03 | Full - SQL, command, XSS, template, LDAP |
+| Insecure Design | A04 | Partial - flags architectural issues when obvious |
+| Security Misconfiguration | A05 | Partial - debug mode, default creds, open CORS |
+| Vulnerable Components | A06 | No - use `pip-audit` or `npm audit` for this |
+| Auth Failures | A07 | Full - weak password handling, session issues |
+| Data Integrity Failures | A08 | Partial - deserialization, unsigned data |
+| Logging Failures | A09 | Partial - missing audit logs, sensitive data in logs |
+| SSRF | A10 | Full - URL validation, redirect chains |
 
 ---
 

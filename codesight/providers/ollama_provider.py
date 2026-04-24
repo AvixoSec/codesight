@@ -9,10 +9,21 @@ class OllamaProvider(BaseLLMProvider):
     def __init__(self, config: ProviderConfig) -> None:
         self._config = config
         self._base_url = (config.base_url or "http://localhost:11434").rstrip("/")
+        self._client: httpx.AsyncClient | None = None
 
     @property
     def name(self) -> str:
         return "Ollama"
+
+    def _get_client(self) -> httpx.AsyncClient:
+        if self._client is None:
+            self._client = httpx.AsyncClient(timeout=None)
+        return self._client
+
+    async def aclose(self) -> None:
+        if self._client is not None:
+            await self._client.aclose()
+            self._client = None
 
     async def complete(
         self,
@@ -29,13 +40,14 @@ class OllamaProvider(BaseLLMProvider):
             },
             "stream": False,
         }
-        async with httpx.AsyncClient(timeout=300) as client:
-            resp = await client.post(
-                f"{self._base_url}/api/chat",
-                json=payload,
-            )
-            resp.raise_for_status()
-            data = resp.json()
+        client = self._get_client()
+        resp = await client.post(
+            f"{self._base_url}/api/chat",
+            json=payload,
+            timeout=300,
+        )
+        resp.raise_for_status()
+        data = resp.json()
 
         content = data.get("message", {}).get("content", "")
         prompt_tokens = data.get("prompt_eval_count", 0)
@@ -53,8 +65,8 @@ class OllamaProvider(BaseLLMProvider):
 
     async def health_check(self) -> bool:
         try:
-            async with httpx.AsyncClient(timeout=5) as client:
-                resp = await client.get(f"{self._base_url}/api/tags")
-                return resp.status_code == 200
+            client = self._get_client()
+            resp = await client.get(f"{self._base_url}/api/tags", timeout=5)
+            return resp.status_code == 200
         except Exception:
             return False

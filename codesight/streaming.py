@@ -6,6 +6,17 @@ import httpx
 from .config import AppConfig, get_provider_config
 
 
+async def _iter_sse_data(resp: httpx.Response) -> AsyncIterator[str]:
+    # Yields SSE data lines. '[DONE]' ends iteration. Caller parses payload.
+    async for line in resp.aiter_lines():
+        if not line.startswith("data: "):
+            continue
+        data = line[6:]
+        if data == "[DONE]":
+            break
+        yield data
+
+
 async def stream_openai(
     messages: list[dict],
     api_key: str,
@@ -34,12 +45,7 @@ async def stream_openai(
         ) as resp,
     ):
         resp.raise_for_status()
-        async for line in resp.aiter_lines():
-            if not line.startswith("data: "):
-                continue
-            data = line[6:]
-            if data == "[DONE]":
-                break
+        async for data in _iter_sse_data(resp):
             chunk = json.loads(data)
             delta = chunk["choices"][0].get("delta", {})
             text = delta.get("content", "")
@@ -87,10 +93,8 @@ async def stream_anthropic(
         ) as resp,
     ):
         resp.raise_for_status()
-        async for line in resp.aiter_lines():
-            if not line.startswith("data: "):
-                continue
-            chunk = json.loads(line[6:])
+        async for data in _iter_sse_data(resp):
+            chunk = json.loads(data)
             if chunk.get("type") == "content_block_delta":
                 text = chunk.get("delta", {}).get("text", "")
                 if text:
@@ -116,6 +120,7 @@ async def stream_ollama(
         ) as resp,
     ):
         resp.raise_for_status()
+        # Ollama uses NDJSON (one JSON per line), not SSE.
         async for line in resp.aiter_lines():
             if not line.strip():
                 continue

@@ -436,7 +436,7 @@ def _run_scan(args, config: AppConfig) -> None:
     summary.append(f"\n{len(results)} files analyzed", style="bold")
     if errors:
         summary.append(f", {len(errors)} failed", style="bold red")
-    summary.append(f" — {total_tokens:,} tokens total", style="dim")
+    summary.append(f" - {total_tokens:,} tokens total", style="dim")
     out.print(Panel(summary, border_style="green", title="Scan Complete"))
 
     if errors:
@@ -556,7 +556,7 @@ def _run_diff(args, config: AppConfig) -> None:
     summary.append(f"\n{len(results)} changed files analyzed", style="bold")
     if errors:
         summary.append(f", {len(errors)} failed", style="bold red")
-    summary.append(f" — {total_tokens:,} tokens total", style="dim")
+    summary.append(f" - {total_tokens:,} tokens total", style="dim")
     out.print(Panel(summary, border_style="green", title="Diff Analysis Complete"))
 
     if errors:
@@ -920,7 +920,7 @@ def _run_templates(args, config: AppConfig) -> None:
         for slug, tmpl in templates.items():
             name = tmpl.get("name", slug)
             desc = tmpl.get("description", "")
-            console.print(f"  [bold cyan]{slug}[/] — {name}")
+            console.print(f"  [bold cyan]{slug}[/] - {name}")
             if desc:
                 console.print(f"    [dim]{desc}[/]")
         console.print()
@@ -1027,16 +1027,16 @@ def _run_interactive(config: AppConfig, provider_name: str | None = None) -> Non
         action = questionary.select(
             "What do you want to do?",
             choices=[
-                questionary.Choice("review    — code review", value="review"),
-                questionary.Choice("bugs      — find logic errors & race conditions", value="bugs"),
-                questionary.Choice("security  — security audit (CWE / OWASP)", value="security"),
-                questionary.Choice("scan      — scan a whole directory", value="scan"),
-                questionary.Choice("diff      — review git-changed files", value="diff"),
-                questionary.Choice("explain   — plain-language code breakdown", value="explain"),
-                questionary.Choice("refactor  — refactoring suggestions", value="refactor"),
+                questionary.Choice("review    - code review", value="review"),
+                questionary.Choice("bugs      - find logic errors & race conditions", value="bugs"),
+                questionary.Choice("security  - security audit (CWE / OWASP)", value="security"),
+                questionary.Choice("scan      - scan a whole directory", value="scan"),
+                questionary.Choice("diff      - review git-changed files", value="diff"),
+                questionary.Choice("explain   - plain-language code breakdown", value="explain"),
+                questionary.Choice("refactor  - refactoring suggestions", value="refactor"),
                 questionary.Separator(),
-                questionary.Choice("config    — setup API keys / provider", value="config"),
-                questionary.Choice("health    — test provider connection", value="health"),
+                questionary.Choice("config    - setup API keys / provider", value="config"),
+                questionary.Choice("health    - test provider connection", value="health"),
                 questionary.Choice("quit", value="quit"),
             ],
         ).ask()
@@ -1064,9 +1064,9 @@ def _run_interactive(config: AppConfig, provider_name: str | None = None) -> Non
                 task = questionary.select(
                     "Analysis type:",
                     choices=[
-                        questionary.Choice("security  — find vulnerabilities", value="security"),
-                        questionary.Choice("bugs      — find logic errors", value="bugs"),
-                        questionary.Choice("review    — general code review", value="review"),
+                        questionary.Choice("security  - find vulnerabilities", value="security"),
+                        questionary.Choice("bugs      - find logic errors", value="bugs"),
+                        questionary.Choice("review    - general code review", value="review"),
                     ],
                 ).ask()
                 if task is None:

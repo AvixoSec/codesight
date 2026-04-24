@@ -59,8 +59,20 @@ class AnthropicProvider(BaseLLMProvider):
                 "Content-Type": "application/json",
             }
 
+        self._client: httpx.AsyncClient | None = None
+
     def _url(self, path: str) -> str:
         return f"{self._base_url}{path}"
+
+    def _get_client(self) -> httpx.AsyncClient:
+        if self._client is None:
+            self._client = httpx.AsyncClient(timeout=None)
+        return self._client
+
+    async def aclose(self) -> None:
+        if self._client is not None:
+            await self._client.aclose()
+            self._client = None
 
     @staticmethod
     def _error_message(resp: httpx.Response) -> str:
@@ -71,39 +83,41 @@ class AnthropicProvider(BaseLLMProvider):
             return resp.text
 
     async def _post_messages(self, payload: dict) -> dict:
-        async with httpx.AsyncClient(timeout=120) as client:
-            resp = await client.post(
-                self._url("/messages"),
-                headers=self._headers,
-                json=payload,
-            )
+        client = self._get_client()
+        resp = await client.post(
+            self._url("/messages"),
+            headers=self._headers,
+            json=payload,
+            timeout=120,
+        )
 
-            if resp.status_code >= 400:
-                message = self._error_message(resp)
-                if (
-                    resp.status_code == 400
-                    and "temperature" in message.lower()
-                    and "deprecated" in message.lower()
-                    and "temperature" in payload
-                ):
-                    retry_payload = dict(payload)
-                    retry_payload.pop("temperature", None)
-                    retry = await client.post(
-                        self._url("/messages"),
-                        headers=self._headers,
-                        json=retry_payload,
-                    )
-                    if retry.status_code < 400:
-                        return retry.json()
-                    raise RuntimeError(
-                        f"Anthropic API error ({retry.status_code}): {self._error_message(retry)}"
-                    )
-
+        if resp.status_code >= 400:
+            message = self._error_message(resp)
+            if (
+                resp.status_code == 400
+                and "temperature" in message.lower()
+                and "deprecated" in message.lower()
+                and "temperature" in payload
+            ):
+                retry_payload = dict(payload)
+                retry_payload.pop("temperature", None)
+                retry = await client.post(
+                    self._url("/messages"),
+                    headers=self._headers,
+                    json=retry_payload,
+                    timeout=120,
+                )
+                if retry.status_code < 400:
+                    return retry.json()
                 raise RuntimeError(
-                    f"Anthropic API error ({resp.status_code}): {message}"
+                    f"Anthropic API error ({retry.status_code}): {self._error_message(retry)}"
                 )
 
-            return resp.json()
+            raise RuntimeError(
+                f"Anthropic API error ({resp.status_code}): {message}"
+            )
+
+        return resp.json()
 
     @property
     def name(self) -> str:
@@ -149,22 +163,24 @@ class AnthropicProvider(BaseLLMProvider):
 
     async def health_check(self) -> bool:
         try:
-            async with httpx.AsyncClient(timeout=15) as client:
-                if self._is_azure:
-                    resp = await client.post(
-                        self._url("/messages"),
-                        headers=self._headers,
-                        json={
-                            "model": self._model,
-                            "max_tokens": 1,
-                            "messages": [{"role": "user", "content": "ping"}],
-                        },
-                    )
-                    return resp.status_code == 200
-                resp = await client.get(
-                    self._url("/models"),
+            client = self._get_client()
+            if self._is_azure:
+                resp = await client.post(
+                    self._url("/messages"),
                     headers=self._headers,
+                    json={
+                        "model": self._model,
+                        "max_tokens": 1,
+                        "messages": [{"role": "user", "content": "ping"}],
+                    },
+                    timeout=15,
                 )
                 return resp.status_code == 200
+            resp = await client.get(
+                self._url("/models"),
+                headers=self._headers,
+                timeout=15,
+            )
+            return resp.status_code == 200
         except Exception:
             return False

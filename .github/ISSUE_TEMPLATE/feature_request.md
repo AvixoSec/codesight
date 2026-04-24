@@ -16,4 +16,4 @@ How should it work? CLI flags, output format, behavior changes, etc.
 Any workarounds you've tried or other tools that handle this.
 
 **Context**
-Anything else — screenshots, links, related issues.
+Anything else: screenshots, links, related issues.

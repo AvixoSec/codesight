@@ -1,4 +1,6 @@
+import asyncio
 import re
+import time
 
 import httpx
 
@@ -8,6 +10,9 @@ from .base import BaseLLMProvider, LLMResponse, Message
 _REGION_RE = re.compile(r"^[a-z]+-[a-z]+[0-9]+$")
 _PROJECT_RE = re.compile(r"^[a-z][a-z0-9-]{5,29}$")
 _MODEL_RE = re.compile(r"^[a-zA-Z0-9._-]+$")
+
+# Google tokens are valid ~3600s; cache short to stay ahead of clock skew.
+_TOKEN_CACHE_SECS = 1800
 
 
 class GoogleVertexProvider(BaseLLMProvider):
@@ -35,24 +40,48 @@ class GoogleVertexProvider(BaseLLMProvider):
             f"/projects/{self._project}/locations/{self._region}"
             f"/publishers/google/models/{self._model}"
         )
+        self._client: httpx.AsyncClient | None = None
+        self._token: str | None = None
+        self._token_fetched_at: float = 0.0
 
     @property
     def name(self) -> str:
         return "Google Vertex AI"
 
-    def _get_access_token(self) -> str:
+    def _get_client(self) -> httpx.AsyncClient:
+        if self._client is None:
+            self._client = httpx.AsyncClient(timeout=None)
+        return self._client
+
+    async def aclose(self) -> None:
+        if self._client is not None:
+            await self._client.aclose()
+            self._client = None
+
+    def _fetch_access_token_sync(self) -> str:
         try:
             import google.auth
             import google.auth.transport.requests
-
-            credentials, _ = google.auth.default()
-            credentials.refresh(google.auth.transport.requests.Request())
-            return str(credentials.token)
         except ImportError as err:
             raise ImportError(
                 "google-auth is required for Vertex AI. "
                 "Install it: pip install google-auth"
             ) from err
+
+        credentials, _ = google.auth.default()
+        credentials.refresh(google.auth.transport.requests.Request())
+        return str(credentials.token)
+
+    async def _get_access_token(self) -> str:
+        # google.auth.refresh() does blocking network I/O; offload to a thread
+        # and cache the result so parallel requests don't each refresh.
+        now = time.monotonic()
+        if self._token and (now - self._token_fetched_at) < _TOKEN_CACHE_SECS:
+            return self._token
+        token = await asyncio.to_thread(self._fetch_access_token_sync)
+        self._token = token
+        self._token_fetched_at = now
+        return token
 
     async def complete(
         self,
@@ -60,7 +89,7 @@ class GoogleVertexProvider(BaseLLMProvider):
         max_tokens: int = 4096,
         temperature: float = 0.2,
     ) -> LLMResponse:
-        token = self._get_access_token()
+        token = await self._get_access_token()
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
@@ -85,14 +114,15 @@ class GoogleVertexProvider(BaseLLMProvider):
         if system_instruction:
             payload["systemInstruction"] = system_instruction
 
-        async with httpx.AsyncClient(timeout=120) as client:
-            resp = await client.post(
-                f"{self._base_url}:generateContent",
-                headers=headers,
-                json=payload,
-            )
-            resp.raise_for_status()
-            data = resp.json()
+        client = self._get_client()
+        resp = await client.post(
+            f"{self._base_url}:generateContent",
+            headers=headers,
+            json=payload,
+            timeout=120,
+        )
+        resp.raise_for_status()
+        data = resp.json()
 
         candidate = data["candidates"][0]["content"]["parts"][0]["text"]
         usage_meta = data.get("usageMetadata", {})
@@ -109,13 +139,14 @@ class GoogleVertexProvider(BaseLLMProvider):
 
     async def health_check(self) -> bool:
         try:
-            token = self._get_access_token()
+            token = await self._get_access_token()
             headers = {"Authorization": f"Bearer {token}"}
-            async with httpx.AsyncClient(timeout=10) as client:
-                resp = await client.get(
-                    f"{self._base_url}",
-                    headers=headers,
-                )
-                return resp.status_code == 200
+            client = self._get_client()
+            resp = await client.get(
+                f"{self._base_url}",
+                headers=headers,
+                timeout=10,
+            )
+            return resp.status_code == 200
         except Exception:
             return False

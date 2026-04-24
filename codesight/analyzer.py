@@ -109,7 +109,7 @@ SYSTEM_PROMPTS = {
         "hardcoded secrets, and insecure cryptography.\n\n"
         "Output format:\n"
         "## Security Findings\n"
-        "### [SEVERITY] Title — CWE-XXX\n"
+        "### [SEVERITY] Title - CWE-XXX\n"
         "**OWASP:** Category\n"
         "**Location:** file:line\n"
         "**Description:** ...\n"
@@ -126,10 +126,10 @@ SYSTEM_PROMPTS = {
     TaskType.EXPLAIN: (
         "Explain this code to someone seeing it for the first time. "
         "Cover: what it does, how data flows through it, why it's structured this way, "
-        "and anything non-obvious. Keep it concrete — reference specific lines."
+        "and anything non-obvious. Keep it concrete, reference specific lines."
     ),
     TaskType.REFACTOR: (
-        "Suggest refactoring for this code. Be specific — show before/after diffs. "
+        "Suggest refactoring for this code. Be specific, show before/after diffs. "
         "Focus on: extracting repeated logic, reducing nesting, better naming, "
         "splitting large functions. Don't suggest changes that only affect style."
     ),
@@ -154,7 +154,7 @@ SOLIDITY_SECURITY_PROMPT = (
     "selfdestruct abuse, and gas griefing.\n\n"
     "Output format:\n"
     "## Security Findings\n"
-    "### [SEVERITY] Title — SWC-XXX\n"
+    "### [SEVERITY] Title - SWC-XXX\n"
     "**Location:** contract:function:line\n"
     "**Description:** ...\n"
     "**Attack Scenario:** ...\n"

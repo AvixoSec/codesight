@@ -20,50 +20,76 @@ class CodeMap:
         return 1 - (self.compressed_lines / self.original_lines)
 
 
+# All quantifiers bounded to avoid catastrophic backtracking.
+_W = r"\w{1,200}"
+_PAREN = r"[^)]{0,1000}"
+_NOTCURLY = r"[^{]{0,500}"
+_NOTCOLON = r"[^:]{0,500}"
+
 LANG_PATTERNS = {
     "py": {
-        "class": re.compile(r"^(class\s+\w+[^:]*:)", re.MULTILINE),
-        "function": re.compile(r"^((?:async\s+)?def\s+\w+\s*\([^)]*\)[^:]*:)", re.MULTILINE),
-        "import": re.compile(r"^((?:from\s+\S+\s+)?import\s+.+)$", re.MULTILINE),
-        "decorator": re.compile(r"^(@\w+[\w.]*(?:\([^)]*\))?)", re.MULTILINE),
-        "docstring_start": re.compile(r'^\s*(""".*?"""|\'\'\'.*?\'\'\')', re.MULTILINE | re.DOTALL),
-    },
-    "js": {
-        "class": re.compile(r"^((?:export\s+)?class\s+\w+[^{]*)", re.MULTILINE),
+        "class": re.compile(rf"^(class\s{{1,10}}{_W}{_NOTCOLON}:)", re.MULTILINE),
         "function": re.compile(
-            r"^((?:export\s+)?(?:async\s+)?function\s+\w+\s*\([^)]*\))", re.MULTILINE
-        ),
-        "arrow": re.compile(
-            r"^((?:export\s+)?(?:const|let|var)\s+\w+\s*=\s*(?:async\s+)?\([^)]*\)\s*=>)",
+            rf"^((?:async\s{{1,5}})?def\s{{1,5}}{_W}\s{{0,5}}\({_PAREN}\){_NOTCOLON}:)",
             re.MULTILINE,
         ),
-        "import": re.compile(r"^(import\s+.+)$", re.MULTILINE),
+        "import": re.compile(
+            r"^((?:from\s{1,5}\S{1,300}\s{1,5})?import\s{1,5}.{1,500})$",
+            re.MULTILINE,
+        ),
+        "decorator": re.compile(
+            rf"^(@{_W}(?:\.{_W}){{0,10}}(?:\({_PAREN}\))?)",
+            re.MULTILINE,
+        ),
+        "docstring_start": re.compile(
+            r'^\s{0,20}(""".{0,2000}?"""|\'\'\'.{0,2000}?\'\'\')',
+            re.MULTILINE | re.DOTALL,
+        ),
+    },
+    "js": {
+        "class": re.compile(rf"^((?:export\s{{1,5}})?class\s{{1,5}}{_W}{_NOTCURLY})", re.MULTILINE),
+        "function": re.compile(
+            rf"^((?:export\s{{1,5}})?(?:async\s{{1,5}})?function\s{{1,5}}{_W}\s{{0,5}}\({_PAREN}\))",
+            re.MULTILINE,
+        ),
+        "arrow": re.compile(
+            rf"^((?:export\s{{1,5}})?(?:const|let|var)\s{{1,5}}{_W}\s{{0,5}}=\s{{0,5}}(?:async\s{{1,5}})?\({_PAREN}\)\s{{0,5}}=>)",
+            re.MULTILINE,
+        ),
+        "import": re.compile(r"^(import\s{1,5}.{1,500})$", re.MULTILINE),
     },
     "ts": None,
     "go": {
-        "function": re.compile(r"^(func\s+(?:\([^)]+\)\s+)?\w+\s*\([^)]*\)[^{]*)", re.MULTILINE),
-        "struct": re.compile(r"^(type\s+\w+\s+struct\s*\{)", re.MULTILINE),
-        "interface": re.compile(r"^(type\s+\w+\s+interface\s*\{)", re.MULTILINE),
-        "import": re.compile(r"^(import\s+.+)$", re.MULTILINE),
+        "function": re.compile(
+            rf"^(func\s{{1,5}}(?:\({_PAREN}\)\s{{1,5}})?{_W}\s{{0,5}}\({_PAREN}\){_NOTCURLY})",
+            re.MULTILINE,
+        ),
+        "struct": re.compile(rf"^(type\s{{1,5}}{_W}\s{{1,5}}struct\s{{0,5}}\{{)", re.MULTILINE),
+        "interface": re.compile(
+            rf"^(type\s{{1,5}}{_W}\s{{1,5}}interface\s{{0,5}}\{{)",
+            re.MULTILINE,
+        ),
+        "import": re.compile(r"^(import\s{1,5}.{1,500})$", re.MULTILINE),
     },
     "rs": {
         "function": re.compile(
-            r"^((?:pub\s+)?(?:async\s+)?fn\s+\w+[^{]*)", re.MULTILINE
+            rf"^((?:pub\s{{1,5}})?(?:async\s{{1,5}})?fn\s{{1,5}}{_W}{_NOTCURLY})",
+            re.MULTILINE,
         ),
-        "struct": re.compile(r"^((?:pub\s+)?struct\s+\w+[^{]*)", re.MULTILINE),
-        "impl": re.compile(r"^(impl(?:<[^>]+>)?\s+\w+[^{]*)", re.MULTILINE),
-        "import": re.compile(r"^(use\s+.+;)$", re.MULTILINE),
+        "struct": re.compile(rf"^((?:pub\s{{1,5}})?struct\s{{1,5}}{_W}{_NOTCURLY})", re.MULTILINE),
+        "impl": re.compile(rf"^(impl(?:<[^>]{{0,200}}>)?\s{{1,5}}{_W}{_NOTCURLY})", re.MULTILINE),
+        "import": re.compile(r"^(use\s{1,5}.{1,500};)$", re.MULTILINE),
     },
     "java": {
         "class": re.compile(
-            r"^((?:public|private|protected)?\s*(?:static\s+)?(?:abstract\s+)?class\s+\w+[^{]*)",
+            rf"^((?:public|private|protected)?\s{{0,5}}(?:static\s{{1,5}})?(?:abstract\s{{1,5}})?class\s{{1,5}}{_W}{_NOTCURLY})",
             re.MULTILINE,
         ),
         "method": re.compile(
-            r"^\s*((?:public|private|protected)\s+(?:static\s+)?[\w<>\[\]]+\s+\w+\s*\([^)]*\))",
+            rf"^\s{{0,20}}((?:public|private|protected)\s{{1,5}}(?:static\s{{1,5}})?[\w<>\[\]]{{1,200}}\s{{1,5}}{_W}\s{{0,5}}\({_PAREN}\))",
             re.MULTILINE,
         ),
-        "import": re.compile(r"^(import\s+.+;)$", re.MULTILINE),
+        "import": re.compile(r"^(import\s{1,5}.{1,500};)$", re.MULTILINE),
     },
 }
 
@@ -73,18 +99,18 @@ LANG_PATTERNS["tsx"] = LANG_PATTERNS["js"]
 LANG_PATTERNS["kt"] = LANG_PATTERNS["java"]
 LANG_PATTERNS["sol"] = {
     "class": re.compile(
-        r"^((?:abstract\s+)?contract\s+\w+[^{]*)", re.MULTILINE
+        rf"^((?:abstract\s{{1,5}})?contract\s{{1,5}}{_W}{_NOTCURLY})", re.MULTILINE
     ),
     "interface": re.compile(
-        r"^((?:interface|library)\s+\w+[^{]*)", re.MULTILINE
+        rf"^((?:interface|library)\s{{1,5}}{_W}{_NOTCURLY})", re.MULTILINE
     ),
     "function": re.compile(
-        r"^\s*(function\s+\w+\s*\([^)]*\)[^{;]*)", re.MULTILINE
+        rf"^\s{{0,20}}(function\s{{1,5}}{_W}\s{{0,5}}\({_PAREN}\)[^{{;]{{0,500}})", re.MULTILINE
     ),
-    "import": re.compile(r"^(import\s+.+;)$", re.MULTILINE),
-    "struct": re.compile(r"^\s*(struct\s+\w+\s*\{)", re.MULTILINE),
+    "import": re.compile(r"^(import\s{1,5}.{1,500};)$", re.MULTILINE),
+    "struct": re.compile(rf"^\s{{0,20}}(struct\s{{1,5}}{_W}\s{{0,5}}\{{)", re.MULTILINE),
     "method": re.compile(
-        r"^\s*(modifier\s+\w+\s*\([^)]*\))", re.MULTILINE
+        rf"^\s{{0,20}}(modifier\s{{1,5}}{_W}\s{{0,5}}\({_PAREN}\))", re.MULTILINE
     ),
 }
 
@@ -113,63 +139,40 @@ def _extract_symbols(source: str, patterns: dict) -> tuple[list[str], list[str]]
     return imports, symbols
 
 
-def _build_structure(source: str, language: str) -> str:
-    lines = source.splitlines()
-    indent_map = []
+_SIG_STARTS: dict[str, tuple[str, ...]] = {
+    "py": ("class ", "def ", "async def ", "@"),
+    "js": ("class ", "function ", "async function ", "export ", "const ", "let ", "import "),
+    "go": ("func ", "type ", "import "),
+    "rs": ("fn ", "pub fn ", "pub async fn ", "struct ", "pub struct ", "impl ", "use "),
+    "java": ("public ", "private ", "protected ", "class ", "import ", "interface "),
+    "sol": (
+        "contract ", "abstract contract ", "interface ", "library ",
+        "function ", "modifier ", "struct ", "enum ", "event ",
+        "mapping", "import ", "pragma ",
+    ),
+}
+_SIG_STARTS["ts"] = _SIG_STARTS["js"]
+_SIG_STARTS["jsx"] = _SIG_STARTS["js"]
+_SIG_STARTS["tsx"] = _SIG_STARTS["js"]
+_SIG_STARTS["kt"] = _SIG_STARTS["java"]
 
-    for i, line in enumerate(lines, 1):
+
+def _build_structure(source: str, language: str) -> str:
+    starts = _SIG_STARTS.get(language)
+    if not starts:
+        return ""
+    lines = source.splitlines()
+    structure_lines: list[str] = []
+    for line_no, line in enumerate(lines, 1):
         stripped = line.strip()
         if not stripped or stripped.startswith("#") or stripped.startswith("//"):
             continue
-
-        indent = len(line) - len(line.lstrip())
-        indent_map.append((i, indent, stripped))
-
-    structure_lines = []
-    prev_indent = -1
-
-    for line_no, indent, content in indent_map:
-        is_sig = False
-        if language == "py":
-            is_sig = content.startswith(("class ", "def ", "async def ", "@"))
-        elif language in ("js", "ts", "jsx", "tsx"):
-            is_sig = any(
-                content.startswith(kw)
-                for kw in (
-                    "class ", "function ", "async function ",
-                    "export ", "const ", "let ", "import ",
-                )
-            )
-        elif language == "go":
-            is_sig = content.startswith(("func ", "type ", "import "))
-        elif language == "rs":
-            is_sig = content.startswith((
-                "fn ", "pub fn ", "pub async fn ",
-                "struct ", "pub struct ", "impl ", "use ",
-            ))
-        elif language in ("java", "kt"):
-            is_sig = any(
-                content.startswith(kw)
-                for kw in ("public ", "private ", "protected ", "class ", "import ", "interface ")
-            )
-        elif language == "sol":
-            is_sig = any(
-                content.startswith(kw)
-                for kw in (
-                    "contract ", "abstract contract ",
-                    "interface ", "library ",
-                    "function ", "modifier ",
-                    "struct ", "enum ", "event ",
-                    "mapping", "import ", "pragma ",
-                )
-            )
-
-        if is_sig:
-            structure_lines.append(f"  {'  ' * (indent // 4)}L{line_no}: {content}")
-            prev_indent = indent
-        elif indent <= prev_indent and prev_indent >= 0:
-            prev_indent = -1
-
+        if not stripped.startswith(starts):
+            continue
+        indent = len(line) - len(line.lstrip(" \t"))
+        depth = indent // 4 if indent >= 0 else 0
+        depth = min(depth, 12)  # bound nesting to avoid silly output on tab-abuse files
+        structure_lines.append(f"  {'  ' * depth}L{line_no}: {stripped}")
     return "\n".join(structure_lines)
 
 
@@ -207,7 +210,7 @@ def compress_for_prompt(file_path: str, source: str, max_lines: int = 300) -> st
     code_map = build_code_map(file_path)
 
     parts = [
-        f"[compressed code map — {code_map.original_lines} lines, "
+        f"[compressed code map - {code_map.original_lines} lines, "
         f"{code_map.ratio:.0%} reduction]\n",
         "IMPORTS:",
         *code_map.imports,
