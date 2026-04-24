@@ -11,8 +11,8 @@ _REGION_RE = re.compile(r"^[a-z]+-[a-z]+[0-9]+$")
 _PROJECT_RE = re.compile(r"^[a-z][a-z0-9-]{5,29}$")
 _MODEL_RE = re.compile(r"^[a-zA-Z0-9._-]+$")
 
-# Google tokens are valid ~3600s; cache short to stay ahead of clock skew.
 _TOKEN_CACHE_SECS = 1800
+_REFUSED_FINISH_REASONS = {"SAFETY", "BLOCKLIST", "PROHIBITED_CONTENT", "RECITATION"}
 
 
 class GoogleVertexProvider(BaseLLMProvider):
@@ -74,9 +74,6 @@ class GoogleVertexProvider(BaseLLMProvider):
         return str(credentials.token)
 
     async def _get_access_token(self) -> str:
-        # google.auth.refresh() does blocking network I/O; offload to a thread
-        # and cache the result so parallel requests don't each refresh.
-        # Lock guarantees single-flight: concurrent callers wait for one refresh.
         now = time.monotonic()
         if self._token and (now - self._token_fetched_at) < _TOKEN_CACHE_SECS:
             return self._token
@@ -130,14 +127,22 @@ class GoogleVertexProvider(BaseLLMProvider):
         resp.raise_for_status()
         data = resp.json()
 
-        # Blocked / safety-filtered responses omit parts. Default to empty.
+        block_reason = (data.get("promptFeedback") or {}).get("blockReason")
+        if block_reason:
+            raise RuntimeError(f"Vertex AI blocked the prompt: {block_reason}")
+
         candidates = data.get("candidates") or []
-        parts = []
-        if candidates:
-            parts = (candidates[0].get("content") or {}).get("parts") or []
+        if not candidates:
+            raise RuntimeError("Vertex AI returned no candidates")
+        finish_reason = candidates[0].get("finishReason", "")
+        parts = (candidates[0].get("content") or {}).get("parts") or []
         candidate = "".join(
             p.get("text", "") for p in parts if isinstance(p, dict)
         )
+        if not candidate and finish_reason in _REFUSED_FINISH_REASONS:
+            raise RuntimeError(
+                f"Vertex AI refused to answer (finishReason={finish_reason})"
+            )
         usage_meta = data.get("usageMetadata", {})
 
         return LLMResponse(

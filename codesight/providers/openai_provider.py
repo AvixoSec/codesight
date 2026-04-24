@@ -29,7 +29,6 @@ class OpenAIProvider(BaseLLMProvider):
 
     def _get_client(self) -> httpx.AsyncClient:
         if self._client is None:
-            # timeout=None so short health probes don't cap long completions
             self._client = httpx.AsyncClient(timeout=None)
         return self._client
 
@@ -50,7 +49,6 @@ class OpenAIProvider(BaseLLMProvider):
             last = resp
             if resp.status_code not in _RETRY_STATUS or attempt == _MAX_RETRIES - 1:
                 return resp
-            # Honour Retry-After header if present, else exponential backoff.
             retry_after = resp.headers.get("retry-after")
             delay = 2 ** attempt
             if retry_after and retry_after.isdigit():
@@ -76,7 +74,6 @@ class OpenAIProvider(BaseLLMProvider):
         resp.raise_for_status()
         data = resp.json()
 
-        # Refusals return content=None; coerce to "" so callers don't crash.
         choices = data.get("choices") or []
         msg = (choices[0].get("message") if choices else {}) or {}
         content = msg.get("content") or ""

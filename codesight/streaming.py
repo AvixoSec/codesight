@@ -13,7 +13,6 @@ _GOOGLE_MODEL_RE = re.compile(r"^[a-zA-Z0-9._-]+$")
 
 
 async def _iter_sse_data(resp: httpx.Response) -> AsyncIterator[str]:
-    # Yields SSE data lines. '[DONE]' ends iteration. Caller parses payload.
     async for line in resp.aiter_lines():
         if not line.startswith("data: "):
             continue
@@ -221,7 +220,6 @@ async def stream_ollama(
         ) as resp,
     ):
         resp.raise_for_status()
-        # Ollama uses NDJSON (one JSON per line), not SSE.
         async for line in resp.aiter_lines():
             if not line.strip():
                 continue

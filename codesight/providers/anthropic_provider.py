@@ -37,11 +37,16 @@ class AnthropicProvider(BaseLLMProvider):
         custom_base = normalize_azure_base_url(raw_base) if is_azure_url(raw_base) else raw_base
 
         if custom_base and is_azure_url(custom_base):
+            if not config.api_key:
+                raise ValueError(
+                    "Azure AI (Anthropic) requires an API key. "
+                    "Set it via 'codesight config' or the provider config."
+                )
             base = custom_base if custom_base.endswith("/anthropic") else f"{custom_base}/anthropic"
             self._base_url = f"{base}/v1"
             self._is_azure = True
             self._headers: dict[str, str] = {
-                "x-api-key": config.api_key or "",
+                "x-api-key": config.api_key,
                 "anthropic-version": "2023-06-01",
                 "Content-Type": "application/json",
             }
@@ -148,9 +153,6 @@ class AnthropicProvider(BaseLLMProvider):
 
         data = await self._post_messages(payload)
 
-        # Anthropic returns a list of content blocks; tool_use / refusals can
-        # leave it empty or have no "text" entry, so skip non-text blocks
-        # instead of crashing on [0]["text"].
         content_blocks = data.get("content") or []
         content = "".join(
             block.get("text", "")
