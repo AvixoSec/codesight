@@ -135,7 +135,7 @@ ignore_patterns = ["build/", "migrations/", "*.generated.ts"]
 model = "claude-opus-4-7"
 ```
 
-Project config overrides values from `~/.codesight/config.json` but never touches API keys - those stay in your keyring.
+Project config overrides values from `~/.codesight/config.json`. Two things are deliberately NOT readable from a project file: `api_key` (stays in your keyring) and `base_url` (so a hostile repo cannot redirect requests to `https://attacker.tld` and exfiltrate your key). Project-config search is also bounded to `$HOME` to stop pickup from `/tmp/.codesight.toml`.
 
 ## Pre-commit integration
 

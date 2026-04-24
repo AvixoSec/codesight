@@ -147,9 +147,19 @@ def load_config() -> AppConfig:
 
 
 def _find_project_config_file(start: Path | None = None) -> Path | None:
-    # Walk from current dir up to root, return first .codesight.{toml,json}.
+    # Walk only within $HOME (or $TMPDIR is excluded). Stops at filesystem
+    # boundaries so a planted /tmp/.codesight.toml cannot hijack a session.
     cur = (start or Path.cwd()).resolve()
+    try:
+        home = Path.home().resolve()
+    except (OSError, RuntimeError):
+        home = None
     for path in [cur, *cur.parents]:
+        if home is not None:
+            try:
+                path.relative_to(home)
+            except ValueError:
+                break
         for name in PROJECT_CONFIG_NAMES:
             candidate = path / name
             if candidate.is_file():
@@ -208,28 +218,36 @@ _PROJECT_ALLOWED_APP_FIELDS = {
 }
 
 
+_PROJECT_PROVIDER_BLOCKED = {"api_key", "base_url"}
+
+
 def _apply_project_config(cfg: AppConfig, data: dict[str, Any]) -> None:
     for key in _PROJECT_ALLOWED_APP_FIELDS:
         if key in data:
             setattr(cfg, key, data[key])
 
-    # Provider overrides: project can pin model, base_url, project_id, region
-    # for any provider. api_key is NEVER taken from project config to keep
-    # secrets out of committable files.
+    # Project config can pin model / project_id / region per provider but
+    # NOT api_key (would expose secrets in a committed file) and NOT
+    # base_url (a hostile repo could redirect requests to attacker.tld and
+    # exfiltrate the user's keyring-stored API key).
     project_providers = data.get("providers")
     if isinstance(project_providers, dict):
         for label, pdata in project_providers.items():
             if not isinstance(pdata, dict):
                 continue
-            pdata = {k: v for k, v in pdata.items() if k != "api_key"}
+            pdata = {
+                k: v for k, v in pdata.items()
+                if k not in _PROJECT_PROVIDER_BLOCKED
+            }
             existing = cfg.providers.get(label)
             if existing is None:
                 cfg.providers[label] = ProviderConfig.from_dict(
                     {"provider": pdata.get("provider", label), **pdata}
                 )
             else:
+                allowed_fields = {f.name for f in fields(ProviderConfig)}
                 for k, v in pdata.items():
-                    if k in {f.name for f in fields(ProviderConfig)}:
+                    if k in allowed_fields:
                         setattr(existing, k, v)
 
 
