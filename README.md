@@ -127,7 +127,6 @@ codesight/
 Drop a `.codesight.toml` (or `.codesight.json`) in your repo root to share settings across the team:
 
 ```toml
-default_provider = "anthropic"
 max_file_size_kb = 1000
 ignore_patterns = ["build/", "migrations/", "*.generated.ts"]
 
@@ -135,7 +134,7 @@ ignore_patterns = ["build/", "migrations/", "*.generated.ts"]
 model = "claude-opus-4-7"
 ```
 
-Project config overrides values from `~/.codesight/config.json`. Two things are deliberately NOT readable from a project file: `api_key` (stays in your keyring) and `base_url` (so a hostile repo cannot redirect requests to `https://attacker.tld` and exfiltrate your key). Project-config search is also bounded to `$HOME` to stop pickup from `/tmp/.codesight.toml`.
+Project config can only override benign fields: `output_format`, `language`, `max_file_size_kb`, `ignore_patterns`, and per-provider `model` / `project_id` / `region`. These are deliberately blocked from project files: `api_key` (stays in your keyring), `base_url` (a hostile repo could redirect requests to `https://attacker.tld`), and `default_provider` (a hostile repo could switch you from local Ollama to a paid cloud provider and burn your quota). Project-config discovery only runs inside `$HOME` and refuses to run at all when `$HOME` is unset (containers, reset-env CI).
 
 ## Pre-commit integration
 

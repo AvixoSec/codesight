@@ -147,19 +147,22 @@ def load_config() -> AppConfig:
 
 
 def _find_project_config_file(start: Path | None = None) -> Path | None:
-    # Walk only within $HOME (or $TMPDIR is excluded). Stops at filesystem
-    # boundaries so a planted /tmp/.codesight.toml cannot hijack a session.
-    cur = (start or Path.cwd()).resolve()
     try:
         home = Path.home().resolve()
     except (OSError, RuntimeError):
-        home = None
+        return None
+    if not home:
+        return None
+    cur = (start or Path.cwd()).resolve()
+    try:
+        cur.relative_to(home)
+    except ValueError:
+        return None
     for path in [cur, *cur.parents]:
-        if home is not None:
-            try:
-                path.relative_to(home)
-            except ValueError:
-                break
+        try:
+            path.relative_to(home)
+        except ValueError:
+            break
         for name in PROJECT_CONFIG_NAMES:
             candidate = path / name
             if candidate.is_file():
@@ -210,7 +213,6 @@ def _load_project_config() -> dict[str, Any] | None:
 # We deliberately exclude allow_plaintext_keys so a hostile repo cannot flip
 # the plaintext-secret gate on.
 _PROJECT_ALLOWED_APP_FIELDS = {
-    "default_provider",
     "output_format",
     "language",
     "max_file_size_kb",
