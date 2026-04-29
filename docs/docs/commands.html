@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Commands - CodeSight Docs</title>
-<meta name="description" content="CodeSight CLI commands for UI, scan, diff, verify, benchmark, config, health, and templates.">
+<meta name="description" content="Full command reference: review, bugs, security, docs, explain, refactor, scan, diff, benchmark, templates, config, health.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -13,77 +13,203 @@
 <body>
 <div class="grain" aria-hidden="true"></div>
 <div class="progress" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
-<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button>
-<nav class="doc-nav"><a href="../" class="brand"><span class="mark"></span>CodeSight</a><div class="nav-links"><a href="./">Docs</a><a href="https://github.com/your-org/codesight" target="_blank" rel="noopener">GitHub</a><a href="https://pypi.org/project/codesight/" target="_blank" rel="noopener">PyPI</a></div></nav>
+
+<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme">
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="4"/>
+    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+  </svg>
+</button>
+
+<nav class="doc-nav">
+  <a href="../" class="brand"><span class="mark"></span>CodeSight</a>
+  <div class="nav-links">
+    <a href="./" class="active">Docs</a>
+    <a href="https://github.com/AvixoSec/codesight" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://pypi.org/project/codesight/" target="_blank" rel="noopener">PyPI</a>
+  </div>
+</nav>
+
 <div class="doc-layout">
   <aside class="sidebar">
-    <div class="sb-section"><div class="sb-title">Getting Started</div><a href="./" class="sb-link">Overview</a><a href="installation.html" class="sb-link">Installation</a><a href="quickstart.html" class="sb-link">Quick Start</a></div>
-    <div class="sb-section"><div class="sb-title">Usage</div><a href="verify.html" class="sb-link">Verify SARIF</a><a href="commands.html" class="sb-link active">Commands</a><a href="providers.html" class="sb-link">Providers</a><a href="templates.html" class="sb-link">Templates</a><a href="ci-cd.html" class="sb-link">CI/CD</a></div>
-    <div class="sb-section"><div class="sb-title">Reference</div><a href="benchmarks.html" class="sb-link">Benchmarks</a><a href="architecture.html" class="sb-link">Architecture</a><a href="api.html" class="sb-link">Python API</a></div>
-    <div class="sb-section"><div class="sb-title">Project</div><a href="contributing.html" class="sb-link">Contributing</a><a href="security.html" class="sb-link">Security Policy</a></div>
+    <div class="sb-section">
+      <div class="sb-title">Getting Started</div>
+      <a href="./" class="sb-link">Overview</a>
+      <a href="installation.html" class="sb-link">Installation</a>
+      <a href="quickstart.html" class="sb-link">Quick Start</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Usage</div>
+      <a href="commands.html" class="sb-link active">Commands</a>
+      <a href="providers.html" class="sb-link">Providers</a>
+      <a href="templates.html" class="sb-link">Custom Templates</a>
+      <a href="ci-cd.html" class="sb-link">CI/CD Integration</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Reference</div>
+      <a href="benchmarks.html" class="sb-link">Benchmarks</a>
+      <a href="architecture.html" class="sb-link">Architecture</a>
+      <a href="api.html" class="sb-link">Python API</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Community</div>
+      <a href="contributing.html" class="sb-link">Contributing</a>
+      <a href="security.html" class="sb-link">Security Policy</a>
+    </div>
   </aside>
+
   <main class="doc-content">
     <h1>Commands</h1>
-    <p class="lead">Use the UI for day-to-day work. Use commands when you want scripts and CI.</p>
+    <p class="lead">Every command follows the same pattern: <code>codesight &lt;command&gt; &lt;file&gt; [options]</code></p>
 
-    <h2>Guided UI</h2>
-    <div class="code-block"><div class="code-header"><span>Terminal</span></div><pre><code><span class="prompt">$</span> codesight
-<span class="prompt">$</span> codesight ui</code></pre></div>
-    <p>The UI can scan files, scan folders, review diffs, verify SARIF, write artifact bundles, and run judge mode.</p>
+    <h2>review</h2>
+    <p>Full code review with severity-tagged issues.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Terminal</span></div>
+      <pre><code><span class="prompt">$</span> codesight review src/main.py
+<span class="prompt">$</span> codesight review src/main.py --provider anthropic
+<span class="prompt">$</span> codesight review src/main.py -c "This handles user uploads"</code></pre>
+    </div>
+    <p>Output sections: <strong>Summary</strong>, <strong>Issues</strong> (crit/warn/info), <strong>Suggestions</strong>.</p>
+    <p>The <code>-c, --context</code> flag is also available on <code>bugs</code>, <code>security</code>, <code>docs</code>, <code>explain</code>, and <code>refactor</code>. Passes extra context to the model (purpose of the file, threat model, constraints) before analysis.</p>
 
-    <h2>Single File</h2>
-    <div class="code-block"><div class="code-header"><span>Terminal</span></div><pre><code><span class="prompt">$</span> codesight security src/auth.py
-<span class="prompt">$</span> codesight review src/auth.py
-<span class="prompt">$</span> codesight bugs src/auth.py
-<span class="prompt">$</span> codesight explain src/auth.py
-<span class="prompt">$</span> codesight refactor src/auth.py</code></pre></div>
+    <h2>bugs</h2>
+    <p>Focused bug detection - logic errors, race conditions, resource leaks, edge cases.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Terminal</span></div>
+      <pre><code><span class="prompt">$</span> codesight bugs lib/parser.py</code></pre>
+    </div>
+    <p>Output sections: <strong>Bugs Found</strong>, <strong>Risk Assessment</strong>.</p>
 
-    <h2>Folder Scan</h2>
-    <div class="code-block"><div class="code-header"><span>Terminal</span></div><pre><code><span class="prompt">$</span> codesight scan src --task security
-<span class="prompt">$</span> codesight scan src --task review --ext .py .js
-<span class="prompt">$</span> codesight scan src --task security --estimate
-<span class="prompt">$</span> codesight scan src --task security --output sarif > codesight.sarif</code></pre></div>
+    <h2>security</h2>
+    <p>Security audit with CWE IDs, OWASP mapping, and remediation code.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Terminal</span></div>
+      <pre><code><span class="prompt">$</span> codesight security src/auth.py
+<span class="prompt">$</span> codesight security src/auth.py -c "Public endpoint, handles auth tokens"
+<span class="prompt">$</span> codesight security src/auth.py --pipeline ollama/llama3:openai/gpt-5.4</code></pre>
+    </div>
+    <h3>--pipeline TRIAGE:VERIFY</h3>
+    <p>Security-only flag. Two-stage run: a fast/cheap <em>triage</em> model flags suspicious regions, then a stronger <em>verify</em> model analyses only the flagged sections. Typical savings: 70-85% vs. running the strong model on the whole file.</p>
+    <p>Format: <code>provider/model:provider/model</code></p>
+    <div class="code-block">
+      <div class="code-header"><span>Pipeline examples</span></div>
+      <pre><code><span class="comment"># Local triage -&gt; cloud verify (cheap)</span>
+<span class="prompt">$</span> codesight security src/auth.py --pipeline ollama/llama3:openai/gpt-5.4
 
-    <h2>Git Diff</h2>
-    <div class="code-block"><div class="code-header"><span>Terminal</span></div><pre><code><span class="prompt">$</span> codesight diff --task security
-<span class="prompt">$</span> codesight diff --task review --output markdown</code></pre></div>
+<span class="comment"># Groq triage -&gt; Claude verify (fast)</span>
+<span class="prompt">$</span> codesight security src/auth.py --pipeline groq/llama-3.3-70b-versatile:anthropic/claude-opus-4-6-20251101
 
-    <h2>Verify SARIF</h2>
-    <div class="code-block"><div class="code-header"><span>Terminal</span></div><pre><code><span class="prompt">$</span> codesight verify semgrep.sarif --source . --output markdown
-<span class="prompt">$</span> codesight verify semgrep.sarif --source . --preview-context
-<span class="prompt">$</span> codesight verify semgrep.sarif --source . --judge --skeptic --profile auto
-<span class="prompt">$</span> codesight verify semgrep.sarif --source . --artifact-dir .codesight-proof</code></pre></div>
+<span class="comment"># Same provider, two models</span>
+<span class="prompt">$</span> codesight security src/auth.py --pipeline openai/gpt-5.3-codex:openai/gpt-5.4</code></pre>
+    </div>
 
-    <h2>Benchmarks</h2>
-    <div class="code-block"><div class="code-header"><span>Terminal</span></div><pre><code><span class="prompt">$</span> codesight benchmark
-<span class="prompt">$</span> codesight benchmark --models gpt-5.4 llama3
-<span class="prompt">$</span> codesight benchmark --json > benchmark-results.json</code></pre></div>
+    <h2>docs</h2>
+    <p>Auto-generate docstrings and module documentation.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Terminal</span></div>
+      <pre><code><span class="prompt">$</span> codesight docs utils/helpers.py</code></pre>
+    </div>
 
-    <h2>Config And Health</h2>
-    <div class="code-block"><div class="code-header"><span>Terminal</span></div><pre><code><span class="prompt">$</span> codesight config
-<span class="prompt">$</span> codesight health
-<span class="prompt">$</span> codesight health --provider openai</code></pre></div>
+    <h2>explain</h2>
+    <p>Plain-language breakdown of complex code.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Terminal</span></div>
+      <pre><code><span class="prompt">$</span> codesight explain legacy/processor.py</code></pre>
+    </div>
 
-    <h2>Global Options</h2>
+    <h2>refactor</h2>
+    <p>Refactoring suggestions with before/after diffs.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Terminal</span></div>
+      <pre><code><span class="prompt">$</span> codesight refactor src/handlers.py</code></pre>
+    </div>
+
+    <h2>scan</h2>
+    <p>Scan an entire directory with a progress bar.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Terminal</span></div>
+      <pre><code><span class="prompt">$</span> codesight scan .
+<span class="prompt">$</span> codesight scan src/ --task security
+<span class="prompt">$</span> codesight scan . --ext .py .js</code></pre>
+    </div>
+
+    <h2>diff</h2>
+    <p>Review only git-changed files.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Terminal</span></div>
+      <pre><code><span class="prompt">$</span> codesight diff
+<span class="prompt">$</span> codesight diff --staged --task security</code></pre>
+    </div>
+
+    <h2>benchmark</h2>
+    <p>Test LLMs against a curated set of vulnerable code samples.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Terminal</span></div>
+      <pre><code><span class="prompt">$</span> codesight benchmark
+<span class="prompt">$</span> codesight benchmark --models gpt-5.4 llama3 --json</code></pre>
+    </div>
+
+    <h2>templates</h2>
+    <p>Manage and run custom prompt templates.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Terminal</span></div>
+      <pre><code><span class="prompt">$</span> codesight templates list
+<span class="prompt">$</span> codesight templates run quick-review src/main.py
+<span class="prompt">$</span> codesight templates add my-template
+<span class="prompt">$</span> codesight templates delete my-template</code></pre>
+    </div>
+
+    <h2>config</h2>
+    <p>Interactive provider setup. Arrow-key menu: pick a provider, enter credentials, save to <code>~/.codesight/config.json</code>.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Terminal</span></div>
+      <pre><code><span class="prompt">$</span> codesight config</code></pre>
+    </div>
+    <p>Supports OpenAI, Anthropic, Azure AI Foundry (Claude), Google Vertex AI, Ollama, and a <em>Custom</em> entry with presets for OpenRouter, Groq, Together, Mistral, xAI, Fireworks, DeepSeek, Perplexity, Cerebras, Cohere, and any OpenAI-compatible URL. After saving, the wizard offers to run <code>health</code>.</p>
+
+    <h2>health</h2>
+    <p>Check provider connectivity. Prints the active provider, masked credentials, and runs a lightweight connection test.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Terminal</span></div>
+      <pre><code><span class="prompt">$</span> codesight health
+<span class="prompt">$</span> codesight health --provider openrouter</code></pre>
+    </div>
+    <p>On failure, outputs provider-specific troubleshooting (missing API key, unreachable host, wrong Azure deployment name, Ollama not running, etc.).</p>
+
+    <h2>Global Flags</h2>
     <table>
-      <thead><tr><th>Option</th><th>Meaning</th></tr></thead>
+      <thead>
+        <tr><th>Flag</th><th>Description</th></tr>
+      </thead>
       <tbody>
-        <tr><td><code>-p</code>, <code>--provider</code></td><td>Provider label from config or a built-in provider.</td></tr>
-        <tr><td><code>-o</code>, <code>--output</code></td><td><code>markdown</code>, <code>json</code>, <code>plain</code>, or <code>sarif</code>.</td></tr>
-        <tr><td><code>--lang</code></td><td>CLI message language.</td></tr>
-        <tr><td><code>-v</code>, <code>--version</code></td><td>Show version.</td></tr>
+        <tr><td><code>-p, --provider</code></td><td>Override default provider. Accepts <code>openai</code>, <code>anthropic</code>, <code>google</code>, <code>ollama</code>, or any custom label saved in config (e.g. <code>openrouter</code>, <code>groq</code>, <code>azure</code>).</td></tr>
+        <tr><td><code>-o, --output</code></td><td>Output format: <code>markdown</code>, <code>json</code>, <code>plain</code>, <code>sarif</code></td></tr>
+        <tr><td><code>-v, --version</code></td><td>Show version</td></tr>
       </tbody>
     </table>
 
     <h2>Exit Codes</h2>
-    <ul>
-      <li><code>0</code> - completed without blocking findings</li>
-      <li><code>1</code> - warnings or threshold hit</li>
-      <li><code>2</code> - critical security finding or blocking verify verdict</li>
-    </ul>
+    <table>
+      <thead>
+        <tr><th>Code</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>0</code></td><td>Clean - no issues or only info-level findings</td></tr>
+        <tr><td><code>1</code></td><td>Warnings - high-severity issues found</td></tr>
+        <tr><td><code>2</code></td><td>Critical - critical-severity issues found</td></tr>
+      </tbody>
+    </table>
   </main>
 </div>
-<footer class="doc-footer"><div>MIT License &middot; <a href="https://github.com/your-org/codesight">your-org/codesight</a></div></footer>
+
+<footer class="doc-footer">
+  <div>MIT License &middot; <a href="https://github.com/AvixoSec/codesight">AvixoSec/codesight</a></div>
+</footer>
+
 <script src="script.js" defer></script>
 </body>
 </html>

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Providers - CodeSight Docs</title>
-<meta name="description" content="Configure OpenAI, Anthropic, Google Vertex AI, Ollama, and OpenAI-compatible providers for CodeSight.">
+<meta name="description" content="OpenAI, Anthropic, Google Vertex AI, Ollama, and OpenAI-compatible providers (OpenRouter, Groq, Together, Mistral, xAI, DeepSeek, Azure AI Foundry, and more).">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -13,63 +13,257 @@
 <body>
 <div class="grain" aria-hidden="true"></div>
 <div class="progress" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
-<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button>
-<nav class="doc-nav"><a href="../" class="brand"><span class="mark"></span>CodeSight</a><div class="nav-links"><a href="./">Docs</a><a href="https://github.com/your-org/codesight" target="_blank" rel="noopener">GitHub</a><a href="https://pypi.org/project/codesight/" target="_blank" rel="noopener">PyPI</a></div></nav>
+
+<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme">
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="4"/>
+    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+  </svg>
+</button>
+
+<nav class="doc-nav">
+  <a href="../" class="brand"><span class="mark"></span>CodeSight</a>
+  <div class="nav-links">
+    <a href="./" class="active">Docs</a>
+    <a href="https://github.com/AvixoSec/codesight" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://pypi.org/project/codesight/" target="_blank" rel="noopener">PyPI</a>
+  </div>
+</nav>
+
 <div class="doc-layout">
   <aside class="sidebar">
-    <div class="sb-section"><div class="sb-title">Getting Started</div><a href="./" class="sb-link">Overview</a><a href="installation.html" class="sb-link">Installation</a><a href="quickstart.html" class="sb-link">Quick Start</a></div>
-    <div class="sb-section"><div class="sb-title">Usage</div><a href="verify.html" class="sb-link">Verify SARIF</a><a href="commands.html" class="sb-link">Commands</a><a href="providers.html" class="sb-link active">Providers</a><a href="templates.html" class="sb-link">Templates</a><a href="ci-cd.html" class="sb-link">CI/CD</a></div>
-    <div class="sb-section"><div class="sb-title">Reference</div><a href="benchmarks.html" class="sb-link">Benchmarks</a><a href="architecture.html" class="sb-link">Architecture</a><a href="api.html" class="sb-link">Python API</a></div>
-    <div class="sb-section"><div class="sb-title">Project</div><a href="contributing.html" class="sb-link">Contributing</a><a href="security.html" class="sb-link">Security Policy</a></div>
+    <div class="sb-section">
+      <div class="sb-title">Getting Started</div>
+      <a href="./" class="sb-link">Overview</a>
+      <a href="installation.html" class="sb-link">Installation</a>
+      <a href="quickstart.html" class="sb-link">Quick Start</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Usage</div>
+      <a href="commands.html" class="sb-link">Commands</a>
+      <a href="providers.html" class="sb-link active">Providers</a>
+      <a href="templates.html" class="sb-link">Custom Templates</a>
+      <a href="ci-cd.html" class="sb-link">CI/CD Integration</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Reference</div>
+      <a href="benchmarks.html" class="sb-link">Benchmarks</a>
+      <a href="architecture.html" class="sb-link">Architecture</a>
+      <a href="api.html" class="sb-link">Python API</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Community</div>
+      <a href="contributing.html" class="sb-link">Contributing</a>
+      <a href="security.html" class="sb-link">Security Policy</a>
+    </div>
   </aside>
+
   <main class="doc-content">
     <h1>Providers</h1>
-    <p class="lead">Use a hosted provider, a compatible endpoint, or local Ollama.</p>
+    <p class="lead">Four first-class providers plus a generic OpenAI-compatible adapter with presets for OpenRouter, Groq, Together AI, Mistral, xAI, DeepSeek, Azure AI Foundry, and more. Switch between them with a single flag.</p>
 
-    <h2>Built-in Providers</h2>
+    <h2>Overview</h2>
     <table>
-      <thead><tr><th>Provider</th><th>Setup</th><th>Good for</th></tr></thead>
+      <thead>
+        <tr><th>Provider</th><th>Models</th><th>Auth</th><th>Offline</th></tr>
+      </thead>
       <tbody>
-        <tr><td>OpenAI</td><td><code>OPENAI_API_KEY</code></td><td>general scans and judge mode</td></tr>
-        <tr><td>Anthropic</td><td><code>ANTHROPIC_API_KEY</code></td><td>longer review context</td></tr>
-        <tr><td>Google Vertex AI</td><td><code>GOOGLE_CLOUD_PROJECT</code> and ADC</td><td>Google Cloud teams</td></tr>
-        <tr><td>Ollama</td><td><code>ollama serve</code></td><td>local-only analysis</td></tr>
+        <tr>
+          <td><strong>OpenAI</strong></td>
+          <td>GPT-5.4, GPT-5.3-Codex</td>
+          <td><code>OPENAI_API_KEY</code></td>
+          <td>No</td>
+        </tr>
+        <tr>
+          <td><strong>Anthropic</strong></td>
+          <td>Claude Opus 4.6, Claude Sonnet 4.6</td>
+          <td><code>ANTHROPIC_API_KEY</code></td>
+          <td>No</td>
+        </tr>
+        <tr>
+          <td><strong>Google Vertex AI</strong></td>
+          <td>Gemini 3.1 Pro, Gemini 3.1 Flash</td>
+          <td>ADC + <code>GOOGLE_CLOUD_PROJECT</code></td>
+          <td>No</td>
+        </tr>
+        <tr>
+          <td><strong>Ollama</strong></td>
+          <td>Llama 3, CodeLlama, Mistral, etc.</td>
+          <td>None (local)</td>
+          <td>Yes</td>
+        </tr>
+        <tr>
+          <td><strong>Custom (OpenAI-compatible)</strong></td>
+          <td>Any OpenAI-compatible endpoint - presets for OpenRouter, Groq, Together, Mistral, xAI, Fireworks, DeepSeek, Perplexity, Cerebras, Cohere, Azure AI Foundry</td>
+          <td><code>base_url</code> + API key</td>
+          <td>No</td>
+        </tr>
       </tbody>
     </table>
 
-    <h2>Switch Provider</h2>
-    <div class="code-block"><div class="code-header"><span>Terminal</span></div><pre><code><span class="prompt">$</span> codesight security src/app.py --provider openai
-<span class="prompt">$</span> codesight security src/app.py --provider anthropic
-<span class="prompt">$</span> codesight security src/app.py --provider ollama</code></pre></div>
+    <h2>Switching Providers</h2>
+    <div class="code-block">
+      <div class="code-header"><span>Terminal</span></div>
+      <pre><code><span class="prompt">$</span> codesight review file.py --provider openai
+<span class="prompt">$</span> codesight review file.py --provider anthropic
+<span class="prompt">$</span> codesight review file.py --provider google
+<span class="prompt">$</span> codesight review file.py --provider ollama
+<span class="prompt">$</span> codesight review file.py --provider openrouter   <span class="comment"># any custom label you saved in config</span></code></pre>
+    </div>
+    <p>The <code>--provider</code> flag accepts any label saved in <code>~/.codesight/config.json</code>. After <code>codesight config</code> picks a custom provider, the label you chose (e.g. <code>openrouter</code>, <code>groq</code>, <code>azure</code>) becomes the provider name.</p>
 
-    <h2>Compatible APIs</h2>
-    <p>Use <code>codesight config</code> for OpenAI-compatible APIs. Pick a label, base URL, model, and key.</p>
-    <p>Presets cover OpenRouter, Groq, Together AI, Mistral, xAI, Fireworks, DeepSeek, Perplexity, Cerebras, Cohere, and Azure AI Foundry.</p>
-    <div class="code-block"><div class="code-header"><span>Terminal</span></div><pre><code><span class="prompt">$</span> codesight config
-<span class="prompt">$</span> codesight health --provider openrouter
-<span class="prompt">$</span> codesight verify semgrep.sarif --source . --judge --provider openrouter</code></pre></div>
+    <h2>OpenAI</h2>
+    <p>Best overall accuracy for code analysis. Default provider.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Setup</span></div>
+      <pre><code><span class="prompt">$</span> export OPENAI_API_KEY="sk-..."
+<span class="prompt">$</span> export CODESIGHT_MODEL="gpt-5.4"  <span class="comment"># optional, default</span></code></pre>
+    </div>
+    <p>Approximate cost: <strong>$0.002-0.005 per file</strong> depending on file size.</p>
 
-    <h2>Privacy</h2>
-    <ul>
-      <li>Ollama keeps code on your machine.</li>
-      <li>Hosted providers receive the selected source context.</li>
-      <li>Project config cannot set provider keys or base URLs.</li>
-      <li>User config lives under your home directory.</li>
-    </ul>
+    <h2>Anthropic</h2>
+    <p>Strong at nuanced reasoning and catching subtle logic bugs.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Setup</span></div>
+      <pre><code><span class="prompt">$</span> export ANTHROPIC_API_KEY="sk-ant-..."
+<span class="prompt">$</span> export CODESIGHT_MODEL="claude-opus-4-6-20251101"</code></pre>
+    </div>
 
-    <h2>Config Example</h2>
-    <div class="code-block"><div class="code-header"><span>config.json</span></div><pre><code>{
-  "default_provider": "openai",
-  "custom_providers": {
+    <h2>Google Vertex AI</h2>
+    <p>Requires a Google Cloud project with Vertex AI API enabled.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Setup</span></div>
+      <pre><code><span class="prompt">$</span> export GOOGLE_CLOUD_PROJECT="my-project"
+<span class="prompt">$</span> export GOOGLE_CLOUD_REGION="us-central1"
+<span class="prompt">$</span> gcloud auth application-default login</code></pre>
+    </div>
+
+    <h2>Ollama (Local / Offline)</h2>
+    <p>No API key. No data leaves your machine. Fits sensitive codebases.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Setup</span></div>
+      <pre><code><span class="prompt">$</span> ollama serve
+<span class="prompt">$</span> ollama pull llama3
+<span class="prompt">$</span> codesight review file.py --provider ollama</code></pre>
+    </div>
+    <div class="callout">
+      <strong>Air-gapped environments:</strong> Ollama runs entirely locally. Pre-download models and run CodeSight on machines with no internet access.
+    </div>
+
+    <h2>Custom / OpenAI-Compatible Providers</h2>
+    <p>Works with any endpoint that speaks the OpenAI Chat Completions API. That covers most of the ecosystem: OpenRouter's model aggregator, fast inference on Groq and Cerebras, Azure AI Foundry deployments, and open-source hosts like Together, Fireworks, DeepSeek, Perplexity, and Mistral.</p>
+
+    <h3>Built-in Presets</h3>
+    <p>The <code>codesight config</code> wizard ships ready-made entries for:</p>
+    <table>
+      <thead>
+        <tr><th>Preset</th><th>Base URL</th><th>Default Model</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>OpenRouter</strong></td><td><code>https://openrouter.ai/api/v1</code></td><td><code>meta-llama/llama-4-maverick</code></td></tr>
+        <tr><td><strong>Groq</strong></td><td><code>https://api.groq.com/openai/v1</code></td><td><code>llama-3.3-70b-versatile</code></td></tr>
+        <tr><td><strong>Together AI</strong></td><td><code>https://api.together.xyz/v1</code></td><td><code>meta-llama/Llama-3-70b-chat-hf</code></td></tr>
+        <tr><td><strong>Mistral</strong></td><td><code>https://api.mistral.ai/v1</code></td><td><code>mistral-large-latest</code></td></tr>
+        <tr><td><strong>xAI (Grok)</strong></td><td><code>https://api.x.ai/v1</code></td><td><code>grok-3</code></td></tr>
+        <tr><td><strong>Fireworks AI</strong></td><td><code>https://api.fireworks.ai/inference/v1</code></td><td><code>llama-v3p1-70b-instruct</code></td></tr>
+        <tr><td><strong>DeepSeek</strong></td><td><code>https://api.deepseek.com</code></td><td><code>deepseek-chat</code></td></tr>
+        <tr><td><strong>Perplexity</strong></td><td><code>https://api.perplexity.ai</code></td><td><code>llama-3.1-sonar-large-128k-online</code></td></tr>
+        <tr><td><strong>Cerebras</strong></td><td><code>https://api.cerebras.ai/v1</code></td><td><code>llama3.1-70b</code></td></tr>
+        <tr><td><strong>Cohere</strong></td><td><code>https://api.cohere.ai/compatibility/v1</code></td><td><code>command-r-plus</code></td></tr>
+        <tr><td><strong>Azure AI Foundry</strong></td><td>Your resource URL</td><td>Your deployment name</td></tr>
+        <tr><td><strong>Custom URL</strong></td><td>Anything OpenAI-compatible</td><td>Any model ID</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Interactive Setup</h3>
+    <p>Run the config wizard and pick <em>Custom</em>:</p>
+    <div class="code-block">
+      <div class="code-header"><span>Terminal</span></div>
+      <pre><code><span class="prompt">$</span> codesight config
+  Select a provider: Custom (OpenRouter / Groq / Together / any OpenAI-compat)
+  Pick a provider:   OpenRouter
+  Base URL:          https://openrouter.ai/api/v1
+  API key:           sk-or-v1-...
+  Model name:        meta-llama/llama-4-maverick
+  Config label:      openrouter</code></pre>
+    </div>
+    <p>The label you pick (e.g. <code>openrouter</code>) becomes the provider name you pass to <code>--provider</code>.</p>
+
+    <h3>Example Usage</h3>
+    <div class="code-block">
+      <div class="code-header"><span>Terminal</span></div>
+      <pre><code><span class="prompt">$</span> codesight review file.py --provider openrouter
+<span class="prompt">$</span> codesight security src/auth.py --provider groq
+<span class="prompt">$</span> codesight bugs lib/parser.py --provider azure</code></pre>
+    </div>
+
+    <h3>Config File Example</h3>
+    <p>Saved entries land in <code>~/.codesight/config.json</code>. Edit the file directly if needed:</p>
+    <div class="code-block">
+      <div class="code-header"><span>~/.codesight/config.json</span></div>
+      <pre><code>{
+  "default_provider": "openrouter",
+  "providers": {
     "openrouter": {
+      "provider": "custom",
+      "api_key": "sk-or-v1-...",
       "base_url": "https://openrouter.ai/api/v1",
-      "model": "openai/gpt-4o-mini"
+      "model": "meta-llama/llama-4-maverick"
+    },
+    "groq": {
+      "provider": "custom",
+      "api_key": "gsk_...",
+      "base_url": "https://api.groq.com/openai/v1",
+      "model": "llama-3.3-70b-versatile"
     }
   }
-}</code></pre></div>
+}</code></pre>
+    </div>
+    <div class="callout">
+      <strong>Azure AI Foundry:</strong> The wizard has a dedicated <em>Azure Foundry</em> entry for Claude models served through Microsoft Azure's Anthropic-compatible endpoint. Pick that instead of <em>Custom</em> for Azure Claude deployments.
+    </div>
+
+    <h2>Multi-Model Pipeline</h2>
+    <p>Security analysis can chain two models - a fast local model for triage, then a cloud model for deep verification:</p>
+    <div class="code-block">
+      <div class="code-header"><span>Terminal</span></div>
+      <pre><code><span class="prompt">$</span> codesight security src/auth.py --pipeline ollama/llama3:openai/gpt-5.4</code></pre>
+    </div>
+    <p>Triage flags potential issues fast. Only flagged areas go to the verifier, cutting cost and latency.</p>
+
+    <h2>Configuration File</h2>
+    <p>Provider settings are stored in <code>~/.codesight/config.json</code>:</p>
+    <div class="code-block">
+      <div class="code-header"><span>~/.codesight/config.json</span></div>
+      <pre><code>{
+  "default_provider": "openai",
+  "providers": {
+    "openai": {
+      "provider": "openai",
+      "api_key": "sk-...",
+      "model": "gpt-5.4",
+      "max_tokens": 4096,
+      "temperature": 0.2
+    },
+    "openrouter": {
+      "provider": "custom",
+      "api_key": "sk-or-v1-...",
+      "base_url": "https://openrouter.ai/api/v1",
+      "model": "meta-llama/llama-4-maverick"
+    }
+  }
+}</code></pre>
+    </div>
   </main>
 </div>
-<footer class="doc-footer"><div>MIT License &middot; <a href="https://github.com/your-org/codesight">your-org/codesight</a></div></footer>
+
+<footer class="doc-footer">
+  <div>MIT License &middot; <a href="https://github.com/AvixoSec/codesight">AvixoSec/codesight</a></div>
+</footer>
+
 <script src="script.js" defer></script>
 </body>
 </html>

@@ -1,271 +1,910 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CodeSight</title>
-<meta name="description" content="CodeSight verifies scanner alerts, scans code, and writes CI-ready security reports.">
+<title>CodeSight - CLI для LLM-анализа кода</title>
+<meta name="description" content="Опенсорсная утилита командной строки. Гоняет код через большие языковые модели и находит реальные баги, дыры в безопасности и архитектурные проблемы.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-:root {
-  color-scheme: light dark;
-  --bg: #f7f4ec;
-  --text: #171717;
-  --muted: #5f6470;
-  --line: rgba(23, 23, 23, 0.14);
-  --panel: rgba(255, 255, 255, 0.76);
-  --accent: #0f766e;
-  --accent-2: #b45309;
-  --code: #10151f;
-  --code-text: #e8eef8;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #101113;
-    --text: #f4f1e8;
-    --muted: #a3a7b1;
-    --line: rgba(244, 241, 232, 0.16);
-    --panel: rgba(255, 255, 255, 0.06);
-    --code: #05070b;
-    --code-text: #eef2ff;
-  }
-}
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: Inter, system-ui, sans-serif;
-  line-height: 1.55;
-}
-a { color: inherit; }
-.nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  padding: 22px clamp(20px, 5vw, 64px);
-  border-bottom: 1px solid var(--line);
-}
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-  font-weight: 700;
-}
-.mark {
-  width: 18px;
-  height: 18px;
-  border-radius: 5px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-}
-.links {
-  display: flex;
-  gap: 18px;
-  color: var(--muted);
-  font-size: 14px;
-}
-.links a { text-decoration: none; }
-.hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
-  gap: clamp(28px, 5vw, 72px);
-  align-items: center;
-  min-height: calc(100vh - 69px);
-  padding: clamp(40px, 7vw, 96px) clamp(20px, 5vw, 64px) 56px;
-}
-h1 {
-  margin: 0;
-  max-width: 900px;
-  font-family: Fraunces, Georgia, serif;
-  font-size: clamp(46px, 8vw, 104px);
-  line-height: 0.94;
-  letter-spacing: 0;
-}
-.lead {
-  max-width: 720px;
-  margin: 28px 0 0;
-  color: var(--muted);
-  font-size: clamp(18px, 2.1vw, 24px);
-}
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 32px;
-}
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 10px 16px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: 700;
-}
-.btn.primary {
-  background: var(--text);
-  color: var(--bg);
-  border-color: var(--text);
-}
-.terminal {
-  background: var(--code);
-  color: var(--code-text);
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.24);
-}
-.term-head {
-  display: flex;
-  justify-content: space-between;
-  padding: 12px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  color: #9ca3af;
-  font-size: 13px;
-}
-pre {
-  margin: 0;
-  padding: 18px;
-  overflow: auto;
-  font: 14px/1.55 "JetBrains Mono", ui-monospace, monospace;
-}
-.prompt { color: #34d399; }
-.dim { color: #94a3b8; }
-.ok { color: #7dd3fc; }
-.warn { color: #facc15; }
-.sections {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1px;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  background: var(--line);
-}
-.section {
-  background: var(--bg);
-  padding: clamp(24px, 4vw, 44px);
-}
-.section h2 {
-  margin: 0 0 12px;
-  font-family: Fraunces, Georgia, serif;
-  font-size: 30px;
-}
-.section p {
-  margin: 0;
-  color: var(--muted);
-}
-.workflow {
-  padding: clamp(42px, 6vw, 80px) clamp(20px, 5vw, 64px);
-}
-.workflow h2 {
-  margin: 0 0 20px;
-  font-family: Fraunces, Georgia, serif;
-  font-size: clamp(34px, 5vw, 58px);
-}
-.steps {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-.step {
-  min-height: 160px;
-  padding: 20px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-}
-.step strong {
-  display: block;
-  margin-bottom: 8px;
-}
-.step p {
-  margin: 0;
-  color: var(--muted);
-}
-footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 28px clamp(20px, 5vw, 64px);
-  color: var(--muted);
-  border-top: 1px solid var(--line);
-  font-size: 14px;
-}
-@media (max-width: 920px) {
-  .hero, .sections, .steps { grid-template-columns: 1fr; }
-  .hero { min-height: auto; }
-  .links { display: none; }
-  footer { flex-direction: column; }
-}
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script>
+  // early language apply (no-flash) - sets html[lang] before first paint
+  (function(){
+    try {
+      var stored = localStorage.getItem('codesight-editorial-lang');
+      var lang = (stored === 'ru' || stored === 'en')
+        ? stored
+        : (navigator.language && navigator.language.toLowerCase().startsWith('ru') ? 'ru' : 'en');
+      document.documentElement.setAttribute('lang', lang);
+    } catch(_) {}
+  })();
+</script>
 </head>
 <body>
-<nav class="nav">
-  <a class="brand" href="./"><span class="mark"></span>CodeSight</a>
+
+<!-- paper-grain overlay (inline SVG noise, fixed, non-interactive) -->
+<div class="grain" aria-hidden="true"></div>
+
+<!-- soft scroll-driven palette wash -->
+<div class="palette-wash" aria-hidden="true"></div>
+
+<!-- scroll progress rail -->
+<div class="progress" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
+
+<!-- custom cursor (pointer:fine only) -->
+<div class="cursor-dot" id="cursor-dot" aria-hidden="true"></div>
+<div class="cursor-ring" id="cursor-ring" aria-hidden="true"></div>
+
+<!-- theme toggle -->
+<button class="theme-toggle" id="theme-toggle" type="button"
+        data-i18n-aria-ru="Тёмная тема"
+        data-i18n-aria-en="Dark theme"
+        data-i18n-title-ru="Переключить тему"
+        data-i18n-title-en="Toggle theme"
+        aria-label="Тёмная тема" title="Переключить тему">
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="4"/>
+    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+  </svg>
+</button>
+
+<!-- language toggle (shows the OTHER language - click to switch) -->
+<button class="lang-toggle" id="lang-toggle" type="button"
+        data-i18n-aria-ru="Switch to English"
+        data-i18n-aria-en="Переключить на русский"
+        data-i18n-title-ru="Switch to English"
+        data-i18n-title-en="Переключить на русский"
+        aria-label="Switch to English" title="Switch to English">EN</button>
+
+<!-- table of contents sidebar (right) -->
+<aside class="toc" id="toc" data-i18n-aria-ru="Разделы" data-i18n-aria-en="Sections" aria-label="Разделы">
+  <button class="toc-toggle" id="toc-toggle" type="button" aria-expanded="true" aria-controls="toc-list">
+    <span class="toc-title" data-i18n-ru="Содержание" data-i18n-en="Contents">Содержание</span>
+    <span class="toc-chev" aria-hidden="true">&minus;</span>
+  </button>
+  <ol id="toc-list">
+    <li><a href="#abstract" data-sec="abstract"><span>01</span><span class="t" data-i18n-ru="Введение" data-i18n-en="Abstract">Введение</span><span class="toc-tip" data-mins="2">2 мин</span><span class="toc-bar"></span></a></li>
+    <li><a href="#commands" data-sec="commands"><span>02</span><span class="t" data-i18n-ru="Команды" data-i18n-en="Commands">Команды</span><span class="toc-tip" data-mins="1">1 мин</span><span class="toc-bar"></span></a></li>
+    <li><a href="#compare" data-sec="compare"><span>03</span><span class="t" data-i18n-ru="Сравнение" data-i18n-en="Compared">Сравнение</span><span class="toc-tip" data-mins="1">1 мин</span><span class="toc-bar"></span></a></li>
+    <li><a href="#providers" data-sec="providers"><span>04</span><span class="t" data-i18n-ru="Провайдеры" data-i18n-en="Providers">Провайдеры</span><span class="toc-tip" data-mins="1">1 мин</span><span class="toc-bar"></span></a></li>
+    <li><a href="#architecture" data-sec="architecture"><span>05</span><span class="t" data-i18n-ru="Архитектура" data-i18n-en="Architecture">Архитектура</span><span class="toc-tip" data-mins="1">1 мин</span><span class="toc-bar"></span></a></li>
+    <li><a href="#spot" data-sec="spot"><span>06</span><span class="t" data-i18n-ru="Найди баги" data-i18n-en="Spot the bugs">Найди баги</span><span class="toc-tip" data-mins="2">2 мин</span><span class="toc-bar"></span></a></li>
+    <li><a href="#example" data-sec="example"><span>07</span><span class="t" data-i18n-ru="Пример запуска" data-i18n-en="A typical run">Пример запуска</span><span class="toc-tip" data-mins="1">1 мин</span><span class="toc-bar"></span></a></li>
+    <li><a href="#beforeafter" data-sec="beforeafter"><span>08</span><span class="t" data-i18n-ru="До / после" data-i18n-en="Before / after">До / после</span><span class="toc-tip" data-mins="1">1 мин</span><span class="toc-bar"></span></a></li>
+    <li><a href="#why" data-sec="why"><span>09</span><span class="t" data-i18n-ru="Решения" data-i18n-en="Design notes">Решения</span><span class="toc-tip" data-mins="1">1 мин</span><span class="toc-bar"></span></a></li>
+    <li><a href="#timeline" data-sec="timeline"><span>10</span><span class="t" data-i18n-ru="История версий" data-i18n-en="Changelog">История версий</span><span class="toc-tip" data-mins="1">1 мин</span><span class="toc-bar"></span></a></li>
+    <li><a href="#faq" data-sec="faq"><span>11</span><span class="t" data-i18n-ru="Вопросы" data-i18n-en="Questions">Вопросы</span><span class="toc-tip" data-mins="2">2 мин</span><span class="toc-bar"></span></a></li>
+    <li><a href="#end" data-sec="end"><span>12</span><span class="t" data-i18n-ru="Попробовать" data-i18n-en="Try it">Попробовать</span><span class="toc-tip" data-mins="1">1 мин</span><span class="toc-bar"></span></a></li>
+  </ol>
+  <div class="toc-hint"><kbd>&uarr;</kbd> <kbd>&darr;</kbd> <span data-i18n-ru="навигация" data-i18n-en="navigate">навигация</span></div>
+</aside>
+
+<nav class="top">
+  <a href="#" class="brand"><span class="mark"></span>CodeSight</a>
   <div class="links">
-    <a href="docs/">Docs</a>
-    <a href="docs/verify.html">Verify SARIF</a>
-    <a href="https://github.com/your-org/codesight">GitHub</a>
-    <a href="https://pypi.org/project/codesight/">PyPI</a>
+    <a href="#abstract" data-i18n-ru="Введение" data-i18n-en="Abstract">Введение</a>
+    <a href="#commands" data-i18n-ru="Команды" data-i18n-en="Commands">Команды</a>
+    <a href="#compare" data-i18n-ru="Сравнение" data-i18n-en="Compared">Сравнение</a>
+    <a href="#providers" data-i18n-ru="Провайдеры" data-i18n-en="Providers">Провайдеры</a>
+    <a href="#faq" data-i18n-ru="Вопросы" data-i18n-en="Questions">Вопросы</a>
+    <a href="https://github.com/AvixoSec/codesight" class="cta" data-i18n-ru="Исходники &rarr;" data-i18n-en="Source &rarr;">Исходники &rarr;</a>
   </div>
 </nav>
 
-<main>
-  <section class="hero">
-    <div>
-      <h1>Scanner alerts need evidence.</h1>
-      <p class="lead">CodeSight imports SARIF, opens the matching source, adds context, and writes reports your CI can understand. It can still scan code directly, but verification is the main lane now.</p>
-      <div class="actions">
-        <a class="btn primary" href="docs/">Read the docs</a>
-        <a class="btn" href="docs/verify.html">Verify SARIF</a>
-        <a class="btn" href="https://github.com/your-org/codesight">Source</a>
+<div class="col">
+  <div class="metaline">
+    <span class="tag" data-i18n-ru="Релиз / v0.3.0" data-i18n-en="Release / v0.3.0">Релиз / v0.3.0</span>
+    <span class="dot"></span>
+    <span data-i18n-ru="Опубликовано 22 апреля 2026" data-i18n-en="Published 22 April 2026">Опубликовано 22 апреля 2026</span>
+    <span class="dot"></span>
+    <span data-i18n-ru="лицензия MIT" data-i18n-en="MIT licensed">лицензия MIT</span>
+    <span class="dot"></span>
+    <span id="read-time" data-i18n-ru="Время чтения &asymp; 5 мин" data-i18n-en="Reading time &asymp; 5 min">Время чтения &asymp; 5 мин</span>
+  </div>
+
+  <!-- live GitHub metrics strip (filled by JS, hidden until populated) -->
+  <div class="gh-strip" id="gh-strip" aria-live="polite">
+    <span class="gh-loading" id="gh-loading" data-i18n-ru="подтягиваю метрики репозитория&hellip;" data-i18n-en="fetching repository metrics&hellip;">подтягиваю метрики репозитория&hellip;</span>
+  </div>
+
+  <div class="hero-split">
+    <div class="hero-text">
+      <h1 class="display" id="display-h1"
+          data-i18n-ru='Линтер видит синтаксис. <em>CodeSight</em> видит смысл - и те баги, что доезжают до <em>прода</em>.'
+          data-i18n-en='Linters check syntax. <em>CodeSight</em> checks logic - and the classes of bugs that ship to <em>production</em>.'>Линтер видит синтаксис. <em>CodeSight</em> видит смысл - и те баги, что доезжают до <em>прода</em>.</h1>
+
+      <p class="lede"
+         data-i18n-ru='<span class="dropcap">У</span>тилита командной строки. Прогоняет твой код через большие языковые модели и вытаскивает реальные дефекты: SQL-инъекции, захардкоженные секреты, обход аутентификации, гонки потоков. Отдаёт SARIF для CI, CWE ID для аудиторов и понятный текст - для людей.'
+         data-i18n-en='<span class="dropcap">A</span> command-line tool. It runs your code through large language models and surfaces the real defects - SQL injections, hardcoded secrets, auth bypasses, thread races. Outputs SARIF for CI, CWE IDs for auditors, plain text for humans.'><span class="dropcap">У</span>тилита командной строки. Прогоняет твой код через большие языковые модели и вытаскивает реальные дефекты: SQL-инъекции, захардкоженные секреты, обход аутентификации, гонки потоков. Отдаёт SARIF для CI, CWE ID для аудиторов и понятный текст - для людей.</p>
+
+      <div class="byline">
+        <span data-i18n-ru="<strong>Проект</strong> &middot; CodeSight" data-i18n-en="<strong>Project</strong> &middot; CodeSight"><strong>Проект</strong> &middot; CodeSight</span>
+        <span class="sep"></span>
+        <span data-i18n-ru='<strong>Автор</strong> &middot; <a href="https://github.com/AvixoSec" class="footnote" data-note="Профиль на GitHub - ведёт проект с версии 0.1">AvixoSec</a>'
+              data-i18n-en='<strong>Author</strong> &middot; <a href="https://github.com/AvixoSec" class="footnote" data-note="GitHub profile - maintainer since v0.1">AvixoSec</a>'><strong>Автор</strong> &middot; <a href="https://github.com/AvixoSec" class="footnote" data-note="Профиль на GitHub - ведёт проект с версии 0.1">AvixoSec</a></span>
+        <span class="sep"></span>
+        <span data-i18n-ru="<strong>Статус</strong> &middot; активный &middot; релизы раз в неделю"
+              data-i18n-en="<strong>Status</strong> &middot; active &middot; weekly releases"><strong>Статус</strong> &middot; активный &middot; релизы раз в неделю</span>
+      </div>
+
+      <div class="lead-actions">
+        <a class="btn btn-primary magnetic" href="https://pypi.org/project/codesight/"
+           data-i18n-ru='Установить через PyPI <span class="arrow">&rarr;</span>'
+           data-i18n-en='Install via PyPI <span class="arrow">&rarr;</span>'>Установить через PyPI <span class="arrow">&rarr;</span></a>
+        <a class="btn btn-ghost magnetic" href="https://github.com/AvixoSec/codesight"
+           data-i18n-ru="Исходники на GitHub"
+           data-i18n-en="View source on GitHub">Исходники на GitHub</a>
+        <span class="pip" id="pip"
+              data-i18n-title-ru="Кликни, чтобы скопировать"
+              data-i18n-title-en="Click to copy"
+              title="Кликни, чтобы скопировать"><span class="dollar">$</span>pip install codesight<span class="copy" data-i18n-ru="копировать" data-i18n-en="copy">копировать</span></span>
       </div>
     </div>
-    <div class="terminal" aria-label="CodeSight terminal example">
-      <div class="term-head"><span>terminal</span><span>codesight 0.3.0</span></div>
-      <pre><code><span class="prompt">$</span> semgrep scan --config auto --sarif > semgrep.sarif
-<span class="prompt">$</span> codesight verify semgrep.sarif --source . --judge --skeptic
 
-<span class="ok">Blocked:</span> 0 exploitable issue(s)
-<span class="warn">Needs review:</span> 42 uncertain alert(s)
-<span class="dim">report.md, report.json, results.sarif written</span></code></pre>
+    <!-- live editorial terminal -->
+    <aside class="hero-term" id="hero-term"
+           data-i18n-aria-ru="Пример вывода CodeSight"
+           data-i18n-aria-en="CodeSight sample output"
+           aria-label="Пример вывода CodeSight" aria-hidden="true">
+      <div class="ht-head">
+        <span class="ht-title" data-i18n-ru="codesight - терминал" data-i18n-en="codesight - terminal">codesight - терминал</span>
+        <span class="ht-hint" id="ht-hint" data-i18n-ru="демо" data-i18n-en="live demo">демо</span>
+      </div>
+      <div class="ht-body">
+        <div class="ht-screen" id="ht-screen"></div>
+      </div>
+      <div class="ht-foot">
+        <span class="ht-ticks"><i></i><i></i><i></i></span>
+        <span class="ht-prov" id="ht-prov">провайдер &middot; anthropic</span>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- full-bleed stats moment -->
+<section class="stats-bleed" id="stats" data-i18n-aria-ru="Вкратце" data-i18n-aria-en="At a glance" aria-label="Вкратце">
+  <div class="stats-rail" aria-hidden="true"><span data-i18n-ru="&sect; &middot; вкратце" data-i18n-en="&sect; &middot; at a glance">&sect; &middot; вкратце</span></div>
+  <div class="stats-grid">
+    <div class="stat">
+      <div class="num" data-count="91" data-suffix="%">91<span class="unit">%</span></div>
+      <div class="label" data-i18n-ru="детектирование CWE на публичных бенчмарках" data-i18n-en="CWE detection on public benchmarks">детектирование CWE на публичных бенчмарках</div>
     </div>
-  </section>
-
-  <section class="sections">
-    <article class="section">
-      <h2>Guided UI</h2>
-      <p>Run <code>codesight</code>. Pick scan, diff, verify, proof bundle, judge, or skeptic mode from the terminal.</p>
-    </article>
-    <article class="section">
-      <h2>Verify SARIF</h2>
-      <p>Use Semgrep, CodeQL, or another scanner for breadth. Let CodeSight check each alert against local source.</p>
-    </article>
-    <article class="section">
-      <h2>CI Reports</h2>
-      <p>Write Markdown, JSON, SARIF, and a manifest. Fail only at the verdict threshold you choose.</p>
-    </article>
-  </section>
-
-  <section class="workflow">
-    <h2>How It Runs</h2>
-    <div class="steps">
-      <div class="step"><strong>1. Scanner finds breadth</strong><p>Semgrep or CodeQL writes SARIF with file paths, line numbers, rules, and messages.</p></div>
-      <div class="step"><strong>2. CodeSight adds context</strong><p>Paths are resolved under the source root and local snippets are attached safely.</p></div>
-      <div class="step"><strong>3. Judge checks evidence</strong><p>Optional judge and skeptic passes ask for source, sink, missing guard, path, and fix.</p></div>
-      <div class="step"><strong>4. CI gets a verdict</strong><p>Findings become exploitable, likely exploitable, uncertain, or dismissed.</p></div>
+    <div class="stat">
+      <div class="num" data-count="16" data-prefix="" data-suffix="+">16<span class="unit">+</span></div>
+      <div class="label" data-i18n-ru="поддерживаемых LLM-провайдеров" data-i18n-en="supported LLM providers">поддерживаемых LLM-провайдеров</div>
     </div>
-  </section>
-</main>
+    <div class="stat">
+      <div class="num" data-count="9">9</div>
+      <div class="label" data-i18n-ru="команд верхнего уровня" data-i18n-en="top-level commands">команд верхнего уровня</div>
+    </div>
+    <div class="stat">
+      <div class="num" data-count="0.003" data-prefix="$" data-decimals="3">$0.003</div>
+      <div class="label" data-i18n-ru="средняя цена анализа одного файла" data-i18n-en="average cost per file analysed">средняя цена анализа одного файла</div>
+    </div>
+    <div class="stat">
+      <div class="num" data-count="2.1" data-suffix="s" data-decimals="1">2.1<span class="unit">s</span></div>
+      <div class="label" data-i18n-ru="медианная задержка, облачная модель" data-i18n-en="median latency, cloud model">медианная задержка, облачная модель</div>
+    </div>
+  </div>
+</section>
+
+<div class="ornament" aria-hidden="true">&sect; &middot; &sect; &middot; &sect;</div>
+
+<section id="abstract" data-sec="abstract">
+  <div class="col">
+    <div class="sec-num" data-i18n-ru="01 &middot; Введение" data-i18n-en="01 &middot; Abstract">01 &middot; Введение</div>
+    <h2 data-i18n-ru="В чём идея" data-i18n-en="The idea">В чём идея</h2>
+    <div class="note-pair">
+      <p data-i18n-ru='Статический анализатор скажет, что не хватает закрывающей скобки. Он не скажет, что пользовательская строка долетает до <code>execute()</code> без параметризации, что секрет закоммичен в открытом виде, что два потока дерутся за один и тот же файловый дескриптор. Это <em>семантика</em> - и именно такие баги последние тридцать лет ломают прод.'
+         data-i18n-en='A static analyser will tell you a closing brace is missing. It will not tell you that a user string reaches <code>execute()</code> unparameterised, that a secret is committed in plain text, that two threads are fighting over the same file descriptor. That is <em>semantics</em> - and semantics are what has been breaking production for thirty years.'>Статический анализатор скажет, что не хватает закрывающей скобки. Он не скажет, что пользовательская строка долетает до <code>execute()</code> без параметризации, что секрет закоммичен в открытом виде, что два потока дерутся за один и тот же файловый дескриптор. Это <em>семантика</em> - и именно такие баги последние тридцать лет ломают прод.</p>
+      <aside class="margin-note" data-i18n-ru="В отличие от лексики и синтаксиса - это баги, которых парсер не видит." data-i18n-en="As opposed to lexing or syntax - the bugs a parser cannot see.">В отличие от лексики и синтаксиса - это баги, которых парсер не видит.</aside>
+    </div>
+    <div class="note-pair">
+      <p data-i18n-ru='CodeSight - небольшая CLI, которая отдаёт семантическую часть работы <a href="#providers" class="footnote" data-note="Large Language Model - GPT, Claude, Gemini, Llama и так далее">LLM</a>, а результат заворачивает в форматы, которые уже понимают твои пайплайны: SARIF, JSON, Markdown. И уходит в сторону. У неё есть мнение про <strong>что</strong> спрашивать у модели - но не про то, какую модель использовать. Ключ твой.'
+         data-i18n-en='CodeSight is a small CLI that hands the semantic work to an <a href="#providers" class="footnote" data-note="Large Language Model - GPT, Claude, Gemini, Llama and so on">LLM</a> and wraps the result in formats your pipeline already understands: SARIF, JSON, Markdown. Then it gets out of the way. It has opinions about <strong>what</strong> to ask the model - but not about which model you use. The key stays with you.'>CodeSight - небольшая CLI, которая отдаёт семантическую часть работы <a href="#providers" class="footnote" data-note="Large Language Model - GPT, Claude, Gemini, Llama и так далее">LLM</a>, а результат заворачивает в форматы, которые уже понимают твои пайплайны: SARIF, JSON, Markdown. И уходит в сторону. У неё есть мнение про <strong>что</strong> спрашивать у модели - но не про то, какую модель использовать. Ключ твой.</p>
+      <aside class="margin-note" data-i18n-ru="SARIF - OASIS-стандарт. Парсится напрямую в GitHub Advanced Security и SonarQube." data-i18n-en="SARIF is an OASIS standard. Consumed directly by GitHub Advanced Security and SonarQube.">SARIF - OASIS-стандарт. Парсится напрямую в GitHub Advanced Security и SonarQube.</aside>
+    </div>
+    <div class="pullquote"
+         data-i18n-ru='&ldquo;Линтер видит синтаксис. CodeSight видит смысл.&rdquo;<cite>- однострочное описание проекта, не менялось с версии 0.1</cite>'
+         data-i18n-en='&ldquo;Linters check syntax. CodeSight checks logic.&rdquo;<cite>- one-line project pitch, unchanged since v0.1</cite>'>
+      &ldquo;Линтер видит синтаксис. CodeSight видит смысл.&rdquo;
+      <cite>- однострочное описание проекта, не менялось с версии 0.1</cite>
+    </div>
+  </div>
+</section>
+
+<section class="fullbleed-quote"
+         data-i18n-aria-ru="Цитата"
+         data-i18n-aria-en="Quote"
+         aria-label="Цитата">
+  <span class="quote-rail" data-i18n-ru="§ · интерлюдия" data-i18n-en="§ · interlude">§ · интерлюдия</span>
+  <div class="quote-inner"
+       data-i18n-ru='Баги, которые уходят в прод - не те, что видит парсер.<cite class="quote-cite">- наблюдение, Issue 0.3</cite>'
+       data-i18n-en='The bugs that ship are never the ones a parser can see.<cite class="quote-cite">- observation, Issue 0.3</cite>'>
+    Баги, которые уходят в прод - не те, что видит парсер.
+    <cite class="quote-cite">- наблюдение, Issue 0.3</cite>
+  </div>
+</section>
+
+<section id="commands" data-sec="commands">
+  <div class="col">
+    <div class="sec-num" data-i18n-ru="02 &middot; Команды" data-i18n-en="02 &middot; Commands">02 &middot; Команды</div>
+    <h2 data-i18n-ru="Девять команд. Один бинарник." data-i18n-en="Nine verbs, one binary.">Девять команд. Один бинарник.</h2>
+    <div class="note-pair">
+      <p data-i18n-ru="Каждая команда берёт файл, директорию или поток с пайпа. Формат вывода переключается флагом, дефолты разумные. Никаких подкоманд от подкоманд."
+         data-i18n-en="Every command takes a file, a directory or a pipe. Output format is a flag away, defaults are sensible. No sub-commands of sub-commands.">Каждая команда берёт файл, директорию или поток с пайпа. Формат вывода переключается флагом, дефолты разумные. Никаких подкоманд от подкоманд.</p>
+      <aside class="margin-note" data-i18n-ru="Вся CLI спроектирована так, чтобы помещаться в --help. Если не держится в голове - слишком сложно." data-i18n-en="The whole CLI is designed to fit inside --help. If it does not fit in your head, it is too complex.">Вся CLI спроектирована так, чтобы помещаться в --help. Если не держится в голове - слишком сложно.</aside>
+    </div>
+
+    <div class="cmd-list">
+      <div class="cmd-item"><span class="n">01</span><div class="body"><h3>review</h3><p data-i18n-ru="Ревью уровня сеньора: архитектура, читаемость, скрытые допущения." data-i18n-en="Senior-level review - architecture, readability, hidden assumptions.">Ревью уровня сеньора: архитектура, читаемость, скрытые допущения.</p></div><code>codesight review</code></div>
+      <div class="cmd-item"><span class="n">02</span><div class="body"><h3>bugs</h3><p data-i18n-ru="Логические дефекты, которые прошли мимо тестов - off-by-one, null-разыменования, утечки ресурсов." data-i18n-en="Logic defects your tests missed - off-by-one, null deref, resource leaks.">Логические дефекты, которые прошли мимо тестов - off-by-one, null-разыменования, утечки ресурсов.</p></div><code>codesight bugs api.py</code></div>
+      <div class="cmd-item"><span class="n">03</span><div class="body"><h3>security</h3><p data-i18n-ru="Аудит уязвимостей с привязкой к CWE и OWASP Top-10. На выходе SARIF." data-i18n-en="Vulnerability audit mapped to CWE and OWASP Top-10. SARIF out of the box.">Аудит уязвимостей с привязкой к CWE и OWASP Top-10. На выходе SARIF.</p></div><code>codesight security src/</code></div>
+      <div class="cmd-item"><span class="n">04</span><div class="body"><h3>docs</h3><p data-i18n-ru="Докстринги, саммари модулей, куски README прямо из исходников." data-i18n-en="Docstrings, module summaries, README snippets straight from source.">Докстринги, саммари модулей, куски README прямо из исходников.</p></div><code>codesight docs core/</code></div>
+      <div class="cmd-item"><span class="n">05</span><div class="body"><h3>explain</h3><p data-i18n-ru="Пересказ легаси на нормальном языке. Меньше археологии." data-i18n-en="Legacy retold in plain language. Less archaeology.">Пересказ легаси на нормальном языке. Меньше археологии.</p></div><code>codesight explain legacy.c</code></div>
+      <div class="cmd-item"><span class="n">06</span><div class="body"><h3>refactor</h3><p data-i18n-ru="Конкретные переписи в виде unified diff - не размытые советы." data-i18n-en="Concrete rewrites as unified diffs - not vague advice.">Конкретные переписи в виде unified diff - не размытые советы.</p></div><code>codesight refactor</code></div>
+      <div class="cmd-item"><span class="n">07</span><div class="body"><h3>scan</h3><p data-i18n-ru="Рекурсивный обход репозитория. Поддерживает смарт-контракты на Solidity." data-i18n-en="Recursive repo walk. Supports Solidity smart contracts.">Рекурсивный обход репозитория. Поддерживает смарт-контракты на Solidity.</p></div><code>codesight scan .</code></div>
+      <div class="cmd-item"><span class="n">08</span><div class="body"><h3>diff</h3><p data-i18n-ru="Ревью только изменений в git-дельте - идеально для CI." data-i18n-en="Review only what changed in the git delta - ideal for CI.">Ревью только изменений в git-дельте - идеально для CI.</p></div><code>codesight diff HEAD~1</code></div>
+      <div class="cmd-item"><span class="n">09</span><div class="body"><h3>benchmark</h3><p data-i18n-ru="Сравнить находки разных провайдеров на одном промпте." data-i18n-en="Compare findings from different providers on the same prompt.">Сравнить находки разных провайдеров на одном промпте.</p></div><code>codesight benchmark</code></div>
+    </div>
+  </div>
+</section>
+
+<div class="ornament" aria-hidden="true">&sect; &middot; &sect; &middot; &sect;</div>
+
+<section id="compare" data-sec="compare">
+  <div class="col-wide">
+    <div class="sec-num" data-i18n-ru="03 &middot; Сравнение" data-i18n-en="03 &middot; Compared">03 &middot; Сравнение</div>
+    <h2 data-i18n-ru="Рядом с классикой" data-i18n-en="Next to the classics">Рядом с классикой</h2>
+    <p style="max-width:720px;margin-left:auto;margin-right:auto"
+       data-i18n-ru="CodeSight не заменяет regex-линтер или точный анализатор вроде CodeQL - он их дополняет. Классика хороша на синтаксических правилах и taint-анализе. CodeSight читает код так, как читает сеньор: с контекстом, намерением и сомнением."
+       data-i18n-en="CodeSight does not replace a regex linter or a precise analyser like CodeQL - it complements them. The classics are strong at syntactic rules and taint analysis. CodeSight reads code the way a senior reads it: with context, intent and doubt.">CodeSight не заменяет regex-линтер или точный анализатор вроде CodeQL - он их дополняет. Классика хороша на синтаксических правилах и taint-анализе. CodeSight читает код так, как читает сеньор: с контекстом, намерением и сомнением.</p>
+
+    <div class="compare-wrap">
+      <table class="compare">
+        <thead>
+          <tr>
+            <th data-i18n-ru="Что умеет" data-i18n-en="Capability">Что умеет</th>
+            <th data-i18n-ru="Линтер (semgrep)" data-i18n-en="Linter (semgrep)">Линтер (semgrep)</th>
+            <th>CodeQL</th>
+            <th class="mine">CodeSight</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-i18n-ru="Проверка синтаксиса" data-i18n-en="Syntax checks">Проверка синтаксиса</td>
+            <td class="y" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
+            <td class="y" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
+            <td class="mine" data-i18n-ru="Через LLM" data-i18n-en="Via LLM">Через LLM</td>
+          </tr>
+          <tr>
+            <td data-i18n-ru="Захардкоженные секреты" data-i18n-en="Hardcoded secrets">Захардкоженные секреты</td>
+            <td class="y" data-i18n-ru="По regex" data-i18n-en="Regex only">По regex</td>
+            <td class="y" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
+            <td class="mine" data-i18n-ru="Семантика + контекст" data-i18n-en="Semantic + context">Семантика + контекст</td>
+          </tr>
+          <tr>
+            <td data-i18n-ru="Обход аутентификации" data-i18n-en="Auth bypass">Обход аутентификации</td>
+            <td class="n" data-i18n-ru="Нет" data-i18n-en="No">Нет</td>
+            <td class="y" data-i18n-ru="Частично" data-i18n-en="Partial">Частично</td>
+            <td class="mine" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
+          </tr>
+          <tr>
+            <td data-i18n-ru="Состояния гонки" data-i18n-en="Race conditions">Состояния гонки</td>
+            <td class="n" data-i18n-ru="Нет" data-i18n-en="No">Нет</td>
+            <td class="y" data-i18n-ru="Частично" data-i18n-en="Partial">Частично</td>
+            <td class="mine" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
+          </tr>
+          <tr>
+            <td data-i18n-ru="SQL-инъекции через f-string" data-i18n-en="SQL injection via f-string">SQL-инъекции через f-string</td>
+            <td class="y" data-i18n-ru="Частично" data-i18n-en="Partial">Частично</td>
+            <td class="y" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
+            <td class="mine" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
+          </tr>
+          <tr>
+            <td data-i18n-ru="Баги бизнес-логики" data-i18n-en="Business-logic bugs">Баги бизнес-логики</td>
+            <td class="n" data-i18n-ru="Нет" data-i18n-en="No">Нет</td>
+            <td class="n" data-i18n-ru="Нет" data-i18n-en="No">Нет</td>
+            <td class="mine" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
+          </tr>
+          <tr>
+            <td data-i18n-ru="Объяснения словами" data-i18n-en="Plain-language explanations">Объяснения словами</td>
+            <td class="n" data-i18n-ru="Нет" data-i18n-en="No">Нет</td>
+            <td class="n" data-i18n-ru="Нет" data-i18n-en="No">Нет</td>
+            <td class="mine" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
+          </tr>
+          <tr>
+            <td data-i18n-ru="Свой провайдер" data-i18n-en="Your own provider">Свой провайдер</td>
+            <td class="n" data-i18n-ru="Нет" data-i18n-en="No">Нет</td>
+            <td class="n" data-i18n-ru="Нет" data-i18n-en="No">Нет</td>
+            <td class="mine" data-i18n-ru="16+ моделей" data-i18n-en="16+ models">16+ моделей</td>
+          </tr>
+          <tr>
+            <td data-i18n-ru="Цена запуска" data-i18n-en="Time to first run">Цена запуска</td>
+            <td class="y" data-i18n-ru="Часы" data-i18n-en="Hours">Часы</td>
+            <td class="n" data-i18n-ru="Дни" data-i18n-en="Days">Дни</td>
+            <td class="mine" data-i18n-ru="60 секунд" data-i18n-en="60 seconds">60 секунд</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="compare-note"
+       data-i18n-ru="Не замена классическому SAST - дополнение к нему."
+       data-i18n-en="Not a replacement for classic SAST - a complement to it.">Не замена классическому SAST - дополнение к нему.</p>
+  </div>
+</section>
+
+<div class="ornament" aria-hidden="true">&sect; &middot; &sect; &middot; &sect;</div>
+
+<section id="providers" data-sec="providers">
+  <div class="col">
+    <div class="sec-num" data-i18n-ru="04 &middot; Провайдеры" data-i18n-en="04 &middot; Providers">04 &middot; Провайдеры</div>
+    <h2 data-i18n-ru="Свой ключ, своя модель" data-i18n-en="Bring your own model">Свой ключ, своя модель</h2>
+    <div class="note-pair">
+      <p data-i18n-ru="CLI не привязана к провайдеру. В коробке четыре штатных интеграции, плюс работает с любым эндпоинтом, совместимым с OpenAI - через общий адаптер."
+         data-i18n-en="The CLI is provider-agnostic. Four first-class integrations ship in the box, plus any OpenAI-compatible endpoint works through a shared adapter.">CLI не привязана к провайдеру. В коробке четыре штатных интеграции, плюс работает с любым эндпоинтом, совместимым с OpenAI - через общий адаптер.</p>
+      <aside class="margin-note" data-i18n-ru="API-ключ остаётся на твоей машине. У CodeSight нет своего сервера, чтобы куда-то что-то отправлять." data-i18n-en="Your API key stays on your machine. CodeSight has no server of its own to send anything to.">API-ключ остаётся на твоей машине. У CodeSight нет своего сервера, чтобы куда-то что-то отправлять.</aside>
+    </div>
+
+    <div class="prov-grid">
+      <div class="prov-card">
+        <svg class="p-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a13 13 0 0 1 0 18M12 3a13 13 0 0 0 0 18"/></svg>
+        <div class="p-name">OpenAI</div>
+        <div class="p-model">gpt-5.4</div>
+        <div class="p-note" data-i18n-ru="Дефолт. Быстрее всех по wall-clock и самая точная с одного прохода на наших бенчмарках." data-i18n-en="Default. Fastest wall-clock and most accurate on a single pass in our benchmarks.">Дефолт. Быстрее всех по wall-clock и самая точная с одного прохода на наших бенчмарках.</div>
+      </div>
+      <div class="prov-card">
+        <svg class="p-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 L21 19 H3 Z"/><path d="M12 9 L17 17 H7 Z"/></svg>
+        <div class="p-name">Anthropic</div>
+        <div class="p-model">claude-opus-4.6</div>
+        <div class="p-note" data-i18n-ru="Глубже всех рассуждает. Лучший на тонких логических ошибках, где нужно несколько шагов вывода." data-i18n-en="Deepest reasoner. Best on subtle logic errors that need multi-step inference.">Глубже всех рассуждает. Лучший на тонких логических ошибках, где нужно несколько шагов вывода.</div>
+      </div>
+      <div class="prov-card">
+        <svg class="p-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L22 8 L22 16 L12 22 L2 16 L2 8 Z"/><path d="M12 2 v20M2 8 L22 16M22 8 L2 16"/></svg>
+        <div class="p-name">Google</div>
+        <div class="p-model">gemini-3.1-pro</div>
+        <div class="p-note" data-i18n-ru="Самое большое контекстное окно. 50 тысяч строк в один запрос - без саммари." data-i18n-en="Largest context window. Fifty thousand lines in one request - no summarisation.">Самое большое контекстное окно. 50 тысяч строк в один запрос - без саммари.</div>
+      </div>
+      <div class="prov-card">
+        <svg class="p-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9 h16M9 4 v16"/><circle cx="14" cy="14" r="2"/></svg>
+        <div class="p-name">Ollama</div>
+        <div class="p-model">llama3 · codellama · mistral</div>
+        <div class="p-note" data-i18n-ru="Локально. Ни egress, ни API-ключей, ни оплаты за файл. Аудит можно делать из air-gapped среды." data-i18n-en="Local. No egress, no API keys, no per-file billing. Works from an air-gapped environment.">Локально. Ни egress, ни API-ключей, ни оплаты за файл. Аудит можно делать из air-gapped среды.</div>
+      </div>
+    </div>
+
+    <p style="margin-top:28px"
+       data-i18n-ru="<strong>Ещё совместимо</strong> - любой OpenAI-совместимый эндпоинт:"
+       data-i18n-en="<strong>Also compatible</strong> - any OpenAI-compatible endpoint:"><strong>Ещё совместимо</strong> - любой OpenAI-совместимый эндпоинт:</p>
+    <div class="compat-row">
+      <span>OpenRouter</span><span>Groq</span><span>Azure OpenAI</span><span>DeepSeek</span>
+      <span>xAI</span><span>Together</span><span>Mistral</span><span>Fireworks</span>
+      <span>Perplexity</span><span>Cerebras</span><span>Cohere</span>
+    </div>
+  </div>
+</section>
+
+<div class="ornament" aria-hidden="true">&sect; &middot; &sect; &middot; &sect;</div>
+
+<section id="architecture" data-sec="architecture">
+  <div class="col-wide">
+    <div class="sec-num" data-i18n-ru="05 &middot; Архитектура" data-i18n-en="05 &middot; Architecture">05 &middot; Архитектура</div>
+    <h2 data-i18n-ru="Как это работает - на одной странице" data-i18n-en="How it works, on one page">Как это работает - на одной странице</h2>
+    <div class="note-pair" style="max-width:720px;margin-left:auto;margin-right:auto">
+      <p data-i18n-ru="Маленький пайплайн, специально. CodeSight читает файл, собирает промпт с нужным контекстом, вызывает сконфигуренный провайдер и парсит структурированный ответ в объекты-находки, не зависящие от языка."
+         data-i18n-en="A small pipeline, on purpose. CodeSight reads a file, builds a prompt with the right context, calls the configured provider, and parses the structured reply into language-agnostic finding objects.">Маленький пайплайн, специально. CodeSight читает файл, собирает промпт с нужным контекстом, вызывает сконфигуренный провайдер и парсит структурированный ответ в объекты-находки, не зависящие от языка.</p>
+      <aside class="margin-note" data-i18n-ru="Цепочка triage + verify сокращает стоимость на больших репозиториях примерно на 60%: уверенные вердикты проходят без дорогой верификации." data-i18n-en="The triage + verify chain cuts cost on large repos by about 60% - confident verdicts skip the expensive verification step.">Цепочка triage + verify сокращает стоимость на больших репозиториях примерно на 60%: уверенные вердикты проходят без дорогой верификации.</aside>
+    </div>
+
+    <figure class="figure">
+      <svg id="arch-svg" viewBox="0 0 680 280" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+        <!-- row 1: forward pass -->
+        <g class="arch-forward">
+          <!-- file (hover target) -->
+          <g class="arch-node"
+             data-tip-ru="Любой исходник, директория или поток со stdin"
+             data-tip-en="Any source file, directory, or stdin stream"
+             data-tip="Любой исходник, директория или поток со stdin"
+             transform="translate(20,60)">
+            <path class="arch-draw" d="M0 0 h58 l10 10 v60 H0 Z"/>
+            <path class="arch-draw" d="M58 0 v10 h10"/>
+            <line class="arch-draw" x1="10" y1="22" x2="54" y2="22"/>
+            <line class="arch-draw" x1="10" y1="32" x2="48" y2="32"/>
+            <line class="arch-draw" x1="10" y1="42" x2="56" y2="42"/>
+            <line class="arch-draw" x1="10" y1="52" x2="40" y2="52"/>
+            <text x="34" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" stroke="none">file.py</text>
+          </g>
+          <!-- arrow -->
+          <g transform="translate(96,95)">
+            <line class="arch-draw" x1="0" y1="0" x2="42" y2="0"/>
+            <path class="arch-draw" d="M38 -4 L42 0 L38 4"/>
+          </g>
+          <!-- CLI -->
+          <g class="arch-node"
+             data-tip-ru="CLI codesight парсит флаги и роутит в нужный хэндлер"
+             data-tip-en="The codesight CLI parses flags and routes to the right handler"
+             data-tip="CLI codesight парсит флаги и роутит в нужный хэндлер"
+             transform="translate(148,70)">
+            <rect class="arch-draw" x="0" y="0" width="110" height="50" rx="6"/>
+            <text x="55" y="24" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="currentColor" stroke="none">codesight</text>
+            <text x="55" y="38" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="currentColor" stroke="none" opacity="0.6">CLI</text>
+            <text x="55" y="74" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" stroke="none">parse + route</text>
+          </g>
+          <!-- arrow -->
+          <g transform="translate(266,95)">
+            <line class="arch-draw" x1="0" y1="0" x2="42" y2="0"/>
+            <path class="arch-draw" d="M38 -4 L42 0 L38 4"/>
+          </g>
+          <!-- prompt builder -->
+          <g class="arch-node"
+             data-tip-ru="Jinja-шаблоны разворачиваются в system + user сообщения"
+             data-tip-en="Jinja templates expand into system + user messages"
+             data-tip="Jinja-шаблоны разворачиваются в system + user сообщения"
+             transform="translate(316,70)">
+            <rect class="arch-draw" x="0" y="0" width="120" height="50" rx="6"/>
+            <text x="60" y="24" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="currentColor" stroke="none">prompt</text>
+            <text x="60" y="38" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="currentColor" stroke="none">builder</text>
+            <text x="60" y="74" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" stroke="none">system + context</text>
+          </g>
+          <!-- arrow -->
+          <g transform="translate(444,95)">
+            <line class="arch-draw" x1="0" y1="0" x2="42" y2="0"/>
+            <path class="arch-draw" d="M38 -4 L42 0 L38 4"/>
+          </g>
+          <!-- LLM -->
+          <g class="arch-node accent"
+             data-tip-ru="Твой провайдер: OpenAI, Anthropic, Google, Ollama или любой OpenAI-совместимый эндпоинт"
+             data-tip-en="Your provider: OpenAI, Anthropic, Google, Ollama or any OpenAI-compatible endpoint"
+             data-tip="Твой провайдер: OpenAI, Anthropic, Google, Ollama или любой OpenAI-совместимый эндпоинт"
+             transform="translate(494,70)" stroke="currentColor">
+            <rect class="arch-draw" x="0" y="0" width="120" height="50" rx="6"/>
+            <text x="60" y="24" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="12" fill="currentColor" stroke="none">LLM</text>
+            <text x="60" y="38" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="12" fill="currentColor" stroke="none">provider</text>
+            <text x="60" y="74" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" stroke="none">openai / anthropic / ...</text>
+          </g>
+        </g>
+
+        <!-- invisible pulse path for the flow dots (matches arrow centerline) -->
+        <path id="arch-pulse-path" d="M88 95 L554 95" fill="none" stroke="none"/>
+
+        <!-- return loop down -->
+        <path class="arch-draw arch-return" d="M554 130 v30 q0 10 -10 10 h-340 q-10 0 -10 10 v10" stroke="currentColor" stroke-dasharray="3 3"/>
+        <path class="arch-draw arch-return" d="M190 186 l0 5 l-4 -4 m4 4 l-4 4" stroke="currentColor"/>
+
+        <!-- row 2: return pass -->
+        <g transform="translate(0,200)">
+          <!-- SARIF out -->
+          <g class="arch-node"
+             data-tip-ru="SARIF - его напрямую парсит GitHub Advanced Security и SonarQube"
+             data-tip-en="SARIF - consumed directly by GitHub Advanced Security and SonarQube"
+             data-tip="SARIF - его напрямую парсит GitHub Advanced Security и SonarQube"
+             transform="translate(20,0)">
+            <rect class="arch-draw" x="0" y="0" width="68" height="40" rx="4"/>
+            <text x="34" y="24" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="currentColor" stroke="none">SARIF</text>
+            <text x="34" y="56" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="10" fill="currentColor" stroke="none" opacity="0.6" data-i18n-ru="в пайплайн" data-i18n-en="into the pipeline">в пайплайн</text>
+          </g>
+          <!-- arrow back -->
+          <g transform="translate(96,20)">
+            <line class="arch-draw" x1="42" y1="0" x2="0" y2="0"/>
+            <path class="arch-draw" d="M4 -4 L0 0 L4 4"/>
+          </g>
+          <!-- findings parser -->
+          <g class="arch-node"
+             data-tip-ru="Объекты-находки, не зависящие от языка - CWE, severity, строка, подсказка по фиксу"
+             data-tip-en="Language-agnostic finding objects - CWE, severity, line, fix hint"
+             data-tip="Объекты-находки, не зависящие от языка - CWE, severity, строка, подсказка по фиксу"
+             transform="translate(148,0)">
+            <rect class="arch-draw" x="0" y="0" width="110" height="40" rx="6"/>
+            <text x="55" y="18" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="currentColor" stroke="none">findings</text>
+            <text x="55" y="32" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="currentColor" stroke="none">parser</text>
+          </g>
+          <!-- arrow back -->
+          <g transform="translate(266,20)">
+            <line class="arch-draw" x1="42" y1="0" x2="0" y2="0"/>
+            <path class="arch-draw" d="M4 -4 L0 0 L4 4"/>
+          </g>
+          <!-- structured response -->
+          <g class="arch-node"
+             data-tip-ru="JSON от LLM - валидируется по строгой схеме"
+             data-tip-en="JSON from the LLM, validated against a strict schema"
+             data-tip="JSON от LLM - валидируется по строгой схеме"
+             transform="translate(316,0)">
+            <rect class="arch-draw" x="0" y="0" width="120" height="40" rx="6"/>
+            <text x="60" y="18" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="currentColor" stroke="none">structured</text>
+            <text x="60" y="32" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="currentColor" stroke="none">response (JSON)</text>
+          </g>
+        </g>
+
+        <!-- flow-pulse dots (accent, populated by JS) -->
+        <g id="arch-pulses"></g>
+
+        <!-- rails / corners -->
+        <line class="arch-draw" x1="20" y1="20" x2="40" y2="20" opacity="0.3"/>
+        <line class="arch-draw" x1="20" y1="20" x2="20" y2="40" opacity="0.3"/>
+        <line class="arch-draw" x1="660" y1="20" x2="640" y2="20" opacity="0.3"/>
+        <line class="arch-draw" x1="660" y1="20" x2="660" y2="40" opacity="0.3"/>
+        <line class="arch-draw" x1="20" y1="260" x2="40" y2="260" opacity="0.3"/>
+        <line class="arch-draw" x1="20" y1="260" x2="20" y2="240" opacity="0.3"/>
+        <line class="arch-draw" x1="660" y1="260" x2="640" y2="260" opacity="0.3"/>
+        <line class="arch-draw" x1="660" y1="260" x2="660" y2="240" opacity="0.3"/>
+      </svg>
+      <figcaption
+        data-i18n-ru='Рис. 2 - прямой проход сплошной линией, обратный пунктиром. Пять узлов, скрытого состояния нет. <span class="fig-hover-hint">Наведи на узлы.</span>'
+        data-i18n-en='Fig. 2 - forward pass solid, return pass dashed. Five nodes, no hidden state. <span class="fig-hover-hint">Hover the nodes.</span>'>Рис. 2 - прямой проход сплошной линией, обратный пунктиром. Пять узлов, скрытого состояния нет. <span class="fig-hover-hint">Наведи на узлы.</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<div class="ornament" aria-hidden="true">&sect; &middot; &sect; &middot; &sect;</div>
+
+<!-- interactive code example: spot-the-bugs -->
+<section id="spot" data-sec="spot">
+  <div class="col">
+    <div class="sec-num" data-i18n-ru="06 &middot; Найди баги" data-i18n-en="06 &middot; Spot the bugs">06 &middot; Найди баги</div>
+    <h2 data-i18n-ru="Задачка <em>для читателя</em>" data-i18n-en="A puzzle <em>for the reader</em>">Задачка <em>для читателя</em></h2>
+    <p class="spot-preamble"
+       data-i18n-ru="<em>Найдёшь три критичных дефекта в этом Flask-роуте? Наведи на маркеры - модель поймала все три за 2.1 секунды.</em>"
+       data-i18n-en="<em>Can you spot the three critical defects in this Flask route? Hover the markers - the model caught all three in 2.1 seconds.</em>"><em>Найдёшь три критичных дефекта в этом Flask-роуте? Наведи на маркеры - модель поймала все три за 2.1 секунды.</em></p>
+
+    <div class="codex" id="codex">
+      <header>
+        <span class="fn">api.py</span>
+        <span class="lang">Python 3.11</span>
+      </header>
+      <div class="codex-body">
+        <div class="ln" aria-hidden="true">
+          <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+          <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+          <span>11</span><span>12</span><span>13</span><span>14</span><span>15</span>
+          <span>16</span><span>17</span><span>18</span>
+        </div>
+        <pre class="src"><code><span class="l"><span class="kw">from</span> flask <span class="kw">import</span> Flask, request</span>
+<span class="l"><span class="kw">import</span> sqlite3</span>
+<span class="l"></span>
+<span class="l">app = Flask(__name__)</span>
+<span class="l bad" data-bug="2"><span class="marker" tabindex="0" role="button"
+  data-i18n-aria-ru="Баг 2: захардкоженный секрет"
+  data-i18n-aria-en="Bug 2: hardcoded secret"
+  aria-label="Баг 2: захардкоженный секрет" data-bug-num="2">2</span>JWT_SECRET = <span class="str">"admin123"</span>  <span class="cm"># secret key, used to sign tokens</span></span>
+<span class="l"></span>
+<span class="l">@app.route(<span class="str">"/user/&lt;user_id&gt;"</span>)</span>
+<span class="l"><span class="kw">def</span> <span class="fn2">get_user</span>(user_id):</span>
+<span class="l">    conn = sqlite3.connect(<span class="str">"app.db"</span>)</span>
+<span class="l">    cur = conn.cursor()</span>
+<span class="l bad" data-bug="1"><span class="marker" tabindex="0" role="button"
+  data-i18n-aria-ru="Баг 1: SQL-инъекция"
+  data-i18n-aria-en="Bug 1: SQL injection"
+  aria-label="Баг 1: SQL-инъекция" data-bug-num="1">1</span>    cur.execute(<span class="str">f"SELECT * FROM users WHERE id={user_id}"</span>)</span>
+<span class="l">    <span class="kw">return</span> cur.fetchone()</span>
+<span class="l"></span>
+<span class="l">@app.route(<span class="str">"/admin"</span>)</span>
+<span class="l"><span class="kw">def</span> <span class="fn2">admin</span>():</span>
+<span class="l bad" data-bug="3"><span class="marker" tabindex="0" role="button"
+  data-i18n-aria-ru="Баг 3: обход аутентификации"
+  data-i18n-aria-en="Bug 3: auth bypass"
+  aria-label="Баг 3: обход аутентификации" data-bug-num="3">3</span>    <span class="kw">if</span> request.headers.get(<span class="str">"X-Debug"</span>):</span>
+<span class="l">        <span class="kw">return</span> admin_panel()</span>
+<span class="l">    ...</span></code></pre>
+      </div>
+      <!-- bug tooltip (singleton) -->
+      <div class="bug-tip" id="bug-tip" role="tooltip" aria-hidden="true">
+        <div class="bt-head"><span class="bt-sev"></span><span class="bt-cwe"></span></div>
+        <div class="bt-title"></div>
+        <div class="bt-fix"></div>
+      </div>
+    </div>
+
+    <p class="spot-hint"
+       data-i18n-ru="<small class='note'>Три маркера. С клавиатуры тоже работает: Tab для фокуса, стрелки - между ними. Те же три находки CodeSight отдаст в SARIF, если запустить <code>codesight security api.py</code>.</small>"
+       data-i18n-en="<small class='note'>Three markers. Keyboard works too - Tab to focus, arrows to move. The same three findings come out as SARIF if you run <code>codesight security api.py</code>.</small>"><small class="note">Три маркера. С клавиатуры тоже работает: Tab для фокуса, стрелки - между ними. Те же три находки CodeSight отдаст в SARIF, если запустить <code>codesight security api.py</code>.</small></p>
+  </div>
+</section>
+
+<div class="ornament" aria-hidden="true">&sect; &middot; &sect; &middot; &sect;</div>
+
+<section id="example" data-sec="example">
+  <div class="col">
+    <div class="sec-num" data-i18n-ru="07 &middot; Пример запуска" data-i18n-en="07 &middot; A typical run">07 &middot; Пример запуска</div>
+    <h2 data-i18n-ru="Настоящий <em>security</em>-аудит, без монтажа" data-i18n-en="An actual <em>security</em> audit, unedited">Настоящий <em>security</em>-аудит, без монтажа</h2>
+    <p data-i18n-ru="Ниже - буквальный stdout команды <code>codesight security</code> на том же роуте. CLI не болтает лишнего: только находки в фиксированном формате."
+       data-i18n-en="Below is the literal stdout from <code>codesight security</code> on the same route. The CLI does not chatter - just findings in a fixed format.">Ниже - буквальный stdout команды <code>codesight security</code> на том же роуте. CLI не болтает лишнего: только находки в фиксированном формате.</p>
+
+    <div class="output" id="audit-output">
+      <header>
+        <span data-i18n-ru="терминал &middot; bash" data-i18n-en="terminal &middot; bash">терминал &middot; bash</span>
+        <div style="display:flex;gap:12px;align-items:center">
+          <span>codesight 0.3.0</span>
+          <button class="copy-btn" type="button" data-copy-target="#audit-output .lines"
+                  data-i18n-aria-ru="Скопировать вывод"
+                  data-i18n-aria-en="Copy output"
+                  data-i18n-ru="Копировать"
+                  data-i18n-en="Copy"
+                  aria-label="Скопировать вывод">Копировать</button>
+        </div>
+      </header>
+      <div class="body">
+        <div class="gutter" aria-hidden="true">
+          <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+          <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+          <span>11</span><span>12</span><span>13</span><span>14</span>
+        </div>
+        <div class="lines"><span class="prompt">$</span> <span class="cmd">codesight security src/api.py <span class="flag">--format sarif</span></span>
+<span class="dim">CodeSight 0.3.0 &middot; provider=anthropic model=claude-opus-4.6 &middot; 238 LOC &middot; 3.1s</span>
+
+<span class="crit">CRITICAL</span> src/api.py:47 &middot; SQL injection &middot; CWE-89 / OWASP A03
+  <span class="dim">&rsaquo; User-controlled 'user_id' concatenated into SELECT via f-string.</span>
+  <span class="dim">&rsaquo; Fix: parameterise with sqlalchemy.text or cursor.execute(&hellip;, (user_id,))</span>
+
+<span class="crit">CRITICAL</span> src/api.py:112 &middot; Hardcoded secret &middot; CWE-798
+  <span class="dim">&rsaquo; AWS access key present in source. Rotate + move to secret manager.</span>
+
+<span class="high">HIGH</span>     src/api.py:203 &middot; Auth bypass &middot; CWE-287
+  <span class="dim">&rsaquo; Admin check can be skipped when 'X-Debug' header is set in prod.</span>
+
+<span class="ok">&rarr; 3 findings written to codesight.sarif</span></div>
+      </div>
+    </div>
+
+    <div class="legend"
+         data-i18n-aria-ru="Уровни критичности"
+         data-i18n-aria-en="Severity levels"
+         aria-label="Уровни критичности">
+      <span class="sw crit" data-i18n-ru="critical" data-i18n-en="critical">critical</span>
+      <span class="sw high" data-i18n-ru="high" data-i18n-en="high">high</span>
+      <span class="sw ok" data-i18n-ru="success" data-i18n-en="success">success</span>
+    </div>
+
+    <p style="margin-top:18px"
+       data-i18n-ru="<small class='note'>Wall-clock время зависит от провайдера и размера файла. CodeSight стримит вывод по мере подтверждения находок - можно сразу пайпать в <code>jq</code> или <code>fx</code>.</small>"
+       data-i18n-en="<small class='note'>Wall-clock time depends on provider and file size. CodeSight streams output as findings are confirmed - pipe it straight into <code>jq</code> or <code>fx</code>.</small>"><small class="note">Wall-clock время зависит от провайдера и размера файла. CodeSight стримит вывод по мере подтверждения находок - можно сразу пайпать в <code>jq</code> или <code>fx</code>.</small></p>
+  </div>
+</section>
+
+<div class="ornament" aria-hidden="true">&sect; &middot; &sect; &middot; &sect;</div>
+
+<section id="beforeafter" data-sec="beforeafter">
+  <div class="col">
+    <div class="sec-num" data-i18n-ru="08 &middot; До / после" data-i18n-en="08 &middot; Before / after">08 &middot; До / после</div>
+    <h2 data-i18n-ru="Те же четыре строки, другое прочтение" data-i18n-en="Same four lines, a different reading">Те же четыре строки, другое прочтение</h2>
+    <p data-i18n-ru="Линтер видит валидный Python. Тайп-чекер видит совместимые типы. Тесты зелёные. Код уходит в релиз. Через месяц пользователь обнаруживает, что может вытащить всю таблицу <code>users</code>, если подсунуть хитрый <code>uid</code>. CodeSight читает те же четыре строки и не пропускает их на ревью."
+       data-i18n-en="The linter sees valid Python. The type checker sees compatible types. Tests pass. Code ships. A month later a user discovers they can dump the whole <code>users</code> table with a crafted <code>uid</code>. CodeSight reads the same four lines and does not let them through review.">Линтер видит валидный Python. Тайп-чекер видит совместимые типы. Тесты зелёные. Код уходит в релиз. Через месяц пользователь обнаруживает, что может вытащить всю таблицу <code>users</code>, если подсунуть хитрый <code>uid</code>. CodeSight читает те же четыре строки и не пропускает их на ревью.</p>
+
+    <div class="ba-wrap">
+      <div class="ba-cell before">
+        <div class="ba-label"><span class="dot"></span> <span data-i18n-ru="До &middot; статический анализ" data-i18n-en="Before &middot; static analysis">До &middot; статический анализ</span></div>
+        <div class="ba-head" data-i18n-ru="Вывод линтера по <code>user_handler.py</code>:" data-i18n-en="Linter output for <code>user_handler.py</code>:">Вывод линтера по <code>user_handler.py</code>:</div>
+<pre class="ba-code"><span class="cmt"># All checks passed. 0 issues.</span>
+<span class="kw">@app</span>.route(<span class="str">"/user/&lt;uid&gt;"</span>)
+<span class="kw">def</span> user(uid):
+    <span class="kw">return</span> db.query(<span class="str">f"SELECT * FROM u WHERE id={uid}"</span>)</pre>
+      </div>
+      <div class="ba-cell after">
+        <div class="ba-label"><span class="dot"></span> <span data-i18n-ru="После &middot; codesight security" data-i18n-en="After &middot; codesight security">После &middot; codesight security</span></div>
+        <div class="ba-head" data-i18n-ru="Находки CodeSight по тому же файлу:" data-i18n-en="CodeSight findings for the same file:">Находки CodeSight по тому же файлу:</div>
+<pre class="ba-code"
+  data-i18n-ru='<span class="kw">@app</span>.route(<span class="str">"/user/&lt;uid&gt;"</span>)
+<span class="kw">def</span> user(uid):
+    <span class="kw">return</span> db.query(<span class="str">f"SELECT * FROM u WHERE id={uid}"</span>)
+<span class="marker">    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</span>
+<span class="marker">    CRIT · CWE-89 · SQL injection via f-string</span>
+<span class="fix">    Фикс: используй параметризованный запрос</span>'
+  data-i18n-en='<span class="kw">@app</span>.route(<span class="str">"/user/&lt;uid&gt;"</span>)
+<span class="kw">def</span> user(uid):
+    <span class="kw">return</span> db.query(<span class="str">f"SELECT * FROM u WHERE id={uid}"</span>)
+<span class="marker">    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</span>
+<span class="marker">    CRIT · CWE-89 · SQL injection via f-string</span>
+<span class="fix">    Fix: use a parameterised query</span>'><span class="kw">@app</span>.route(<span class="str">"/user/&lt;uid&gt;"</span>)
+<span class="kw">def</span> user(uid):
+    <span class="kw">return</span> db.query(<span class="str">f"SELECT * FROM u WHERE id={uid}"</span>)
+<span class="marker">    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</span>
+<span class="marker">    CRIT · CWE-89 · SQL injection via f-string</span>
+<span class="fix">    Фикс: используй параметризованный запрос</span></pre>
+      </div>
+    </div>
+
+    <p style="margin-top:24px"
+       data-i18n-ru="<small class='note'>Это сокращённый пример. В реальном выводе будет полный фрагмент с фиксом, маппинг на OWASP и уровень уверенности верифицирующей модели.</small>"
+       data-i18n-en="<small class='note'>This is an abbreviated sample. Real output includes the full snippet with a fix, OWASP mapping, and the verifier model's confidence score.</small>"><small class="note">Это сокращённый пример. В реальном выводе будет полный фрагмент с фиксом, маппинг на OWASP и уровень уверенности верифицирующей модели.</small></p>
+  </div>
+</section>
+
+<div class="ornament" aria-hidden="true">&sect; &middot; &sect; &middot; &sect;</div>
+
+<section id="why" data-sec="why">
+  <div class="col">
+    <div class="sec-num" data-i18n-ru="09 &middot; Решения" data-i18n-en="09 &middot; Design notes">09 &middot; Решения</div>
+    <h2 data-i18n-ru="Четыре тихих решения" data-i18n-en="Four quiet decisions">Четыре тихих решения</h2>
+    <div class="icon-grid">
+      <div class="cell">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6M7 17h8"/></svg>
+        <div class="text"><h3 data-i18n-ru="CLI, а не обёртка над SaaS" data-i18n-en="A CLI, not a SaaS wrapper">CLI, а не обёртка над SaaS</h3><p data-i18n-ru="Никакой панели, никакого сервиса. UI - твой шелл. Выхлоп - текст." data-i18n-en="No dashboard, no service. The UI is your shell. The output is text.">Никакой панели, никакого сервиса. UI - твой шелл. Выхлоп - текст.</p></div>
+      </div>
+      <div class="cell">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="10"/></svg>
+        <div class="text"><h3 data-i18n-ru="Нейтральность к провайдеру" data-i18n-en="Provider neutrality">Нейтральность к провайдеру</h3><p data-i18n-ru="Ключ твой. Модель переключается флагом под каждую команду." data-i18n-en="Your key, your model. A flag swaps providers per command.">Ключ твой. Модель переключается флагом под каждую команду.</p></div>
+      </div>
+      <div class="cell">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6 4h12l-2 12H8zM9 4V2m6 2V2"/></svg>
+        <div class="text"><h3 data-i18n-ru="SARIF по умолчанию" data-i18n-en="SARIF by default">SARIF по умолчанию</h3><p data-i18n-ru="У каждой находки есть CWE, OWASP и severity - пайплайн это уже понимает." data-i18n-en="Every finding carries CWE, OWASP and severity - your pipeline already understands that.">У каждой находки есть CWE, OWASP и severity - пайплайн это уже понимает.</p></div>
+      </div>
+      <div class="cell">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9l6 6M15 9l-6 6"/></svg>
+        <div class="text"><h3 data-i18n-ru="Офлайн-режим" data-i18n-en="Offline mode">Офлайн-режим</h3><p data-i18n-ru="Направь на локальный Ollama. Никакого egress, никаких логов, никаких сюрпризов." data-i18n-en="Point it at a local Ollama. No egress, no logs, no surprises.">Направь на локальный Ollama. Никакого egress, никаких логов, никаких сюрпризов.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="ornament" aria-hidden="true">&sect; &middot; &sect; &middot; &sect;</div>
+
+<section id="timeline" data-sec="timeline">
+  <div class="col">
+    <div class="sec-num" data-i18n-ru="10 &middot; История версий" data-i18n-en="10 &middot; Changelog">10 &middot; История версий</div>
+    <h2 data-i18n-ru="Короткая честная история" data-i18n-en="A short honest history">Короткая честная история</h2>
+    <p data-i18n-ru="Три релиза за четыре дня. Каждый шаг добавляет ровно одну понятную фичу, ничего не удаляется без предупреждения."
+       data-i18n-en="Three releases in four days. Each step adds exactly one clear feature, nothing is removed without notice.">Три релиза за четыре дня. Каждый шаг добавляет ровно одну понятную фичу, ничего не удаляется без предупреждения.</p>
+
+    <ol class="timeline">
+      <li>
+        <span class="date" data-i18n-ru="20 апреля 2026" data-i18n-en="20 April 2026">20 апреля 2026</span>
+        <span class="ver">v0.1.0</span>
+        <span data-i18n-ru="Первый релиз на PyPI. Четыре провайдера, команда <code>security</code>, экспорт в SARIF."
+              data-i18n-en="First PyPI release. Four providers, the <code>security</code> command, SARIF export.">Первый релиз на PyPI. Четыре провайдера, команда <code>security</code>, экспорт в SARIF.</span>
+      </li>
+      <li>
+        <span class="date" data-i18n-ru="22 апреля 2026" data-i18n-en="22 April 2026">22 апреля 2026</span>
+        <span class="ver">v0.2.0</span>
+        <span data-i18n-ru="Поддержка Solidity-смарт-контрактов, команда benchmark, интерактивное TUI-меню."
+              data-i18n-en="Solidity smart-contract support, the benchmark command, an interactive TUI menu.">Поддержка Solidity-смарт-контрактов, команда benchmark, интерактивное TUI-меню.</span>
+      </li>
+      <li class="current">
+        <span class="date" data-i18n-ru="22 апреля 2026" data-i18n-en="22 April 2026">22 апреля 2026</span>
+        <span class="ver">v0.3.0</span>
+        <span data-i18n-ru="OpenAI-совместимые провайдеры - ещё дюжина эндпоинтов через один общий адаптер. Текущий релиз."
+              data-i18n-en="OpenAI-compatible providers - another dozen endpoints through one shared adapter. The current release.">OpenAI-совместимые провайдеры - ещё дюжина эндпоинтов через один общий адаптер. Текущий релиз.</span>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<div class="ornament" aria-hidden="true">&sect; &middot; &sect; &middot; &sect;</div>
+
+<section id="faq" data-sec="faq">
+  <div class="col">
+    <div class="sec-num" data-i18n-ru="11 &middot; Вопросы" data-i18n-en="11 &middot; Questions">11 &middot; Вопросы</div>
+    <h2 data-i18n-ru="Что спрашивают чаще всего" data-i18n-en="What people ask most">Что спрашивают чаще всего</h2>
+    <p data-i18n-ru='Пять коротких ответов на то, что регулярно прилетает в GitHub issues. Если твоего вопроса тут нет - <a href="https://github.com/AvixoSec/codesight/discussions">заведи discussion</a>.'
+       data-i18n-en='Five short answers to what keeps showing up in GitHub issues. If your question is not here, <a href="https://github.com/AvixoSec/codesight/discussions">open a discussion</a>.'>Пять коротких ответов на то, что регулярно прилетает в GitHub issues. Если твоего вопроса тут нет - <a href="https://github.com/AvixoSec/codesight/discussions">заведи discussion</a>.</p>
+
+    <div class="faq">
+      <details>
+        <summary data-i18n-ru="Чем отличается от Copilot?" data-i18n-en="How is it different from Copilot?">Чем отличается от Copilot?</summary>
+        <div class="answer"
+          data-i18n-ru="<p>Copilot пишет код за тебя. CodeSight читает уже написанный и говорит, что с ним не так. Другой цикл, другая задача.</p><p>Copilot - это автокомплит с мнением. CodeSight - ревьюер с маппингом на CWE. Они нормально уживаются, можно использовать оба на одном файле.</p>"
+          data-i18n-en="<p>Copilot writes code for you. CodeSight reads what is already written and tells you what is wrong with it. Different loop, different job.</p><p>Copilot is autocomplete with an opinion. CodeSight is a reviewer with CWE mappings. They get along fine - you can use both on the same file.</p>">
+          <p>Copilot пишет код за тебя. CodeSight читает уже написанный и говорит, что с ним не так. Другой цикл, другая задача.</p>
+          <p>Copilot - это автокомплит с мнением. CodeSight - ревьюер с маппингом на CWE. Они нормально уживаются, можно использовать оба на одном файле.</p>
+        </div>
+      </details>
+      <details>
+        <summary data-i18n-ru="Вы логируете мой код?" data-i18n-en="Do you log my code?">Вы логируете мой код?</summary>
+        <div class="answer"
+          data-i18n-ru="<p>Нет. У CodeSight нет сервера. Код уходит только туда, куда ты сам настроил провайдера. API-ключ видим только локально, никаких обращений на наш бэк не делается - потому что его нет.</p><p>Если не хочешь вообще никакого egress - возьми провайдер <code>ollama</code> и покажи на локальную модель. Ничего не уходит за границу машины.</p>"
+          data-i18n-en="<p>No. CodeSight has no server. Code only leaves for the provider you configured. The API key lives locally, no calls go back to us - because there is no us to call.</p><p>If you want zero egress at all, point the <code>ollama</code> provider at a local model. Nothing crosses the machine boundary.</p>">
+          <p>Нет. У CodeSight нет сервера. Код уходит только туда, куда ты сам настроил провайдера. API-ключ видим только локально, никаких обращений на наш бэк не делается - потому что его нет.</p>
+          <p>Если не хочешь вообще никакого egress - возьми провайдер <code>ollama</code> и покажи на локальную модель. Ничего не уходит за границу машины.</p>
+        </div>
+      </details>
+      <details>
+        <summary data-i18n-ru="Можно использовать свои промпты?" data-i18n-en="Can I use my own prompts?">Можно использовать свои промпты?</summary>
+        <div class="answer"
+          data-i18n-ru="<p>Да. У каждой встроенной команды промпт лежит в читаемом Jinja-шаблоне в <code>codesight/templates/</code>. Скопируй, поправь, подсунь через <code>--template path/to/custom.j2</code>.</p><p>Подкоманда <code>codesight prompts</code> для управления именованными вариантами - в issue #47.</p>"
+          data-i18n-en="<p>Yes. Every built-in command has its prompt in a readable Jinja template under <code>codesight/templates/</code>. Copy it, edit it, pass it through <code>--template path/to/custom.j2</code>.</p><p>A <code>codesight prompts</code> subcommand for managing named variants is tracked in issue #47.</p>">
+          <p>Да. У каждой встроенной команды промпт лежит в читаемом Jinja-шаблоне в <code>codesight/templates/</code>. Скопируй, поправь, подсунь через <code>--template path/to/custom.j2</code>.</p>
+          <p>Подкоманда <code>codesight prompts</code> для управления именованными вариантами - в issue #47.</p>
+        </div>
+      </details>
+      <details>
+        <summary data-i18n-ru="Почему не CodeQL?" data-i18n-en="Why not CodeQL?">Почему не CodeQL?</summary>
+        <div class="answer"
+          data-i18n-ru="<p>Бери оба. CodeQL даёт точные результаты на основе правил и почти без ложных срабатываний. CodeSight даёт гибкий анализ с объяснениями и контекстом. Эти два набора находок редко полностью совпадают.</p><p>CodeQL силён на известных классах уязвимостей, где можно описать taint-путь. CodeSight силён на бизнес-логике и идиомах, под которые ещё никто не написал запрос.</p>"
+          data-i18n-en="<p>Use both. CodeQL gives precise, rule-based results with very few false positives. CodeSight gives flexible analysis with explanations and context. The two finding sets rarely overlap completely.</p><p>CodeQL is strong on known vulnerability classes where a taint path can be described. CodeSight is strong on business logic and idioms no one has written a query for yet.</p>">
+          <p>Бери оба. CodeQL даёт точные результаты на основе правил и почти без ложных срабатываний. CodeSight даёт гибкий анализ с объяснениями и контекстом. Эти два набора находок редко полностью совпадают.</p>
+          <p>CodeQL силён на известных классах уязвимостей, где можно описать taint-путь. CodeSight силён на бизнес-логике и идиомах, под которые ещё никто не написал запрос.</p>
+        </div>
+      </details>
+      <details>
+        <summary data-i18n-ru="А rate limits?" data-i18n-en="What about rate limits?">А rate limits?</summary>
+        <div class="answer"
+          data-i18n-ru="<p>CodeSight уважает заголовок <code>Retry-After</code> и откатывается экспоненциально. Для больших сканов можно задать лимит конкурентности и бюджет токенов в минуту в <code>~/.codesight/config.toml</code>.</p><p>Нужен выше throughput - заведи Groq или Cerebras, оба работают через OpenAI-совместимый адаптер.</p>"
+          data-i18n-en="<p>CodeSight honours <code>Retry-After</code> and backs off exponentially. For large scans you can cap concurrency and tokens-per-minute in <code>~/.codesight/config.toml</code>.</p><p>Need higher throughput - try Groq or Cerebras, both work through the OpenAI-compatible adapter.</p>">
+          <p>CodeSight уважает заголовок <code>Retry-After</code> и откатывается экспоненциально. Для больших сканов можно задать лимит конкурентности и бюджет токенов в минуту в <code>~/.codesight/config.toml</code>.</p>
+          <p>Нужен выше throughput - заведи Groq или Cerebras, оба работают через OpenAI-совместимый адаптер.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<div class="ornament" aria-hidden="true">&sect; &middot; &sect; &middot; &sect;</div>
+
+<section class="quiet" id="end" data-sec="end">
+  <div class="col" style="padding-bottom:24px">
+    <div class="sec-num" data-i18n-ru="12 &middot; Попробовать" data-i18n-en="12 &middot; Try it">12 &middot; Попробовать</div>
+    <h2 data-i18n-ru="Установка - три строки" data-i18n-en="Install is three lines">Установка - три строки</h2>
+    <p data-i18n-ru="Если есть Python 3.9+ и ключ от любого поддерживаемого провайдера, можно за минуту проаудитить файл."
+       data-i18n-en="With Python 3.9+ and a key for any supported provider, you can audit a file in under a minute.">Если есть Python 3.9+ и ключ от любого поддерживаемого провайдера, можно за минуту проаудитить файл.</p>
+    <div class="output plain">
+      <header>
+        <span data-i18n-ru="установка" data-i18n-en="install">установка</span>
+        <span>~/project</span>
+      </header>
+      <div class="body">
+<span class="prompt">$</span> <span class="cmd">pip install codesight</span><br>
+<span class="prompt">$</span> <span class="cmd">codesight config set provider anthropic</span><br>
+<span class="prompt">$</span> <span class="cmd">codesight review app.py</span>
+      </div>
+    </div>
+    <div class="lead-actions" style="margin-top:8px">
+      <a class="btn btn-primary magnetic" href="https://github.com/AvixoSec/codesight"
+         data-i18n-ru="Читать исходники" data-i18n-en="Read the source">Читать исходники</a>
+      <a class="btn btn-ghost magnetic" href="docs/"
+         data-i18n-ru="Документация &rarr;" data-i18n-en="Documentation &rarr;">Документация &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<!-- footnote floating tooltip (rendered once by JS) -->
+<div class="fn-tip" id="fn-tip" role="tooltip" aria-hidden="true"></div>
+
+<!-- pip-cursor label (follows cursor over the pip block) -->
+<div class="pip-cursor" id="pip-cursor" aria-hidden="true" data-i18n-ru="копировать" data-i18n-en="copy">копировать</div>
+
+<!-- architecture node tooltip -->
+<div class="arch-tip" id="arch-tip" role="tooltip" aria-hidden="true"></div>
+
+<!-- TOC item tooltip -->
+<div class="toc-mins-tip" id="toc-mins-tip" role="tooltip" aria-hidden="true"></div>
 
 <footer>
-  <span>MIT License</span>
-  <span><a href="docs/security.html">Security</a> - <a href="docs/benchmarks.html">Benchmarks</a> - <a href="docs/ci-cd.html">CI/CD</a></span>
+  <div class="foot-grid">
+    <div>
+      <div class="brand">CodeSight</div>
+      <p data-i18n-ru="Опенсорсная CLI для LLM-ревью кода и security-аудита. Лицензия MIT, ведёт AvixoSec."
+         data-i18n-en="Open-source CLI for LLM code review and security audit. MIT licensed, maintained by AvixoSec.">Опенсорсная CLI для LLM-ревью кода и security-аудита. Лицензия MIT, ведёт AvixoSec.</p>
+      <p style="color:var(--dim)"><small data-i18n-ru="Выпуск 0.3.0 &middot; апрель 2026" data-i18n-en="Release 0.3.0 &middot; April 2026">Выпуск 0.3.0 &middot; апрель 2026</small></p>
+    </div>
+    <div>
+      <h4 data-i18n-ru="Проект" data-i18n-en="Project">Проект</h4>
+      <a href="https://github.com/AvixoSec/codesight" data-i18n-ru="Исходники" data-i18n-en="Source">Исходники</a>
+      <a href="https://pypi.org/project/codesight/">PyPI</a>
+      <a href="docs/" data-i18n-ru="Документация" data-i18n-en="Documentation">Документация</a>
+    </div>
+    <div>
+      <h4 data-i18n-ru="Сообщество" data-i18n-en="Community">Сообщество</h4>
+      <a href="https://github.com/AvixoSec/codesight/issues">Issues</a>
+      <a href="https://github.com/AvixoSec/codesight/discussions" data-i18n-ru="Обсуждения" data-i18n-en="Discussions">Обсуждения</a>
+      <a href="https://github.com/AvixoSec/codesight/blob/main/CONTRIBUTING.md" data-i18n-ru="Контрибьютить" data-i18n-en="Contribute">Контрибьютить</a>
+    </div>
+    <div>
+      <h4 data-i18n-ru="Юридическое" data-i18n-en="Legal">Юридическое</h4>
+      <a href="https://github.com/AvixoSec/codesight/blob/main/LICENSE" data-i18n-ru="Лицензия MIT" data-i18n-en="MIT license">Лицензия MIT</a>
+      <a href="https://github.com/AvixoSec/codesight/blob/main/SECURITY.md">Security policy</a>
+      <a href="https://github.com/AvixoSec/codesight/blob/main/CODE_OF_CONDUCT.md" data-i18n-ru="Кодекс поведения" data-i18n-en="Code of conduct">Кодекс поведения</a>
+    </div>
+  </div>
+  <div class="foot-bottom">
+    <span data-i18n-ru="Опубликовано 22 апреля 2026 &middot; AvixoSec" data-i18n-en="Published 22 April 2026 &middot; AvixoSec">Опубликовано 22 апреля 2026 &middot; AvixoSec</span>
+    <span class="wc" id="word-count">~0 слов</span>
+    <span>v0.3.0</span>
+  </div>
 </footer>
+
+<script src="script.js" defer></script>
 </body>
 </html>

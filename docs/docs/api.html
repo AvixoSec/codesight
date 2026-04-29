@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Python API - CodeSight Docs</title>
-<meta name="description" content="Python API notes for CodeSight Analyzer, SARIF verify helpers, findings, and artifacts.">
+<meta name="description" content="Use CodeSight programmatically in your Python code: Analyzer, TaskType, AnalysisResult, configuration, compression, templates, streaming, cost.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -13,53 +13,199 @@
 <body>
 <div class="grain" aria-hidden="true"></div>
 <div class="progress" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
-<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button>
-<nav class="doc-nav"><a href="../" class="brand"><span class="mark"></span>CodeSight</a><div class="nav-links"><a href="./">Docs</a><a href="https://github.com/your-org/codesight" target="_blank" rel="noopener">GitHub</a><a href="https://pypi.org/project/codesight/" target="_blank" rel="noopener">PyPI</a></div></nav>
+
+<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme">
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="4"/>
+    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+  </svg>
+</button>
+
+<nav class="doc-nav">
+  <a href="../" class="brand"><span class="mark"></span>CodeSight</a>
+  <div class="nav-links">
+    <a href="./" class="active">Docs</a>
+    <a href="https://github.com/AvixoSec/codesight" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://pypi.org/project/codesight/" target="_blank" rel="noopener">PyPI</a>
+  </div>
+</nav>
+
 <div class="doc-layout">
   <aside class="sidebar">
-    <div class="sb-section"><div class="sb-title">Getting Started</div><a href="./" class="sb-link">Overview</a><a href="installation.html" class="sb-link">Installation</a><a href="quickstart.html" class="sb-link">Quick Start</a></div>
-    <div class="sb-section"><div class="sb-title">Usage</div><a href="verify.html" class="sb-link">Verify SARIF</a><a href="commands.html" class="sb-link">Commands</a><a href="providers.html" class="sb-link">Providers</a><a href="templates.html" class="sb-link">Templates</a><a href="ci-cd.html" class="sb-link">CI/CD</a></div>
-    <div class="sb-section"><div class="sb-title">Reference</div><a href="benchmarks.html" class="sb-link">Benchmarks</a><a href="architecture.html" class="sb-link">Architecture</a><a href="api.html" class="sb-link active">Python API</a></div>
-    <div class="sb-section"><div class="sb-title">Project</div><a href="contributing.html" class="sb-link">Contributing</a><a href="security.html" class="sb-link">Security Policy</a></div>
+    <div class="sb-section">
+      <div class="sb-title">Getting Started</div>
+      <a href="./" class="sb-link">Overview</a>
+      <a href="installation.html" class="sb-link">Installation</a>
+      <a href="quickstart.html" class="sb-link">Quick Start</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Usage</div>
+      <a href="commands.html" class="sb-link">Commands</a>
+      <a href="providers.html" class="sb-link">Providers</a>
+      <a href="templates.html" class="sb-link">Custom Templates</a>
+      <a href="ci-cd.html" class="sb-link">CI/CD Integration</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Reference</div>
+      <a href="benchmarks.html" class="sb-link">Benchmarks</a>
+      <a href="architecture.html" class="sb-link">Architecture</a>
+      <a href="api.html" class="sb-link active">Python API</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Community</div>
+      <a href="contributing.html" class="sb-link">Contributing</a>
+      <a href="security.html" class="sb-link">Security Policy</a>
+    </div>
   </aside>
+
   <main class="doc-content">
     <h1>Python API</h1>
-    <p class="lead">The CLI is the stable interface. The Python modules are useful for internal tools and tests.</p>
+    <p class="lead">CodeSight as a library - call it from Python code.</p>
 
-    <h2>Direct Analysis</h2>
-    <div class="code-block"><div class="code-header"><span>Python</span></div><pre><code>import asyncio
-
-from codesight.analyzer import Analyzer, TaskType
+    <h2>Basic Usage</h2>
+    <div class="code-block">
+      <div class="code-header"><span>Python</span></div>
+      <pre><code>import asyncio
 from codesight.config import load_config
+from codesight.analyzer import Analyzer, TaskType
+
+config = load_config()
+analyzer = Analyzer(config, provider_name="openai")
+
+result = asyncio.run(analyzer.analyze_file(
+    "src/auth.py",
+    TaskType.SECURITY,
+))
+
+print(result.content)
+print(f"Tokens: {result.tokens_used}")
+print(f"Model: {result.model}")</code></pre>
+    </div>
+
+    <h2>Analyzer</h2>
+    <div class="code-block">
+      <div class="code-header"><span>codesight.analyzer</span></div>
+      <pre><code>class Analyzer:
+    def __init__(config: AppConfig, provider_name: str | None = None)
+    async def analyze_file(file_path: str, task: TaskType, extra_context: str | None = None) -&gt; AnalysisResult
+    async def analyze_files(file_paths: list[str], task: TaskType) -&gt; list[AnalysisResult]
+    async def health() -&gt; bool</code></pre>
+    </div>
+
+    <h2>TaskType</h2>
+    <div class="code-block">
+      <div class="code-header"><span>codesight.analyzer</span></div>
+      <pre><code>class TaskType(Enum):
+    REVIEW = "review"
+    BUGS = "bugs"
+    SECURITY = "security"
+    DOCS = "docs"
+    EXPLAIN = "explain"
+    REFACTOR = "refactor"</code></pre>
+    </div>
+
+    <h2>AnalysisResult</h2>
+    <div class="code-block">
+      <div class="code-header"><span>codesight.analyzer</span></div>
+      <pre><code>@dataclass
+class AnalysisResult:
+    task: TaskType
+    file_path: str
+    content: str       # markdown analysis output
+    model: str         # model used (e.g. "gpt-5.4")
+    provider: str      # provider name (e.g. "OpenAI")
+    tokens_used: int   # total tokens (prompt + completion)
+    usage: dict        # {"prompt_tokens": N, "completion_tokens": N}</code></pre>
+    </div>
+
+    <h2>Configuration</h2>
+    <div class="code-block">
+      <div class="code-header"><span>Python</span></div>
+      <pre><code>from codesight.config import AppConfig, ProviderConfig, load_config, save_config
+
+config = AppConfig(
+    default_provider="openai",
+    providers={
+        "openai": ProviderConfig(
+            provider="openai",
+            api_key="sk-...",
+            model="gpt-5.4",
+        ),
+    },
+)
+
+save_config(config)</code></pre>
+    </div>
+
+    <h2>Compression</h2>
+    <div class="code-block">
+      <div class="code-header"><span>Python</span></div>
+      <pre><code>from codesight.compression import build_code_map, compress_for_prompt
+
+code_map = build_code_map("src/main.py")
+print(f"Language: {code_map.language}")
+print(f"Symbols: {code_map.symbols}")
+print(f"Compression: {code_map.ratio:.0%}")
+
+compressed = compress_for_prompt("src/main.py", source_code)
+print(compressed)</code></pre>
+    </div>
+
+    <h2>Templates</h2>
+    <div class="code-block">
+      <div class="code-header"><span>Python</span></div>
+      <pre><code>from codesight.templates import list_templates, get_template, save_template
+
+templates = list_templates()
+for name, t in templates.items():
+    print(f"{name}: {t['description']}")
+
+save_template(
+    "my-audit",
+    "My Security Audit",
+    "Custom security check for Django apps",
+    "You are auditing a Django application. Focus on...",
+)</code></pre>
+    </div>
+
+    <h2>Streaming</h2>
+    <div class="code-block">
+      <div class="code-header"><span>Python</span></div>
+      <pre><code>import asyncio
+from codesight.config import load_config
+from codesight.streaming import stream_analysis
+
+config = load_config()
+messages = [
+    {"role": "system", "content": "Review this code."},
+    {"role": "user", "content": "def hello(): pass"},
+]
 
 async def main():
-    analyzer = Analyzer(load_config(), provider_name="openai")
-    result = await analyzer.analyze_file("src/app.py", TaskType.SECURITY)
-    print(result.content)
+    async for chunk in stream_analysis(config, messages):
+        print(chunk, end="", flush=True)
 
-asyncio.run(main())</code></pre></div>
+asyncio.run(main())</code></pre>
+    </div>
 
-    <h2>SARIF Verify Pieces</h2>
-    <table>
-      <thead><tr><th>Module</th><th>Use</th></tr></thead>
-      <tbody>
-        <tr><td><code>codesight.sarif</code></td><td>Read scanner SARIF and write verified SARIF.</td></tr>
-        <tr><td><code>codesight.context</code></td><td>Resolve paths and extract line context under a source root.</td></tr>
-        <tr><td><code>codesight.findings</code></td><td>Build structured verdicts and evidence records.</td></tr>
-        <tr><td><code>codesight.judge</code></td><td>Run judge and skeptic passes through a provider.</td></tr>
-        <tr><td><code>codesight.formatters</code></td><td>Format findings as Markdown, JSON, or plain text.</td></tr>
-        <tr><td><code>codesight.artifacts</code></td><td>Write report.md, report.json, results.sarif, and manifest.json.</td></tr>
-      </tbody>
-    </table>
+    <h2>Cost Estimation</h2>
+    <div class="code-block">
+      <div class="code-header"><span>Python</span></div>
+      <pre><code>from codesight.cost import estimate_cost, format_cost
 
-    <h2>Config</h2>
-    <p>Use <code>load_config()</code> and pass a provider label to <code>Analyzer</code>. Do not load project-controlled keys or base URLs from repo files.</p>
-
-    <h2>Stability Note</h2>
-    <p>Public CLI behavior gets priority. Internal Python objects may change while SARIF verify is still moving toward v1.</p>
+cost = estimate_cost("gpt-5.4", prompt_tokens=800, completion_tokens=400)
+print(format_cost(cost))</code></pre>
+    </div>
   </main>
 </div>
-<footer class="doc-footer"><div>MIT License &middot; <a href="https://github.com/your-org/codesight">your-org/codesight</a></div></footer>
+
+<footer class="doc-footer">
+  <div>MIT License &middot; <a href="https://github.com/AvixoSec/codesight">AvixoSec/codesight</a></div>
+</footer>
+
 <script src="script.js" defer></script>
 </body>
 </html>

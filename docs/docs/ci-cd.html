@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CI/CD - CodeSight Docs</title>
-<meta name="description" content="Run CodeSight in CI with SARIF verification, GitHub Actions, and fail thresholds.">
+<title>CI/CD Integration - CodeSight Docs</title>
+<meta name="description" content="CodeSight CI/CD: SARIF output, exit codes, GitHub Actions, GitLab CI, and pre-commit hooks.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -13,71 +13,180 @@
 <body>
 <div class="grain" aria-hidden="true"></div>
 <div class="progress" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
-<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button>
-<nav class="doc-nav"><a href="../" class="brand"><span class="mark"></span>CodeSight</a><div class="nav-links"><a href="./">Docs</a><a href="https://github.com/your-org/codesight" target="_blank" rel="noopener">GitHub</a><a href="https://pypi.org/project/codesight/" target="_blank" rel="noopener">PyPI</a></div></nav>
+
+<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme">
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="4"/>
+    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+  </svg>
+</button>
+
+<nav class="doc-nav">
+  <a href="../" class="brand"><span class="mark"></span>CodeSight</a>
+  <div class="nav-links">
+    <a href="./" class="active">Docs</a>
+    <a href="https://github.com/AvixoSec/codesight" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://pypi.org/project/codesight/" target="_blank" rel="noopener">PyPI</a>
+  </div>
+</nav>
+
 <div class="doc-layout">
   <aside class="sidebar">
-    <div class="sb-section"><div class="sb-title">Getting Started</div><a href="./" class="sb-link">Overview</a><a href="installation.html" class="sb-link">Installation</a><a href="quickstart.html" class="sb-link">Quick Start</a></div>
-    <div class="sb-section"><div class="sb-title">Usage</div><a href="verify.html" class="sb-link">Verify SARIF</a><a href="commands.html" class="sb-link">Commands</a><a href="providers.html" class="sb-link">Providers</a><a href="templates.html" class="sb-link">Templates</a><a href="ci-cd.html" class="sb-link active">CI/CD</a></div>
-    <div class="sb-section"><div class="sb-title">Reference</div><a href="benchmarks.html" class="sb-link">Benchmarks</a><a href="architecture.html" class="sb-link">Architecture</a><a href="api.html" class="sb-link">Python API</a></div>
-    <div class="sb-section"><div class="sb-title">Project</div><a href="contributing.html" class="sb-link">Contributing</a><a href="security.html" class="sb-link">Security Policy</a></div>
+    <div class="sb-section">
+      <div class="sb-title">Getting Started</div>
+      <a href="./" class="sb-link">Overview</a>
+      <a href="installation.html" class="sb-link">Installation</a>
+      <a href="quickstart.html" class="sb-link">Quick Start</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Usage</div>
+      <a href="commands.html" class="sb-link">Commands</a>
+      <a href="providers.html" class="sb-link">Providers</a>
+      <a href="templates.html" class="sb-link">Custom Templates</a>
+      <a href="ci-cd.html" class="sb-link active">CI/CD Integration</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Reference</div>
+      <a href="benchmarks.html" class="sb-link">Benchmarks</a>
+      <a href="architecture.html" class="sb-link">Architecture</a>
+      <a href="api.html" class="sb-link">Python API</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Community</div>
+      <a href="contributing.html" class="sb-link">Contributing</a>
+      <a href="security.html" class="sb-link">Security Policy</a>
+    </div>
   </aside>
+
   <main class="doc-content">
-    <h1>CI/CD</h1>
-    <p class="lead">Use CodeSight as a SARIF verifier first. Direct scans are still available.</p>
+    <h1>CI/CD Integration</h1>
+    <p class="lead">SARIF output, meaningful exit codes, ready-made GitHub Action.</p>
 
-    <h2>Recommended Flow</h2>
-    <p>Let a fast scanner find breadth. Let CodeSight check the alert against source context and decide whether CI should block.</p>
-    <div class="code-block"><div class="code-header"><span>GitHub Actions</span></div><pre><code>- run: |
-    python -m pip install semgrep
-    semgrep scan --config auto --sarif --output semgrep.sarif
-
-- uses: your-org/codesight@v0.3.0
-  with:
-    mode: verify
-    path: .
-    sarif-input: semgrep.sarif
-    output: sarif
-    fail-on: exploitable
-    judge: "true"
-    skeptic: "true"
-    profile: auto
-    provider: openai
-    api-key: ${{ secrets.OPENAI_API_KEY }}</code></pre></div>
-
-    <h2>Direct Scan</h2>
-    <div class="code-block"><div class="code-header"><span>GitHub Actions</span></div><pre><code>- uses: your-org/codesight@v0.3.0
-  with:
-    provider: openai
-    api-key: ${{ secrets.OPENAI_API_KEY }}
-    task: security
-    path: .
-    output: sarif</code></pre></div>
-
-    <h2>Thresholds</h2>
+    <h2>Exit Codes</h2>
     <table>
-      <thead><tr><th>Value</th><th>Behavior</th></tr></thead>
+      <thead><tr><th>Code</th><th>Meaning</th><th>Use</th></tr></thead>
       <tbody>
-        <tr><td><code>exploitable</code></td><td>Fail only on confirmed exploitable findings.</td></tr>
-        <tr><td><code>likely_exploitable</code></td><td>Fail on confirmed and likely exploitable findings.</td></tr>
-        <tr><td><code>uncertain</code></td><td>Also fail on alerts that still need review.</td></tr>
-        <tr><td><code>never</code></td><td>Always exit zero after writing reports.</td></tr>
+        <tr><td><code>0</code></td><td>Clean</td><td>Pipeline passes</td></tr>
+        <tr><td><code>1</code></td><td>Warnings found</td><td>Pipeline warns (non-blocking)</td></tr>
+        <tr><td><code>2</code></td><td>Critical issues found</td><td>Pipeline fails</td></tr>
       </tbody>
     </table>
 
-    <h2>Artifact Bundle</h2>
-    <p>For audits or grant demos, write all outputs into one folder.</p>
-    <div class="code-block"><div class="code-header"><span>Terminal</span></div><pre><code><span class="prompt">$</span> codesight verify semgrep.sarif --source . --artifact-dir .codesight-proof</code></pre></div>
+    <h2>GitHub Actions</h2>
+    <h3>Security scan on every PR</h3>
+    <div class="code-block">
+      <div class="code-header"><span>.github/workflows/codesight.yml</span></div>
+      <pre><code>name: CodeSight Security Scan
 
-    <h2>Pre-commit</h2>
-    <div class="code-block"><div class="code-header"><span>.pre-commit-config.yaml</span></div><pre><code>repos:
-  - repo: https://github.com/your-org/codesight
-    rev: v0.3.0
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install CodeSight
+        run: pip install codesight
+
+      - name: Run security scan
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: codesight scan src/ --task security -o sarif &gt; codesight.sarif
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: codesight.sarif</code></pre>
+    </div>
+
+    <h3>Diff-only scan (faster, cheaper)</h3>
+    <div class="code-block">
+      <div class="code-header"><span>.github/workflows/codesight-diff.yml</span></div>
+      <pre><code>name: CodeSight Diff Review
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install codesight
+
+      - name: Review changed files
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: codesight diff --task security -o sarif &gt; codesight.sarif
+
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: codesight.sarif</code></pre>
+    </div>
+
+    <h2>GitLab CI</h2>
+    <div class="code-block">
+      <div class="code-header"><span>.gitlab-ci.yml</span></div>
+      <pre><code>codesight-scan:
+  image: python:3.12
+  stage: test
+  script:
+    - pip install codesight
+    - codesight scan src/ --task security -o json &gt; report.json
+  artifacts:
+    reports:
+      codequality: report.json
+  variables:
+    OPENAI_API_KEY: $OPENAI_API_KEY</code></pre>
+    </div>
+
+    <h2>Pre-commit Hook</h2>
+    <div class="code-block">
+      <div class="code-header"><span>.pre-commit-config.yaml</span></div>
+      <pre><code>repos:
+  - repo: local
     hooks:
-      - id: codesight-security</code></pre></div>
+      - id: codesight-security
+        name: CodeSight Security Check
+        entry: codesight diff --staged --task security
+        language: system
+        pass_filenames: false
+        stages: [commit]</code></pre>
+    </div>
+
+    <h2>SARIF Output</h2>
+    <p>SARIF (Static Analysis Results Interchange Format) - the standard used by GitHub's Security tab, VS Code SARIF Viewer, and others.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Terminal</span></div>
+      <pre><code><span class="prompt">$</span> codesight security src/auth.py -o sarif &gt; results.sarif</code></pre>
+    </div>
+    <p>Includes tool info, rules with CWE mappings, results with precise file locations.</p>
   </main>
 </div>
-<footer class="doc-footer"><div>MIT License &middot; <a href="https://github.com/your-org/codesight">your-org/codesight</a></div></footer>
+
+<footer class="doc-footer">
+  <div>MIT License &middot; <a href="https://github.com/AvixoSec/codesight">AvixoSec/codesight</a></div>
+</footer>
+
 <script src="script.js" defer></script>
 </body>
 </html>
