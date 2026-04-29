@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CodeSight - CLI для LLM-анализа кода</title>
-<meta name="description" content="Опенсорсная утилита командной строки. Гоняет код через большие языковые модели и находит реальные баги, дыры в безопасности и архитектурные проблемы.">
+<title>CodeSight - проверка алертов до блокировки CI</title>
+<meta name="description" content="CodeSight - open-source слой проверки безопасности для CI. Проверяет алерты сканеров через исходники, доказательства, SARIF, judge mode и proof bundles.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -68,9 +68,9 @@
     <span class="toc-chev" aria-hidden="true">&minus;</span>
   </button>
   <ol id="toc-list">
-    <li><a href="#abstract" data-sec="abstract"><span>01</span><span class="t" data-i18n-ru="Введение" data-i18n-en="Abstract">Введение</span><span class="toc-tip" data-mins="2">2 мин</span><span class="toc-bar"></span></a></li>
+    <li><a href="#abstract" data-sec="abstract"><span>01</span><span class="t" data-i18n-ru="Идея" data-i18n-en="Idea">Идея</span><span class="toc-tip" data-mins="2">2 мин</span><span class="toc-bar"></span></a></li>
     <li><a href="#commands" data-sec="commands"><span>02</span><span class="t" data-i18n-ru="Команды" data-i18n-en="Commands">Команды</span><span class="toc-tip" data-mins="1">1 мин</span><span class="toc-bar"></span></a></li>
-    <li><a href="#compare" data-sec="compare"><span>03</span><span class="t" data-i18n-ru="Сравнение" data-i18n-en="Compared">Сравнение</span><span class="toc-tip" data-mins="1">1 мин</span><span class="toc-bar"></span></a></li>
+    <li><a href="#compare" data-sec="compare"><span>03</span><span class="t" data-i18n-ru="Проверка" data-i18n-en="Verification">Проверка</span><span class="toc-tip" data-mins="1">1 мин</span><span class="toc-bar"></span></a></li>
     <li><a href="#providers" data-sec="providers"><span>04</span><span class="t" data-i18n-ru="Провайдеры" data-i18n-en="Providers">Провайдеры</span><span class="toc-tip" data-mins="1">1 мин</span><span class="toc-bar"></span></a></li>
     <li><a href="#architecture" data-sec="architecture"><span>05</span><span class="t" data-i18n-ru="Архитектура" data-i18n-en="Architecture">Архитектура</span><span class="toc-tip" data-mins="1">1 мин</span><span class="toc-bar"></span></a></li>
     <li><a href="#spot" data-sec="spot"><span>06</span><span class="t" data-i18n-ru="Найди баги" data-i18n-en="Spot the bugs">Найди баги</span><span class="toc-tip" data-mins="2">2 мин</span><span class="toc-bar"></span></a></li>
@@ -87,9 +87,9 @@
 <nav class="top">
   <a href="#" class="brand"><span class="mark"></span>CodeSight</a>
   <div class="links">
-    <a href="#abstract" data-i18n-ru="Введение" data-i18n-en="Abstract">Введение</a>
+    <a href="#abstract" data-i18n-ru="Идея" data-i18n-en="Idea">Идея</a>
     <a href="#commands" data-i18n-ru="Команды" data-i18n-en="Commands">Команды</a>
-    <a href="#compare" data-i18n-ru="Сравнение" data-i18n-en="Compared">Сравнение</a>
+    <a href="#compare" data-i18n-ru="Проверка" data-i18n-en="Verification">Проверка</a>
     <a href="#providers" data-i18n-ru="Провайдеры" data-i18n-en="Providers">Провайдеры</a>
     <a href="#faq" data-i18n-ru="Вопросы" data-i18n-en="Questions">Вопросы</a>
     <a href="https://github.com/AvixoSec/codesight" class="cta" data-i18n-ru="Исходники &rarr;" data-i18n-en="Source &rarr;">Исходники &rarr;</a>
@@ -114,14 +114,23 @@
 
   <div class="hero-split">
     <div class="hero-text">
+      <div class="hero-kicker"
+           data-i18n-ru="open-source слой проверки безопасности для CI"
+           data-i18n-en="open-source security verification layer for CI">open-source слой проверки безопасности для CI</div>
       <h1 class="display" id="display-h1"
-          data-i18n-ru='Линтер видит синтаксис. <em>CodeSight</em> видит смысл - и те баги, что доезжают до <em>прода</em>.'
-          data-i18n-en='Linters check syntax. <em>CodeSight</em> checks logic - and the classes of bugs that ship to <em>production</em>.'>Линтер видит синтаксис. <em>CodeSight</em> видит смысл - и те баги, что доезжают до <em>прода</em>.</h1>
+          data-i18n-ru='Проверяй алерты <em>до блокировки CI</em>.'
+          data-i18n-en='Verify alerts <em>before CI blocks</em>.'>Проверяй алерты <em>до блокировки CI</em>.</h1>
 
       <p class="lede"
-         data-i18n-ru='<span class="dropcap">У</span>тилита командной строки. Прогоняет твой код через большие языковые модели и вытаскивает реальные дефекты: SQL-инъекции, захардкоженные секреты, обход аутентификации, гонки потоков. Отдаёт SARIF для CI, CWE ID для аудиторов и понятный текст - для людей.'
-         data-i18n-en='<span class="dropcap">A</span> command-line tool. It runs your code through large language models and surfaces the real defects - SQL injections, hardcoded secrets, auth bypasses, thread races. Outputs SARIF for CI, CWE IDs for auditors, plain text for humans.'><span class="dropcap">У</span>тилита командной строки. Прогоняет твой код через большие языковые модели и вытаскивает реальные дефекты: SQL-инъекции, захардкоженные секреты, обход аутентификации, гонки потоков. Отдаёт SARIF для CI, CWE ID для аудиторов и понятный текст - для людей.</p>
+         data-i18n-ru='<span class="dropcap">C</span>odeSight берёт SARIF от сканеров, открывает нужный исходник, собирает доказательства и говорит CI, что эксплуатируемо, вероятно опасно, спорно или можно закрыть.'
+         data-i18n-en='<span class="dropcap">C</span>odeSight takes SARIF from scanners, opens the matching source, collects evidence, and tells CI what is exploitable, likely exploitable, uncertain, or safe to dismiss.'><span class="dropcap">C</span>odeSight берёт SARIF от сканеров, открывает нужный исходник, собирает доказательства и говорит CI, что эксплуатируемо, вероятно опасно, спорно или можно закрыть.</p>
 
+      <div class="hero-proof">
+        <span data-i18n-ru="SARIF на входе" data-i18n-en="SARIF in">SARIF на входе</span>
+        <span data-i18n-ru="доказательства из кода" data-i18n-en="source evidence">доказательства из кода</span>
+        <span data-i18n-ru="judge + skeptic" data-i18n-en="judge + skeptic">judge + skeptic</span>
+        <span data-i18n-ru="порог CI" data-i18n-en="CI threshold">порог CI</span>
+      </div>
       <div class="byline">
         <span data-i18n-ru="<strong>Проект</strong> &middot; CodeSight" data-i18n-en="<strong>Project</strong> &middot; CodeSight"><strong>Проект</strong> &middot; CodeSight</span>
         <span class="sep"></span>
@@ -171,24 +180,24 @@
   <div class="stats-rail" aria-hidden="true"><span data-i18n-ru="&sect; &middot; вкратце" data-i18n-en="&sect; &middot; at a glance">&sect; &middot; вкратце</span></div>
   <div class="stats-grid">
     <div class="stat">
-      <div class="num" data-count="91" data-suffix="%">91<span class="unit">%</span></div>
-      <div class="label" data-i18n-ru="детектирование CWE на публичных бенчмарках" data-i18n-en="CWE detection on public benchmarks">детектирование CWE на публичных бенчмарках</div>
+      <div class="num" data-count="5">5</div>
+      <div class="label" data-i18n-ru="вердиктов проверки" data-i18n-en="verification verdicts">вердиктов проверки</div>
     </div>
     <div class="stat">
-      <div class="num" data-count="16" data-prefix="" data-suffix="+">16<span class="unit">+</span></div>
-      <div class="label" data-i18n-ru="поддерживаемых LLM-провайдеров" data-i18n-en="supported LLM providers">поддерживаемых LLM-провайдеров</div>
+      <div class="num" data-count="4">4</div>
+      <div class="label" data-i18n-ru="файла proof bundle" data-i18n-en="proof bundle files">файла proof bundle</div>
     </div>
     <div class="stat">
-      <div class="num" data-count="9">9</div>
-      <div class="label" data-i18n-ru="команд верхнего уровня" data-i18n-en="top-level commands">команд верхнего уровня</div>
+      <div class="num" data-count="16" data-suffix="+">16<span class="unit">+</span></div>
+      <div class="label" data-i18n-ru="вариантов провайдеров" data-i18n-en="provider options">вариантов провайдеров</div>
     </div>
     <div class="stat">
-      <div class="num" data-count="0.003" data-prefix="$" data-decimals="3">$0.003</div>
-      <div class="label" data-i18n-ru="средняя цена анализа одного файла" data-i18n-en="average cost per file analysed">средняя цена анализа одного файла</div>
+      <div class="num" data-count="0">0</div>
+      <div class="label" data-i18n-ru="хостинг-аккаунтов нужно" data-i18n-en="hosted account required">хостинг-аккаунтов нужно</div>
     </div>
     <div class="stat">
-      <div class="num" data-count="2.1" data-suffix="s" data-decimals="1">2.1<span class="unit">s</span></div>
-      <div class="label" data-i18n-ru="медианная задержка, облачная модель" data-i18n-en="median latency, cloud model">медианная задержка, облачная модель</div>
+      <div class="num" data-count="1">1</div>
+      <div class="label" data-i18n-ru="порог блокировки CI" data-i18n-en="CI fail threshold">порог блокировки CI</div>
     </div>
   </div>
 </section>
@@ -197,23 +206,22 @@
 
 <section id="abstract" data-sec="abstract">
   <div class="col">
-    <div class="sec-num" data-i18n-ru="01 &middot; Введение" data-i18n-en="01 &middot; Abstract">01 &middot; Введение</div>
-    <h2 data-i18n-ru="В чём идея" data-i18n-en="The idea">В чём идея</h2>
+    <div class="sec-num" data-i18n-ru="01 &middot; Идея" data-i18n-en="01 &middot; Idea">01 &middot; Идея</div>
+    <h2 data-i18n-ru="Из шума сканеров в полезные доказательства" data-i18n-en="From scanner noise to useful evidence">Из шума сканеров в полезные доказательства</h2>
     <div class="note-pair">
-      <p data-i18n-ru='Статический анализатор скажет, что не хватает закрывающей скобки. Он не скажет, что пользовательская строка долетает до <code>execute()</code> без параметризации, что секрет закоммичен в открытом виде, что два потока дерутся за один и тот же файловый дескриптор. Это <em>семантика</em> - и именно такие баги последние тридцать лет ломают прод.'
-         data-i18n-en='A static analyser will tell you a closing brace is missing. It will not tell you that a user string reaches <code>execute()</code> unparameterised, that a secret is committed in plain text, that two threads are fighting over the same file descriptor. That is <em>semantics</em> - and semantics are what has been breaking production for thirty years.'>Статический анализатор скажет, что не хватает закрывающей скобки. Он не скажет, что пользовательская строка долетает до <code>execute()</code> без параметризации, что секрет закоммичен в открытом виде, что два потока дерутся за один и тот же файловый дескриптор. Это <em>семантика</em> - и именно такие баги последние тридцать лет ломают прод.</p>
-      <aside class="margin-note" data-i18n-ru="В отличие от лексики и синтаксиса - это баги, которых парсер не видит." data-i18n-en="As opposed to lexing or syntax - the bugs a parser cannot see.">В отличие от лексики и синтаксиса - это баги, которых парсер не видит.</aside>
+      <p data-i18n-ru="Большинство сканеров останавливаются на подозрительной строке. Это полезно, но команда всё равно должна понять: это реально эксплуатируемо или просто ещё один алерт в очереди?"
+         data-i18n-en="Most scanners stop at a suspicious line. That is useful, but it leaves the team with the hard question: is this actually exploitable, or just another alert in the queue?">Большинство сканеров останавливаются на подозрительной строке. Это полезно, но команда всё равно должна понять: это реально эксплуатируемо или просто ещё один алерт в очереди?</p>
+      <aside class="margin-note" data-i18n-ru="CodeSight - это проход по доказательствам после сканера." data-i18n-en="CodeSight is the evidence pass after the scanner.">CodeSight - это проход по доказательствам после сканера.</aside>
     </div>
     <div class="note-pair">
-      <p data-i18n-ru='CodeSight - небольшая CLI, которая отдаёт семантическую часть работы <a href="#providers" class="footnote" data-note="Large Language Model - GPT, Claude, Gemini, Llama и так далее">LLM</a>, а результат заворачивает в форматы, которые уже понимают твои пайплайны: SARIF, JSON, Markdown. И уходит в сторону. У неё есть мнение про <strong>что</strong> спрашивать у модели - но не про то, какую модель использовать. Ключ твой.'
-         data-i18n-en='CodeSight is a small CLI that hands the semantic work to an <a href="#providers" class="footnote" data-note="Large Language Model - GPT, Claude, Gemini, Llama and so on">LLM</a> and wraps the result in formats your pipeline already understands: SARIF, JSON, Markdown. Then it gets out of the way. It has opinions about <strong>what</strong> to ask the model - but not about which model you use. The key stays with you.'>CodeSight - небольшая CLI, которая отдаёт семантическую часть работы <a href="#providers" class="footnote" data-note="Large Language Model - GPT, Claude, Gemini, Llama и так далее">LLM</a>, а результат заворачивает в форматы, которые уже понимают твои пайплайны: SARIF, JSON, Markdown. И уходит в сторону. У неё есть мнение про <strong>что</strong> спрашивать у модели - но не про то, какую модель использовать. Ключ твой.</p>
-      <aside class="margin-note" data-i18n-ru="SARIF - OASIS-стандарт. Парсится напрямую в GitHub Advanced Security и SonarQube." data-i18n-en="SARIF is an OASIS standard. Consumed directly by GitHub Advanced Security and SonarQube.">SARIF - OASIS-стандарт. Парсится напрямую в GitHub Advanced Security и SonarQube.</aside>
+      <p data-i18n-ru="CodeSight импортирует SARIF, достаёт исходники вокруг находки, строит proof bundle и прогоняет judge mode. На выходе не просто severity, а вердикт: exploitable, likely exploitable, uncertain, needs review или safe to dismiss."
+         data-i18n-en="CodeSight imports SARIF, pulls source around each finding, builds a proof bundle, and runs judge mode. The output is not just severity, but a verdict: exploitable, likely exploitable, uncertain, needs review, or safe to dismiss.">CodeSight импортирует SARIF, достаёт исходники вокруг находки, строит proof bundle и прогоняет judge mode. На выходе не просто severity, а вердикт: exploitable, likely exploitable, uncertain, needs review или safe to dismiss.</p>
+      <aside class="margin-note" data-i18n-ru="CI блокируется только на том уровне риска, который ты выбрал." data-i18n-en="CI blocks only at the risk threshold you choose.">CI блокируется только на том уровне риска, который ты выбрал.</aside>
     </div>
     <div class="pullquote"
-         data-i18n-ru='&ldquo;Линтер видит синтаксис. CodeSight видит смысл.&rdquo;<cite>- однострочное описание проекта, не менялось с версии 0.1</cite>'
-         data-i18n-en='&ldquo;Linters check syntax. CodeSight checks logic.&rdquo;<cite>- one-line project pitch, unchanged since v0.1</cite>'>
-      &ldquo;Линтер видит синтаксис. CodeSight видит смысл.&rdquo;
-      <cite>- однострочное описание проекта, не менялось с версии 0.1</cite>
+      data-i18n-ru='&ldquo;Проверяй алерты до блокировки CI.&rdquo;<cite>- направление CodeSight v0.3</cite>'
+      data-i18n-en='&ldquo;Verify alerts before CI blocks.&rdquo;<cite>- CodeSight v0.3 direction</cite>'>
+      &ldquo;Проверяй алерты до блокировки CI.&rdquo;<cite>- направление CodeSight v0.3</cite>
     </div>
   </div>
 </section>
@@ -222,35 +230,32 @@
          data-i18n-aria-ru="Цитата"
          data-i18n-aria-en="Quote"
          aria-label="Цитата">
-  <span class="quote-rail" data-i18n-ru="§ · интерлюдия" data-i18n-en="§ · interlude">§ · интерлюдия</span>
+  <span class="quote-rail" data-i18n-ru="&sect; &middot; интерлюдия" data-i18n-en="&sect; &middot; interlude">&sect; &middot; интерлюдия</span>
   <div class="quote-inner"
-       data-i18n-ru='Баги, которые уходят в прод - не те, что видит парсер.<cite class="quote-cite">- наблюдение, Issue 0.3</cite>'
-       data-i18n-en='The bugs that ship are never the ones a parser can see.<cite class="quote-cite">- observation, Issue 0.3</cite>'>
-    Баги, которые уходят в прод - не те, что видит парсер.
-    <cite class="quote-cite">- наблюдение, Issue 0.3</cite>
+       data-i18n-ru='В прод уезжают не те баги, которые видит парсер.<cite class="quote-cite">- заметка, Issue 0.3</cite>'
+       data-i18n-en='The bugs that ship are not the ones a parser can see.<cite class="quote-cite">- note, Issue 0.3</cite>'>
+    В прод уезжают не те баги, которые видит парсер.
+    <cite class="quote-cite">- заметка, Issue 0.3</cite>
   </div>
 </section>
 
 <section id="commands" data-sec="commands">
   <div class="col">
-    <div class="sec-num" data-i18n-ru="02 &middot; Команды" data-i18n-en="02 &middot; Commands">02 &middot; Команды</div>
-    <h2 data-i18n-ru="Девять команд. Один бинарник." data-i18n-en="Nine verbs, one binary.">Девять команд. Один бинарник.</h2>
+    <div class="sec-num" data-i18n-ru="02 &middot; Сценарии" data-i18n-en="02 &middot; Flows">02 &middot; Сценарии</div>
+    <h2 data-i18n-ru="Основные сценарии, один бинарник." data-i18n-en="Main flows, one binary.">Основные сценарии, один бинарник.</h2>
     <div class="note-pair">
-      <p data-i18n-ru="Каждая команда берёт файл, директорию или поток с пайпа. Формат вывода переключается флагом, дефолты разумные. Никаких подкоманд от подкоманд."
-         data-i18n-en="Every command takes a file, a directory or a pipe. Output format is a flag away, defaults are sensible. No sub-commands of sub-commands.">Каждая команда берёт файл, директорию или поток с пайпа. Формат вывода переключается флагом, дефолты разумные. Никаких подкоманд от подкоманд.</p>
-      <aside class="margin-note" data-i18n-ru="Вся CLI спроектирована так, чтобы помещаться в --help. Если не держится в голове - слишком сложно." data-i18n-en="The whole CLI is designed to fit inside --help. If it does not fit in your head, it is too complex.">Вся CLI спроектирована так, чтобы помещаться в --help. Если не держится в голове - слишком сложно.</aside>
+      <p data-i18n-ru="CodeSight можно поставить поверх существующего пайплайна: сканер пишет SARIF, CodeSight проверяет алерты, CI получает понятный порог блокировки."
+         data-i18n-en="CodeSight can sit on top of an existing pipeline: a scanner writes SARIF, CodeSight verifies the alerts, and CI gets a clear blocking threshold.">CodeSight можно поставить поверх существующего пайплайна: сканер пишет SARIF, CodeSight проверяет алерты, CI получает понятный порог блокировки.</p>
+      <aside class="margin-note" data-i18n-ru="Без хостинга и без нового аккаунта: ключ провайдера остаётся у тебя." data-i18n-en="No hosted account required: the provider key stays with you.">Без хостинга и без нового аккаунта: ключ провайдера остаётся у тебя.</aside>
     </div>
 
     <div class="cmd-list">
-      <div class="cmd-item"><span class="n">01</span><div class="body"><h3>review</h3><p data-i18n-ru="Ревью уровня сеньора: архитектура, читаемость, скрытые допущения." data-i18n-en="Senior-level review - architecture, readability, hidden assumptions.">Ревью уровня сеньора: архитектура, читаемость, скрытые допущения.</p></div><code>codesight review</code></div>
-      <div class="cmd-item"><span class="n">02</span><div class="body"><h3>bugs</h3><p data-i18n-ru="Логические дефекты, которые прошли мимо тестов - off-by-one, null-разыменования, утечки ресурсов." data-i18n-en="Logic defects your tests missed - off-by-one, null deref, resource leaks.">Логические дефекты, которые прошли мимо тестов - off-by-one, null-разыменования, утечки ресурсов.</p></div><code>codesight bugs api.py</code></div>
-      <div class="cmd-item"><span class="n">03</span><div class="body"><h3>security</h3><p data-i18n-ru="Аудит уязвимостей с привязкой к CWE и OWASP Top-10. На выходе SARIF." data-i18n-en="Vulnerability audit mapped to CWE and OWASP Top-10. SARIF out of the box.">Аудит уязвимостей с привязкой к CWE и OWASP Top-10. На выходе SARIF.</p></div><code>codesight security src/</code></div>
-      <div class="cmd-item"><span class="n">04</span><div class="body"><h3>docs</h3><p data-i18n-ru="Докстринги, саммари модулей, куски README прямо из исходников." data-i18n-en="Docstrings, module summaries, README snippets straight from source.">Докстринги, саммари модулей, куски README прямо из исходников.</p></div><code>codesight docs core/</code></div>
-      <div class="cmd-item"><span class="n">05</span><div class="body"><h3>explain</h3><p data-i18n-ru="Пересказ легаси на нормальном языке. Меньше археологии." data-i18n-en="Legacy retold in plain language. Less archaeology.">Пересказ легаси на нормальном языке. Меньше археологии.</p></div><code>codesight explain legacy.c</code></div>
-      <div class="cmd-item"><span class="n">06</span><div class="body"><h3>refactor</h3><p data-i18n-ru="Конкретные переписи в виде unified diff - не размытые советы." data-i18n-en="Concrete rewrites as unified diffs - not vague advice.">Конкретные переписи в виде unified diff - не размытые советы.</p></div><code>codesight refactor</code></div>
-      <div class="cmd-item"><span class="n">07</span><div class="body"><h3>scan</h3><p data-i18n-ru="Рекурсивный обход репозитория. Поддерживает смарт-контракты на Solidity." data-i18n-en="Recursive repo walk. Supports Solidity smart contracts.">Рекурсивный обход репозитория. Поддерживает смарт-контракты на Solidity.</p></div><code>codesight scan .</code></div>
-      <div class="cmd-item"><span class="n">08</span><div class="body"><h3>diff</h3><p data-i18n-ru="Ревью только изменений в git-дельте - идеально для CI." data-i18n-en="Review only what changed in the git delta - ideal for CI.">Ревью только изменений в git-дельте - идеально для CI.</p></div><code>codesight diff HEAD~1</code></div>
-      <div class="cmd-item"><span class="n">09</span><div class="body"><h3>benchmark</h3><p data-i18n-ru="Сравнить находки разных провайдеров на одном промпте." data-i18n-en="Compare findings from different providers on the same prompt.">Сравнить находки разных провайдеров на одном промпте.</p></div><code>codesight benchmark</code></div>
+      <div class="cmd-item"><span class="n">01</span><div class="body"><h3>ui</h3><p data-i18n-ru="Терминальный интерфейс: выбрать проект, провайдера, режим и запуск без длинных команд." data-i18n-en="Terminal UI: choose project, provider, mode, and run without memorising long commands.">Терминальный интерфейс: выбрать проект, провайдера, режим и запуск без длинных команд.</p></div><code>codesight ui</code></div>
+      <div class="cmd-item"><span class="n">02</span><div class="body"><h3>verify</h3><p data-i18n-ru="Берёт SARIF от Semgrep, CodeQL или другого сканера и проверяет, есть ли реальные доказательства." data-i18n-en="Takes SARIF from Semgrep, CodeQL, or another scanner and checks whether real evidence exists.">Берёт SARIF от Semgrep, CodeQL или другого сканера и проверяет, есть ли реальные доказательства.</p></div><code>codesight verify semgrep.sarif</code></div>
+      <div class="cmd-item"><span class="n">03</span><div class="body"><h3>security</h3><p data-i18n-ru="Прямой аудит уязвимостей с CWE, OWASP и SARIF, если внешнего сканера пока нет." data-i18n-en="Direct vulnerability audit with CWE, OWASP, and SARIF when there is no external scanner yet.">Прямой аудит уязвимостей с CWE, OWASP и SARIF, если внешнего сканера пока нет.</p></div><code>codesight security src/api.py</code></div>
+      <div class="cmd-item"><span class="n">04</span><div class="body"><h3>scan</h3><p data-i18n-ru="Пакетный прогон по директории с лимитом бюджета, отчётами и машинным выводом." data-i18n-en="Batch run over a directory with budget limits, reports, and machine-readable output.">Пакетный прогон по директории с лимитом бюджета, отчётами и машинным выводом.</p></div><code>codesight scan src</code></div>
+      <div class="cmd-item"><span class="n">05</span><div class="body"><h3>diff</h3><p data-i18n-ru="Проверяет только изменённые строки в PR, чтобы ревью не превращалось в шум." data-i18n-en="Checks only changed PR lines so review does not turn into noise.">Проверяет только изменённые строки в PR, чтобы ревью не превращалось в шум.</p></div><code>codesight diff</code></div>
+      <div class="cmd-item"><span class="n">06</span><div class="body"><h3>benchmark</h3><p data-i18n-ru="Сравнивает профили, провайдеров и стоимость на одинаковом наборе кейсов." data-i18n-en="Compares profiles, providers, and cost on the same case set.">Сравнивает профили, провайдеров и стоимость на одинаковом наборе кейсов.</p></div><code>codesight benchmark</code></div>
     </div>
   </div>
 </section>
@@ -259,83 +264,55 @@
 
 <section id="compare" data-sec="compare">
   <div class="col-wide">
-    <div class="sec-num" data-i18n-ru="03 &middot; Сравнение" data-i18n-en="03 &middot; Compared">03 &middot; Сравнение</div>
-    <h2 data-i18n-ru="Рядом с классикой" data-i18n-en="Next to the classics">Рядом с классикой</h2>
+    <div class="sec-num" data-i18n-ru="03 &middot; Проверка" data-i18n-en="03 &middot; Verification">03 &middot; Проверка</div>
+    <h2 data-i18n-ru="Слой проверки, а не ещё один сканер" data-i18n-en="A verification layer, not another scanner">Слой проверки, а не ещё один сканер</h2>
     <p style="max-width:720px;margin-left:auto;margin-right:auto"
-       data-i18n-ru="CodeSight не заменяет regex-линтер или точный анализатор вроде CodeQL - он их дополняет. Классика хороша на синтаксических правилах и taint-анализе. CodeSight читает код так, как читает сеньор: с контекстом, намерением и сомнением."
-       data-i18n-en="CodeSight does not replace a regex linter or a precise analyser like CodeQL - it complements them. The classics are strong at syntactic rules and taint analysis. CodeSight reads code the way a senior reads it: with context, intent and doubt.">CodeSight не заменяет regex-линтер или точный анализатор вроде CodeQL - он их дополняет. Классика хороша на синтаксических правилах и taint-анализе. CodeSight читает код так, как читает сеньор: с контекстом, намерением и сомнением.</p>
+       data-i18n-ru="Semgrep, CodeQL и другие сканеры хорошо находят подозрительные места. CodeSight нужен после них: открыть исходник, собрать доказательства, объяснить риск и решить, должен ли CI падать."
+       data-i18n-en="Semgrep, CodeQL, and other scanners are good at finding suspicious spots. CodeSight belongs after them: open the source, collect evidence, explain risk, and decide whether CI should fail.">Semgrep, CodeQL и другие сканеры хорошо находят подозрительные места. CodeSight нужен после них: открыть исходник, собрать доказательства, объяснить риск и решить, должен ли CI падать.</p>
 
     <div class="compare-wrap">
       <table class="compare">
         <thead>
           <tr>
-            <th data-i18n-ru="Что умеет" data-i18n-en="Capability">Что умеет</th>
-            <th data-i18n-ru="Линтер (semgrep)" data-i18n-en="Linter (semgrep)">Линтер (semgrep)</th>
-            <th>CodeQL</th>
+            <th data-i18n-ru="Шаг" data-i18n-en="Step">Шаг</th>
+            <th data-i18n-ru="Сканер" data-i18n-en="Scanner">Сканер</th>
             <th class="mine">CodeSight</th>
+            <th data-i18n-ru="Результат CI" data-i18n-en="CI result">Результат CI</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td data-i18n-ru="Проверка синтаксиса" data-i18n-en="Syntax checks">Проверка синтаксиса</td>
+            <td data-i18n-ru="Находит подозрительную строку" data-i18n-en="Finds a suspicious line">Находит подозрительную строку</td>
             <td class="y" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
-            <td class="y" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
-            <td class="mine" data-i18n-ru="Через LLM" data-i18n-en="Via LLM">Через LLM</td>
+            <td class="mine" data-i18n-ru="Берёт её как вход" data-i18n-en="Uses it as input">Берёт её как вход</td>
+            <td data-i18n-ru="Нет решения" data-i18n-en="No decision yet">Нет решения</td>
           </tr>
           <tr>
-            <td data-i18n-ru="Захардкоженные секреты" data-i18n-en="Hardcoded secrets">Захардкоженные секреты</td>
-            <td class="y" data-i18n-ru="По regex" data-i18n-en="Regex only">По regex</td>
-            <td class="y" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
-            <td class="mine" data-i18n-ru="Семантика + контекст" data-i18n-en="Semantic + context">Семантика + контекст</td>
+            <td data-i18n-ru="Смотрит соседний код" data-i18n-en="Reads nearby source">Смотрит соседний код</td>
+            <td class="p" data-i18n-ru="Ограниченно" data-i18n-en="Limited">Ограниченно</td>
+            <td class="mine y" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
+            <td data-i18n-ru="Есть контекст" data-i18n-en="Context exists">Есть контекст</td>
           </tr>
           <tr>
-            <td data-i18n-ru="Обход аутентификации" data-i18n-en="Auth bypass">Обход аутентификации</td>
-            <td class="n" data-i18n-ru="Нет" data-i18n-en="No">Нет</td>
-            <td class="y" data-i18n-ru="Частично" data-i18n-en="Partial">Частично</td>
-            <td class="mine" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
+            <td data-i18n-ru="Даёт проверяемое объяснение" data-i18n-en="Gives a checkable explanation">Даёт проверяемое объяснение</td>
+            <td class="p" data-i18n-ru="Иногда" data-i18n-en="Sometimes">Иногда</td>
+            <td class="mine y" data-i18n-ru="С proof bundle" data-i18n-en="With a proof bundle">С proof bundle</td>
+            <td data-i18n-ru="Ревью быстрее" data-i18n-en="Review is faster">Ревью быстрее</td>
           </tr>
           <tr>
-            <td data-i18n-ru="Состояния гонки" data-i18n-en="Race conditions">Состояния гонки</td>
+            <td data-i18n-ru="Разделяет шум и риск" data-i18n-en="Separates noise from risk">Разделяет шум и риск</td>
             <td class="n" data-i18n-ru="Нет" data-i18n-en="No">Нет</td>
-            <td class="y" data-i18n-ru="Частично" data-i18n-en="Partial">Частично</td>
-            <td class="mine" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
-          </tr>
-          <tr>
-            <td data-i18n-ru="SQL-инъекции через f-string" data-i18n-en="SQL injection via f-string">SQL-инъекции через f-string</td>
-            <td class="y" data-i18n-ru="Частично" data-i18n-en="Partial">Частично</td>
-            <td class="y" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
-            <td class="mine" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
-          </tr>
-          <tr>
-            <td data-i18n-ru="Баги бизнес-логики" data-i18n-en="Business-logic bugs">Баги бизнес-логики</td>
-            <td class="n" data-i18n-ru="Нет" data-i18n-en="No">Нет</td>
-            <td class="n" data-i18n-ru="Нет" data-i18n-en="No">Нет</td>
-            <td class="mine" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
-          </tr>
-          <tr>
-            <td data-i18n-ru="Объяснения словами" data-i18n-en="Plain-language explanations">Объяснения словами</td>
-            <td class="n" data-i18n-ru="Нет" data-i18n-en="No">Нет</td>
-            <td class="n" data-i18n-ru="Нет" data-i18n-en="No">Нет</td>
-            <td class="mine" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
-          </tr>
-          <tr>
-            <td data-i18n-ru="Свой провайдер" data-i18n-en="Your own provider">Свой провайдер</td>
-            <td class="n" data-i18n-ru="Нет" data-i18n-en="No">Нет</td>
-            <td class="n" data-i18n-ru="Нет" data-i18n-en="No">Нет</td>
-            <td class="mine" data-i18n-ru="16+ моделей" data-i18n-en="16+ models">16+ моделей</td>
-          </tr>
-          <tr>
-            <td data-i18n-ru="Цена запуска" data-i18n-en="Time to first run">Цена запуска</td>
-            <td class="y" data-i18n-ru="Часы" data-i18n-en="Hours">Часы</td>
-            <td class="n" data-i18n-ru="Дни" data-i18n-en="Days">Дни</td>
-            <td class="mine" data-i18n-ru="60 секунд" data-i18n-en="60 seconds">60 секунд</td>
+            <td class="mine y" data-i18n-ru="Да" data-i18n-en="Yes">Да</td>
+            <td data-i18n-ru="CI падает только по порогу" data-i18n-en="CI fails only at the threshold">CI падает только по порогу</td>
           </tr>
         </tbody>
       </table>
     </div>
-    <p class="compare-note"
-       data-i18n-ru="Не замена классическому SAST - дополнение к нему."
-       data-i18n-en="Not a replacement for classic SAST - a complement to it.">Не замена классическому SAST - дополнение к нему.</p>
+    <div class="note-pair" style="margin-top:32px">
+      <p data-i18n-ru="Идеальная связка простая: Semgrep или CodeQL находят кандидатов, CodeSight проверяет, какие из них похожи на реальные проблемы. Так проект не спорит со сканерами, а закрывает самый дорогой кусок работы после них."
+         data-i18n-en="The ideal pairing is simple: Semgrep or CodeQL finds candidates, CodeSight verifies which ones look like real problems. The project does not compete with scanners; it handles the expensive work after them.">Идеальная связка простая: Semgrep или CodeQL находят кандидатов, CodeSight проверяет, какие из них похожи на реальные проблемы. Так проект не спорит со сканерами, а закрывает самый дорогой кусок работы после них.</p>
+      <aside class="margin-note" data-i18n-ru="Нормальная формулировка: verify alerts before CI blocks. Грантовая: open-source security verification layer for CI." data-i18n-en="Plain wording: verify alerts before CI blocks. Grant wording: open-source security verification layer for CI.">Нормальная формулировка: verify alerts before CI blocks. Грантовая: open-source security verification layer for CI.</aside>
+    </div>
   </div>
 </section>
 
@@ -837,8 +814,8 @@
   <div class="col" style="padding-bottom:24px">
     <div class="sec-num" data-i18n-ru="12 &middot; Попробовать" data-i18n-en="12 &middot; Try it">12 &middot; Попробовать</div>
     <h2 data-i18n-ru="Установка - три строки" data-i18n-en="Install is three lines">Установка - три строки</h2>
-    <p data-i18n-ru="Если есть Python 3.9+ и ключ от любого поддерживаемого провайдера, можно за минуту проаудитить файл."
-       data-i18n-en="With Python 3.9+ and a key for any supported provider, you can audit a file in under a minute.">Если есть Python 3.9+ и ключ от любого поддерживаемого провайдера, можно за минуту проаудитить файл.</p>
+    <p data-i18n-ru="Если есть Python 3.9+ и ключ любого поддерживаемого провайдера, можно проверить файл меньше чем за минуту."
+       data-i18n-en="With Python 3.9+ and a key for any supported provider, you can audit a file in under a minute.">Если есть Python 3.9+ и ключ любого поддерживаемого провайдера, можно проверить файл меньше чем за минуту.</p>
     <div class="output plain">
       <header>
         <span data-i18n-ru="установка" data-i18n-en="install">установка</span>
@@ -875,9 +852,9 @@
   <div class="foot-grid">
     <div>
       <div class="brand">CodeSight</div>
-      <p data-i18n-ru="Опенсорсная CLI для LLM-ревью кода и security-аудита. Лицензия MIT, ведёт AvixoSec."
-         data-i18n-en="Open-source CLI for LLM code review and security audit. MIT licensed, maintained by AvixoSec.">Опенсорсная CLI для LLM-ревью кода и security-аудита. Лицензия MIT, ведёт AvixoSec.</p>
-      <p style="color:var(--dim)"><small data-i18n-ru="Выпуск 0.3.0 &middot; апрель 2026" data-i18n-en="Release 0.3.0 &middot; April 2026">Выпуск 0.3.0 &middot; апрель 2026</small></p>
+      <p data-i18n-ru="Open-source слой проверки безопасности для CI. Лицензия MIT, ведёт AvixoSec."
+         data-i18n-en="Open-source security verification layer for CI. MIT licensed, maintained by AvixoSec.">Open-source слой проверки безопасности для CI. Лицензия MIT, ведёт AvixoSec.</p>
+      <p style="color:var(--dim)"><small data-i18n-ru="Релиз 0.3.0 &middot; апрель 2026" data-i18n-en="Release 0.3.0 &middot; April 2026">Релиз 0.3.0 &middot; апрель 2026</small></p>
     </div>
     <div>
       <h4 data-i18n-ru="Проект" data-i18n-en="Project">Проект</h4>
@@ -894,7 +871,7 @@
     <div>
       <h4 data-i18n-ru="Юридическое" data-i18n-en="Legal">Юридическое</h4>
       <a href="https://github.com/AvixoSec/codesight/blob/main/LICENSE" data-i18n-ru="Лицензия MIT" data-i18n-en="MIT license">Лицензия MIT</a>
-      <a href="https://github.com/AvixoSec/codesight/blob/main/SECURITY.md">Security policy</a>
+      <a href="https://github.com/AvixoSec/codesight/blob/main/SECURITY.md" data-i18n-ru="Политика безопасности" data-i18n-en="Security policy">Политика безопасности</a>
       <a href="https://github.com/AvixoSec/codesight/blob/main/CODE_OF_CONDUCT.md" data-i18n-ru="Кодекс поведения" data-i18n-en="Code of conduct">Кодекс поведения</a>
     </div>
   </div>

@@ -67,7 +67,7 @@
     ru: {
       // GitHub strip
       stars: 'звёзд',
-      issues: 'открытых issue',
+      issues: 'открытых issues',
       lastCommit: 'последний коммит',
       release: 'релиз',
       // Reading / word count
@@ -94,8 +94,8 @@
       soundOn: 'Звуки включены',
       soundOff: 'Звуки выключены',
       // Page meta
-      title: 'CodeSight - CLI для LLM-анализа кода',
-      desc: 'Опенсорсная утилита командной строки. Гоняет код через большие языковые модели и находит реальные баги, дыры в безопасности и архитектурные проблемы.',
+      title: 'CodeSight - проверка алертов до блокировки CI',
+      desc: 'Open-source слой проверки безопасности для CI. Импортирует SARIF сканеров, добавляет доказательства из исходников и пишет отчёты для CI.',
       // Relative time
       justNow: 'только что',
       ago: 'назад',
@@ -108,8 +108,8 @@
       bug3Fix: 'Завязывай ветку на app.debug и реальную проверку auth, а не на заголовок от клиента.',
       // TLDR chips
       tldrIdea: 'идея',
-      tldrCmds: '9 команд',
-      tldrCompare: 'vs semgrep / CodeQL',
+      tldrCmds: 'сценарии',
+      tldrCompare: 'проверка алертов',
       tldrProviders: '16 провайдеров',
       tldrArch: 'пайплайн на странице',
       tldrSpot: '3 скрытых бага',
@@ -140,8 +140,8 @@
       aheadEnd: 'That is the end. Try the install snippet up top.',
       soundOn: 'Sound on',
       soundOff: 'Sound off',
-      title: 'CodeSight - CLI for LLM-powered code analysis',
-      desc: 'An open-source command-line tool. Runs your code through large language models and surfaces real bugs, security holes, and architecture issues.',
+      title: 'CodeSight - verify alerts before CI blocks',
+      desc: 'Open-source security verification layer for CI. Imports scanner SARIF, adds source evidence, and writes CI-ready reports.',
       justNow: 'just now',
       ago: 'ago',
       bug1Title: 'SQL injection: user_id is concatenated straight into the query.',
@@ -151,8 +151,8 @@
       bug3Title: 'Auth bypass: any request with the X-Debug header gets admin rights.',
       bug3Fix: 'Gate on app.debug and a real auth check, not on a client-supplied header.',
       tldrIdea: 'the idea',
-      tldrCmds: '9 commands',
-      tldrCompare: 'vs semgrep / CodeQL',
+      tldrCmds: 'main flows',
+      tldrCompare: 'verify alerts',
       tldrProviders: '16 providers',
       tldrArch: 'pipeline on a page',
       tldrSpot: '3 hidden bugs',
@@ -1220,60 +1220,88 @@
   const htProv = document.getElementById('ht-prov');
   const htHint = document.getElementById('ht-hint');
   if (htScreen){
-    const scenes = [
+    const scenes = currentLang === 'ru' ? [
       {
-        provName: 'anthropic',
+        provName: 'verify',
         lines: [
-          {prompt:'$', cmd:'codesight security src/api.py', flag:'--format sarif'},
-          {type:'out-dim', text:'CodeSight 0.3.0 · model=claude-opus-4.6 · 238 LOC · 3.1s'},
+          {prompt:'$', cmd:'semgrep scan', flag:'--config auto --sarif > semgrep.sarif'},
+          {prompt:'$', cmd:'codesight verify semgrep.sarif', flag:'--source . --preview-context'},
+          {type:'out-dim', text:'контекст: src/api.py:41-64, rule=python.sql-injection'},
           {type:'gap'},
-          {type:'crit', text:'CRITICAL  src/api.py:47  SQL injection · CWE-89'},
-          {type:'out-dim', text:'  › user_id concatenated into SELECT via f-string'},
+          {prompt:'$', cmd:'codesight verify semgrep.sarif', flag:'--source . --judge --skeptic'},
+          {type:'high', text:'UNCERTAIN  src/api.py:47  нужна связь source-to-sink'},
+          {type:'out-dim', text:'  source: request.args["user_id"]'},
+          {type:'out-dim', text:'  sink: db.execute(query)'},
           {type:'gap'},
-          {type:'crit', text:'CRITICAL  src/api.py:112  Hardcoded secret · CWE-798'},
-          {type:'out-dim', text:'  › AWS access key in source. Rotate + move to vault.'},
-          {type:'gap'},
-          {type:'high', text:'HIGH      src/api.py:203  Auth bypass · CWE-287'},
-          {type:'out-dim', text:'  › X-Debug header skips admin check in prod'},
-          {type:'gap'},
-          {type:'ok', text:'→ 3 findings written to codesight.sarif'}
+          {type:'ok', text:'-> записаны report.md, report.json, results.sarif'}
         ]
       },
       {
-        provName: 'openai',
+        provName: 'ci',
         lines: [
-          {prompt:'$', cmd:'codesight scan .', flag:'--task bugs'},
-          {type:'out-dim', text:'CodeSight 0.3.0 · model=gpt-5.4 · 12 files · analysing...'},
+          {prompt:'$', cmd:'codesight verify semgrep.sarif', flag:'--source . --fail-on exploitable'},
+          {type:'out-dim', text:'CodeSight 0.3.0 - profile=auto - provider=openai'},
           {type:'gap'},
-          {type:'out', text:'  ████████████████████████  100%'},
-          {type:'out-dim', text:'  api.py   handler.py   queue.py   parser.py'},
-          {type:'out-dim', text:'  ... 8 more'},
+          {type:'crit', text:'Блокировано: 0 exploitable issue(s)'},
+          {type:'high', text:'Вероятно эксплуатируемо: 1'},
+          {type:'out-dim', text:'Нужно ревью: 12'},
+          {type:'out-dim', text:'Закрыто: 5'},
           {type:'gap'},
-          {type:'high', text:'4 bugs found across 3 files'},
-          {type:'out-dim', text:'  queue.py:58  race condition on `_pending` dict'},
-          {type:'out-dim', text:'  parser.py:33 off-by-one in slice bound'},
-          {type:'out-dim', text:'  handler.py:91 resource leak (missing close)'},
-          {type:'out-dim', text:'  handler.py:127 silent exception swallowed'},
-          {type:'gap'},
-          {type:'ok', text:'→ pipeline completed in 11.8s  $0.04'}
+          {type:'ok', text:'-> CI проходит при пороге: exploitable'}
         ]
       },
       {
-        provName: 'ollama',
+        provName: 'scan',
         lines: [
-          {prompt:'$', cmd:'codesight review handler.py'},
-          {type:'out-dim', text:'CodeSight 0.3.0 · model=llama3 · local · 1.9s'},
+          {prompt:'$', cmd:'codesight scan src', flag:'--task security --output sarif'},
+          {type:'out-dim', text:'прямой scan всё ещё работает, если SARIF нет'},
           {type:'gap'},
-          {type:'out', text:'SUMMARY'},
-          {type:'out-dim', text:'  Well-structured handler but three concerns:'},
+          {type:'high', text:'HIGH  src/auth.py:88  нет проверки tenant membership'},
+          {type:'out-dim', text:'  fix: проверить membership до поиска project'},
           {type:'gap'},
-          {type:'high', text:'  1. handler.py:42  Implicit dependency on global state'},
-          {type:'out-dim', text:'     › pass `session` explicitly, not via module'},
+          {type:'ok', text:'-> codesight.sarif готов для code scanning'}
+        ]
+      }
+    ] : [
+      {
+        provName: 'verify',
+        lines: [
+          {prompt:'$', cmd:'semgrep scan', flag:'--config auto --sarif > semgrep.sarif'},
+          {prompt:'$', cmd:'codesight verify semgrep.sarif', flag:'--source . --preview-context'},
+          {type:'out-dim', text:'context: src/api.py:41-64, rule=python.sql-injection'},
           {type:'gap'},
-          {type:'high', text:'  2. handler.py:88  Retry logic has no backoff ceiling'},
-          {type:'out-dim', text:'     › add max_attempts + jitter'},
+          {prompt:'$', cmd:'codesight verify semgrep.sarif', flag:'--source . --judge --skeptic'},
+          {type:'high', text:'UNCERTAIN  src/api.py:47  needs source-to-sink evidence'},
+          {type:'out-dim', text:'  source: request.args["user_id"]'},
+          {type:'out-dim', text:'  sink: db.execute(query)'},
           {type:'gap'},
-          {type:'ok', text:'→ review complete, 2 issues flagged (medium)'}
+          {type:'ok', text:'-> report.md, report.json, results.sarif written'}
+        ]
+      },
+      {
+        provName: 'ci',
+        lines: [
+          {prompt:'$', cmd:'codesight verify semgrep.sarif', flag:'--source . --fail-on exploitable'},
+          {type:'out-dim', text:'CodeSight 0.3.0 - profile=auto - provider=openai'},
+          {type:'gap'},
+          {type:'crit', text:'Blocked: 0 exploitable issue(s)'},
+          {type:'high', text:'Likely exploitable: 1'},
+          {type:'out-dim', text:'Needs review: 12'},
+          {type:'out-dim', text:'Dismissed: 5'},
+          {type:'gap'},
+          {type:'ok', text:'-> CI passes at threshold: exploitable'}
+        ]
+      },
+      {
+        provName: 'scan',
+        lines: [
+          {prompt:'$', cmd:'codesight scan src', flag:'--task security --output sarif'},
+          {type:'out-dim', text:'direct scan still works when SARIF is not available'},
+          {type:'gap'},
+          {type:'high', text:'HIGH  src/auth.py:88  missing tenant membership check'},
+          {type:'out-dim', text:'  fix: check org membership before project lookup'},
+          {type:'gap'},
+          {type:'ok', text:'-> codesight.sarif ready for code scanning'}
         ]
       }
     ];

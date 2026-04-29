@@ -429,7 +429,36 @@ h1.display em:hover{
 
 .lede{
   font-size:1.18rem;line-height:1.72;color:var(--ink-soft);
-  margin-bottom:36px;
+  margin-bottom:22px;
+}
+.hero-kicker{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:18px;
+  padding:7px 11px;
+  border:1px solid color-mix(in srgb, var(--accent) 34%, var(--rule));
+  border-radius:999px;
+  color:var(--accent);
+  background:color-mix(in srgb, var(--accent) 7%, transparent);
+  font-family:'JetBrains Mono',monospace;
+  font-size:.72rem;
+  letter-spacing:.02em;
+  text-transform:uppercase;
+}
+.hero-proof{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:0 0 34px;
+}
+.hero-proof span{
+  padding:7px 10px;
+  border:1px solid var(--rule);
+  border-radius:7px;
+  color:var(--ink-soft);
+  background:color-mix(in srgb, var(--paper) 72%, transparent);
+  font-size:.78rem;
 }
 .dropcap{
   float:left;
@@ -445,7 +474,7 @@ h1.display em:hover{
   display:flex;gap:20px;align-items:center;flex-wrap:wrap;
   padding:16px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
   font-size:.82rem;color:var(--dim);
-  margin-bottom:56px;
+  margin-bottom:42px;
 }
 .byline strong{color:var(--ink);font-weight:600}
 .byline .sep{width:1px;height:12px;background:var(--rule);display:inline-block}
@@ -1134,21 +1163,21 @@ footer{
 /* editorial terminal (right column on desktop) */
 .hero-term{
   margin:0;
-  background:#f6f3ea;
-  border:1.5px solid var(--rule);
-  border-radius:4px;
+  background:linear-gradient(180deg, #fbf8ef, #f1ecdf);
+  border:1px solid color-mix(in srgb, var(--accent) 30%, var(--rule));
+  border-radius:8px;
   font-family:'JetBrains Mono',monospace;
   font-size:.78rem;
   line-height:1.7;
   color:#1a1a1a;
-  box-shadow:0 1px 0 rgba(0,0,0,.02), 0 18px 40px -30px rgba(0,0,0,.18);
+  box-shadow:0 1px 0 rgba(0,0,0,.02), 0 24px 54px -32px color-mix(in srgb, var(--accent) 38%, transparent);
   overflow:hidden;
   position:sticky;top:96px;
   transition:background .4s, border-color .4s, color .4s;
 }
 html[data-theme="dark"] .hero-term{
-  background:#15130f;
-  border-color:#2a2521;
+  background:linear-gradient(180deg, #171612, #100f0d);
+  border-color:color-mix(in srgb, var(--accent) 34%, #2a2521);
   color:#d4cfc2;
   box-shadow:0 1px 0 rgba(255,255,255,.02), 0 18px 40px -20px rgba(0,0,0,.5);
 }
@@ -1310,6 +1339,9 @@ html[data-theme="dark"] .stats-bleed{
   border-bottom:1px solid var(--rule);
   position:relative;
 }
+.fullbleed-quote + section{
+  padding-top:0;
+}
 html[data-theme="dark"] .fullbleed-quote{
   background:
     linear-gradient(180deg,
@@ -1340,7 +1372,7 @@ html[data-theme="dark"] .fullbleed-quote{
 }
 .fullbleed-quote .quote-cite{
   display:block;
-  margin-top:36px;
+  margin-top:18px;
   font-family:'Fraunces',serif;
   font-style:italic;
   font-size:.92rem;
