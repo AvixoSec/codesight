@@ -34,13 +34,7 @@ def test_build_code_map_python(tmp_path):
 
 def test_build_code_map_js(tmp_path):
     f = tmp_path / "app.js"
-    f.write_text(
-        "import React from 'react';\n"
-        "\n"
-        "export function App() {\n"
-        "  return null;\n"
-        "}\n"
-    )
+    f.write_text("import React from 'react';\n\nexport function App() {\n  return null;\n}\n")
     cm = build_code_map(str(f))
     assert cm.language == "js"
     assert any("import" in i for i in cm.imports)

@@ -101,24 +101,28 @@ LANG_PATTERNS["sol"] = {
     "class": re.compile(
         rf"^((?:abstract\s{{1,5}})?contract\s{{1,5}}{_W}{_NOTCURLY})", re.MULTILINE
     ),
-    "interface": re.compile(
-        rf"^((?:interface|library)\s{{1,5}}{_W}{_NOTCURLY})", re.MULTILINE
-    ),
+    "interface": re.compile(rf"^((?:interface|library)\s{{1,5}}{_W}{_NOTCURLY})", re.MULTILINE),
     "function": re.compile(
         rf"^\s{{0,20}}(function\s{{1,5}}{_W}\s{{0,5}}\({_PAREN}\)[^{{;]{{0,500}})", re.MULTILINE
     ),
     "import": re.compile(r"^(import\s{1,5}.{1,500};)$", re.MULTILINE),
     "struct": re.compile(rf"^\s{{0,20}}(struct\s{{1,5}}{_W}\s{{0,5}}\{{)", re.MULTILINE),
-    "method": re.compile(
-        rf"^\s{{0,20}}(modifier\s{{1,5}}{_W}\s{{0,5}}\({_PAREN}\))", re.MULTILINE
-    ),
+    "method": re.compile(rf"^\s{{0,20}}(modifier\s{{1,5}}{_W}\s{{0,5}}\({_PAREN}\))", re.MULTILINE),
 }
 
 
 EXT_TO_LANG = {
-    ".py": "py", ".js": "js", ".ts": "ts", ".jsx": "jsx", ".tsx": "tsx",
-    ".go": "go", ".rs": "rs", ".java": "java", ".kt": "kt",
-    ".sol": "sol", ".vy": "vy",
+    ".py": "py",
+    ".js": "js",
+    ".ts": "ts",
+    ".jsx": "jsx",
+    ".tsx": "tsx",
+    ".go": "go",
+    ".rs": "rs",
+    ".java": "java",
+    ".kt": "kt",
+    ".sol": "sol",
+    ".vy": "vy",
 }
 
 
@@ -146,9 +150,18 @@ _SIG_STARTS: dict[str, tuple[str, ...]] = {
     "rs": ("fn ", "pub fn ", "pub async fn ", "struct ", "pub struct ", "impl ", "use "),
     "java": ("public ", "private ", "protected ", "class ", "import ", "interface "),
     "sol": (
-        "contract ", "abstract contract ", "interface ", "library ",
-        "function ", "modifier ", "struct ", "enum ", "event ",
-        "mapping", "import ", "pragma ",
+        "contract ",
+        "abstract contract ",
+        "interface ",
+        "library ",
+        "function ",
+        "modifier ",
+        "struct ",
+        "enum ",
+        "event ",
+        "mapping",
+        "import ",
+        "pragma ",
     ),
 }
 _SIG_STARTS["ts"] = _SIG_STARTS["js"]

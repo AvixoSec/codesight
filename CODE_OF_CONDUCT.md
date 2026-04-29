@@ -20,7 +20,7 @@ This project is maintained by a small team. We want participation to be a positi
 
 ## Enforcement
 
-Violations can be reported to **AvixoSec@gmail.com**. We'll review and take appropriate action, up to and including banning from the project.
+Report violations through the project's GitHub issue tracker or maintainer profile. We'll review and take appropriate action, up to and including banning from the project.
 
 ## Attribution
 

@@ -26,6 +26,7 @@ def test_stream_module_imports():
         stream_ollama,
         stream_openai,
     )
+
     assert callable(stream_openai)
     assert callable(stream_anthropic)
     assert callable(stream_ollama)

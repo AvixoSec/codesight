@@ -28,6 +28,7 @@ class BenchmarkResult:
     detected_cwes: list[str]
     true_positives: int
     false_negatives: int
+    false_positives: int
     response_time_ms: int
     tokens_used: int
     error: str | None = None
@@ -42,7 +43,12 @@ class BenchmarkSummary:
     total_detected: int
     true_positives: int
     false_negatives: int
+    false_positives: int
+    vulnerable_files: int
+    clean_files: int
+    false_positive_cases: int
     detection_rate: float
+    false_positive_rate: float
     avg_response_ms: int
     total_tokens: int
     results: list[BenchmarkResult]
@@ -108,10 +114,34 @@ BUILTIN_CASES: list[VulnerableFile] = [
         cwe_ids=["CWE-502"],
         description="Insecure deserialization with pickle",
     ),
+    VulnerableFile(
+        path="__builtin__/tenant_auth_bypass.py",
+        language="python",
+        cwe_ids=["CWE-862"],
+        description="Tenant object lookup without authorization check",
+    ),
+    VulnerableFile(
+        path="__builtin__/ai_agent_unvalidated_tool.py",
+        language="python",
+        cwe_ids=["CWE-20"],
+        description="AI-selected tool arguments used without validation",
+    ),
+    VulnerableFile(
+        path="__builtin__/clean_parameterized_query.py",
+        language="python",
+        cwe_ids=[],
+        description="Clean parameterized SQL query",
+    ),
+    VulnerableFile(
+        path="__builtin__/clean_safe_join.py",
+        language="python",
+        cwe_ids=[],
+        description="Clean path join with filename validation",
+    ),
 ]
 
 BUILTIN_SOURCES = {
-    "__builtin__/sql_injection.py": '''
+    "__builtin__/sql_injection.py": """
 import sqlite3
 
 def get_user(username):
@@ -120,8 +150,8 @@ def get_user(username):
     query = f"SELECT * FROM users WHERE username = '{username}'"
     cursor.execute(query)
     return cursor.fetchone()
-''',
-    "__builtin__/xss.py": '''
+""",
+    "__builtin__/xss.py": """
 from flask import Flask, request
 
 app = Flask(__name__)
@@ -130,8 +160,8 @@ app = Flask(__name__)
 def search():
     query = request.args.get("q", "")
     return f"<h1>Results for: {query}</h1>"
-''',
-    "__builtin__/path_traversal.py": '''
+""",
+    "__builtin__/path_traversal.py": """
 from flask import Flask, send_file, request
 
 app = Flask(__name__)
@@ -140,8 +170,8 @@ app = Flask(__name__)
 def download():
     filename = request.args.get("file")
     return send_file(f"/uploads/{filename}")
-''',
-    "__builtin__/hardcoded_secret.py": '''
+""",
+    "__builtin__/hardcoded_secret.py": """
 import jwt
 
 SECRET_KEY = "super_secret_password_123"
@@ -149,15 +179,15 @@ DATABASE_PASSWORD = "admin123"
 
 def create_token(user_id):
     return jwt.encode({"user_id": user_id}, SECRET_KEY, algorithm="HS256")
-''',
-    "__builtin__/command_injection.py": '''
+""",
+    "__builtin__/command_injection.py": """
 import subprocess
 
 def ping_host(hostname):
     result = subprocess.run(f"ping -c 3 {hostname}", shell=True, capture_output=True)
     return result.stdout.decode()
-''',
-    "__builtin__/auth_bypass.py": '''
+""",
+    "__builtin__/auth_bypass.py": """
 def check_admin(user):
     return user.role == "admin"
 
@@ -165,8 +195,8 @@ def delete_user(request, target_user_id):
     check_admin(request.user)  # result is ignored!
     db.users.delete(target_user_id)
     return {"status": "deleted"}
-''',
-    "__builtin__/ssrf.py": '''
+""",
+    "__builtin__/ssrf.py": """
 import requests
 from flask import Flask, request as flask_request
 
@@ -177,8 +207,8 @@ def fetch_url():
     url = flask_request.args.get("url")
     response = requests.get(url)
     return response.text
-''',
-    "__builtin__/insecure_deserialization.py": '''
+""",
+    "__builtin__/insecure_deserialization.py": """
 import pickle
 from flask import Flask, request
 
@@ -188,12 +218,45 @@ app = Flask(__name__)
 def load_data():
     data = pickle.loads(request.data)
     return str(data)
-''',
+""",
+    "__builtin__/clean_parameterized_query.py": """
+import sqlite3
+
+def get_user(username):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+    return cursor.fetchone()
+""",
+    "__builtin__/clean_safe_join.py": """
+from pathlib import Path
+
+UPLOAD_ROOT = Path("/srv/uploads").resolve()
+
+def download(filename):
+    if "/" in filename or "\\\\" in filename:
+        raise ValueError("invalid filename")
+    target = (UPLOAD_ROOT / filename).resolve()
+    target.relative_to(UPLOAD_ROOT)
+    return target.read_bytes()
+""",
+    "__builtin__/tenant_auth_bypass.py": """
+def get_project(request, org_id, project_id):
+    project = db.projects.find_one({"org_id": org_id, "id": project_id})
+    return project
+""",
+    "__builtin__/ai_agent_unvalidated_tool.py": """
+def run_tool(model_output, tools):
+    tool_name = model_output["tool"]
+    args = model_output["args"]
+    return tools[tool_name](**args)
+""",
 }
 
 
 def _extract_cwes(response: str) -> list[str]:
     import re
+
     return re.findall(r"CWE-\d+", response.upper())
 
 
@@ -213,10 +276,14 @@ async def benchmark_model(
     results = []
     total_tp = 0
     total_fn = 0
+    total_fp = 0
     total_expected = 0
     total_detected = 0
     total_tokens = 0
     total_time = 0
+    vulnerable_files = 0
+    clean_files = 0
+    false_positive_cases = 0
 
     for case in test_cases:
         if case.path.startswith("__builtin__/"):
@@ -233,7 +300,7 @@ async def benchmark_model(
             Message(
                 role="user",
                 content=(
-                    f"<file path=\"{safe_path}\" lang=\"{case.language}\">\n"
+                    f'<file path="{safe_path}" lang="{case.language}">\n'
                     f"<source>\n{source}\n</source>\n"
                     f"</file>"
                 ),
@@ -241,19 +308,30 @@ async def benchmark_model(
         ]
 
         expected = [c.upper() for c in case.cwe_ids]
+        if expected:
+            vulnerable_files += 1
+        else:
+            clean_files += 1
         start = time.monotonic()
         try:
             response = await provider.complete(messages, max_tokens=1024, temperature=0.1)
         except Exception as exc:
             elapsed_ms = int((time.monotonic() - start) * 1000)
-            results.append(BenchmarkResult(
-                model=model, provider=provider_name,
-                file_path=case.path,
-                expected_cwes=expected, detected_cwes=[],
-                true_positives=0, false_negatives=len(expected),
-                response_time_ms=elapsed_ms, tokens_used=0,
-                error=f"{type(exc).__name__}: {exc}",
-            ))
+            results.append(
+                BenchmarkResult(
+                    model=model,
+                    provider=provider_name,
+                    file_path=case.path,
+                    expected_cwes=expected,
+                    detected_cwes=[],
+                    true_positives=0,
+                    false_negatives=len(expected),
+                    false_positives=0,
+                    response_time_ms=elapsed_ms,
+                    tokens_used=0,
+                    error=f"{type(exc).__name__}: {exc}",
+                )
+            )
             total_fn += len(expected)
             total_expected += len(expected)
             total_time += elapsed_ms
@@ -264,33 +342,51 @@ async def benchmark_model(
 
         tp = len(set(detected) & set(expected))
         fn = len(set(expected) - set(detected))
+        fp = len(set(detected) - set(expected))
         tokens = response.usage.get("prompt_tokens", 0) + response.usage.get("completion_tokens", 0)
 
-        results.append(BenchmarkResult(
-            model=model, provider=provider_name,
-            file_path=case.path,
-            expected_cwes=expected, detected_cwes=detected,
-            true_positives=tp, false_negatives=fn,
-            response_time_ms=elapsed_ms, tokens_used=tokens,
-        ))
+        results.append(
+            BenchmarkResult(
+                model=model,
+                provider=provider_name,
+                file_path=case.path,
+                expected_cwes=expected,
+                detected_cwes=detected,
+                true_positives=tp,
+                false_negatives=fn,
+                false_positives=fp,
+                response_time_ms=elapsed_ms,
+                tokens_used=tokens,
+            )
+        )
 
         total_tp += tp
         total_fn += fn
+        total_fp += fp
         total_expected += len(expected)
         total_detected += len(detected)
         total_tokens += tokens
         total_time += elapsed_ms
+        if not expected and fp:
+            false_positive_cases += 1
 
     detection_rate = total_tp / total_expected if total_expected > 0 else 0.0
+    false_positive_rate = false_positive_cases / clean_files if clean_files else 0.0
 
     return BenchmarkSummary(
-        model=model, provider=provider_name,
+        model=model,
+        provider=provider_name,
         total_files=len(results),
         total_expected=total_expected,
         total_detected=total_detected,
         true_positives=total_tp,
         false_negatives=total_fn,
+        false_positives=total_fp,
+        vulnerable_files=vulnerable_files,
+        clean_files=clean_files,
+        false_positive_cases=false_positive_cases,
         detection_rate=detection_rate,
+        false_positive_rate=false_positive_rate,
         avg_response_ms=total_time // len(results) if results else 0,
         total_tokens=total_tokens,
         results=results,
@@ -304,11 +400,13 @@ def format_benchmark(summary: BenchmarkSummary) -> str:
         f"- **Detection rate:** {summary.detection_rate:.1%}",
         f"- **True positives:** {summary.true_positives}/{summary.total_expected}",
         f"- **False negatives:** {summary.false_negatives}",
+        f"- **False positives:** {summary.false_positives}",
+        f"- **Clean-case FP rate:** {summary.false_positive_rate:.1%}",
         f"- **Avg response time:** {summary.avg_response_ms}ms",
         f"- **Total tokens:** {summary.total_tokens:,}",
         "",
-        "| File | Expected | Detected | TP | FN | Time |",
-        "|------|----------|----------|----|----|------|",
+        "| File | Expected | Detected | TP | FN | FP | Time |",
+        "|------|----------|----------|----|----|----|------|",
     ]
 
     for r in summary.results:
@@ -316,7 +414,7 @@ def format_benchmark(summary: BenchmarkSummary) -> str:
         det = ", ".join(r.detected_cwes) or ("error" if r.error else "none")
         lines.append(
             f"| {Path(r.file_path).name} | {exp} | {det} "
-            f"| {r.true_positives} | {r.false_negatives} "
+            f"| {r.true_positives} | {r.false_negatives} | {r.false_positives} "
             f"| {r.response_time_ms}ms |"
         )
     errored = [r for r in summary.results if r.error]

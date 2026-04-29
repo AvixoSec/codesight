@@ -5,7 +5,6 @@ from .base import BaseLLMProvider, LLMResponse, Message
 
 
 class OllamaProvider(BaseLLMProvider):
-
     def __init__(self, config: ProviderConfig) -> None:
         self._config = config
         self._base_url = (config.base_url or "http://localhost:11434").rstrip("/")

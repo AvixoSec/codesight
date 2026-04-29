@@ -18,6 +18,7 @@ def _safe_template_path(name: str) -> Path:
         raise ValueError(f"Path traversal detected in template name: {name!r}")
     return path
 
+
 DEFAULT_TEMPLATES = {
     "quick-review": {
         "name": "Quick Review",
@@ -101,9 +102,7 @@ def list_templates() -> dict[str, dict]:
             if not isinstance(data, dict):
                 continue
             required = {"name", "description", "system"}
-            if not required.issubset(data) or not all(
-                isinstance(data[k], str) for k in required
-            ):
+            if not required.issubset(data) or not all(isinstance(data[k], str) for k in required):
                 continue
             templates[f.stem] = {k: data[k] for k in required}
 

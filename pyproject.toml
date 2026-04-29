@@ -4,16 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "codesight"
-version = "0.3.0"
-description = "Code analysis and security review CLI for LLMs"
+version = "0.3.1"
+description = "Semantic security verification CLI for scanner alerts and AI-written code"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 authors = [
-    {name = "AvixoSec", email = "AvixoSec@gmail.com"},
+    {name = "CodeSight Maintainers"},
 ]
 keywords = [
-    "code-analysis", "security", "code-review", "ai", "llm",
+    "security", "semantic-security", "sarif", "code-review", "ai", "llm",
     "static-analysis", "vulnerability-detection", "cwe", "owasp",
     "cli", "devtools", "devsecops",
 ]

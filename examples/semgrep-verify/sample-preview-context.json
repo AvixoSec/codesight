@@ -1,0 +1,30 @@
+{
+  "scanner_alert_count": 1,
+  "contexts": [
+    {
+      "alert": {
+        "rule_id": "python.flask.security.injection.sqlalchemy.CWE-89",
+        "tool_name": "Semgrep",
+        "title": "Possible SQL injection",
+        "message": "User input may reach a SQL query.",
+        "level": "error",
+        "uri": "app.py",
+        "start_line": 9,
+        "end_line": null,
+        "cwe_id": "CWE-89"
+      },
+      "security_profile": {
+        "name": "flask",
+        "title": "Python Flask application"
+      },
+      "context": {
+        "display_path": "app.py",
+        "start_line": 9,
+        "end_line": 9,
+        "missing": false,
+        "reason": "",
+        "snippet": "   6: @app.route(\"/users\")\n   7: def users():\n   8:     term = request.args[\"q\"]\n   9:     query = f\"SELECT id, email FROM users WHERE email = '{term}'\"\n  10:     return db.execute(query).fetchall()"
+      }
+    }
+  ]
+}

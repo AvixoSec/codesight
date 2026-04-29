@@ -40,8 +40,10 @@ def test_save_and_load(tmp_path):
 
     cfg = AppConfig(default_provider="google")
 
-    with patch("codesight.config.CONFIG_DIR", config_dir), \
-         patch("codesight.config.CONFIG_FILE", config_file):
+    with (
+        patch("codesight.config.CONFIG_DIR", config_dir),
+        patch("codesight.config.CONFIG_FILE", config_file),
+    ):
         save_config(cfg)
         loaded = load_config()
 

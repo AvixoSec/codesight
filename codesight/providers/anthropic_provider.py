@@ -26,7 +26,6 @@ def normalize_azure_base_url(url: str) -> str:
 
 
 class AnthropicProvider(BaseLLMProvider):
-
     API_BASE = "https://api.anthropic.com/v1"
 
     def __init__(self, config: ProviderConfig) -> None:
@@ -53,8 +52,7 @@ class AnthropicProvider(BaseLLMProvider):
         else:
             if not config.api_key:
                 raise ValueError(
-                    "Missing Anthropic API key. "
-                    "Set ANTHROPIC_API_KEY or run: codesight config"
+                    "Missing Anthropic API key. Set ANTHROPIC_API_KEY or run: codesight config"
                 )
             self._base_url = self.API_BASE
             self._is_azure = False
@@ -118,9 +116,7 @@ class AnthropicProvider(BaseLLMProvider):
                     f"Anthropic API error ({retry.status_code}): {self._error_message(retry)}"
                 )
 
-            raise RuntimeError(
-                f"Anthropic API error ({resp.status_code}): {message}"
-            )
+            raise RuntimeError(f"Anthropic API error ({resp.status_code}): {message}")
 
         return resp.json()
 

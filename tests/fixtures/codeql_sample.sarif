@@ -1,0 +1,47 @@
+{
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeQL",
+          "rules": [
+            {
+              "id": "py/sql-injection",
+              "shortDescription": {
+                "text": "SQL query built from user-controlled sources"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-089"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "py/sql-injection",
+          "level": "error",
+          "message": {
+            "text": "This query depends on user input."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app.py"
+                },
+                "region": {
+                  "startLine": 6
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

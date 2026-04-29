@@ -55,10 +55,12 @@ def test_complete_messages_uses_analyzer_defaults(mock_config, mock_provider):
     with patch("codesight.analyzer.create_provider", return_value=mock_provider):
         analyzer = Analyzer(mock_config)
         asyncio.run(
-            analyzer.complete_messages([
-                Message(role="system", content="sys"),
-                Message(role="user", content="hello"),
-            ])
+            analyzer.complete_messages(
+                [
+                    Message(role="system", content="sys"),
+                    Message(role="user", content="hello"),
+                ]
+            )
         )
 
     mock_provider.complete.assert_called_once_with(
@@ -67,7 +69,7 @@ def test_complete_messages_uses_analyzer_defaults(mock_config, mock_provider):
             Message(role="user", content="hello"),
         ],
         max_tokens=4096,
-        temperature=0.2
+        temperature=0.2,
     )
 
 

@@ -1,12 +1,16 @@
-name: "CodeSight Security Scan"
-description: "Security analysis for code through LLMs. Finds logic vulnerabilities that pattern-matching tools miss."
-author: "AvixoSec"
+name: "CodeSight Security Verification"
+description: "LLM-backed security verification with SARIF output for CI and GitHub code scanning."
+author: "CodeSight Maintainers"
 
 branding:
   icon: "shield"
   color: "green"
 
 inputs:
+  mode:
+    description: "Run mode (scan or verify)"
+    required: false
+    default: "scan"
   provider:
     description: "LLM provider (openai, anthropic, google, ollama)"
     required: true
@@ -22,13 +26,33 @@ inputs:
     required: false
     default: "security"
   path:
-    description: "Directory or file to scan"
+    description: "Directory or file to scan, or source root for verify mode"
     required: false
     default: "."
+  sarif-input:
+    description: "Scanner SARIF file to verify when mode=verify"
+    required: false
+    default: ""
   output:
     description: "Output format (markdown, json, sarif)"
     required: false
     default: "sarif"
+  fail-on:
+    description: "Verify mode threshold (exploitable, likely_exploitable, uncertain, never)"
+    required: false
+    default: "exploitable"
+  judge:
+    description: "Run semantic judge in verify mode"
+    required: false
+    default: "false"
+  skeptic:
+    description: "Run skeptic pass for serious judge findings"
+    required: false
+    default: "false"
+  profile:
+    description: "Security profile hints (auto, generic, flask, fastapi, express, django, github-actions, ai-agent)"
+    required: false
+    default: "auto"
   fail-on-findings:
     description: "Fail the workflow if critical/high findings are found"
     required: false
@@ -48,24 +72,54 @@ runs:
       run: |
         pip install codesight
 
-    - name: Run security scan
+    - name: Run CodeSight
       shell: bash
       env:
         OPENAI_API_KEY: ${{ inputs.api-key }}
         ANTHROPIC_API_KEY: ${{ inputs.api-key }}
         CODESIGHT_MODEL: ${{ inputs.model }}
+        CODESIGHT_OUTPUT: ${{ inputs.output }}
+        CODESIGHT_PROVIDER: ${{ inputs.provider }}
+        CODESIGHT_SCAN_PATH: ${{ inputs.path }}
+        CODESIGHT_MODE: ${{ inputs.mode }}
+        CODESIGHT_SARIF_INPUT: ${{ inputs.sarif-input }}
+        CODESIGHT_FAIL_ON: ${{ inputs.fail-on }}
+        CODESIGHT_JUDGE: ${{ inputs.judge }}
+        CODESIGHT_SKEPTIC: ${{ inputs.skeptic }}
+        CODESIGHT_PROFILE: ${{ inputs.profile }}
+        CODESIGHT_TASK: ${{ inputs.task }}
       run: |
         set +e
-        codesight scan ${{ inputs.path }} \
-          --provider ${{ inputs.provider }} \
-          --task ${{ inputs.task }} \
-          --output ${{ inputs.output }} \
-          > codesight-results.sarif 2>&1
+        if [ "$CODESIGHT_MODE" = "verify" ]; then
+          if [ -z "$CODESIGHT_SARIF_INPUT" ] || [ ! -f "$CODESIGHT_SARIF_INPUT" ]; then
+            echo "::error::mode=verify needs sarif-input"
+            exit 1
+          fi
+          codesight verify "$CODESIGHT_SARIF_INPUT" \
+            --source "$CODESIGHT_SCAN_PATH" \
+            --output "$CODESIGHT_OUTPUT" \
+            --fail-on "$CODESIGHT_FAIL_ON" \
+            $(if [ "$CODESIGHT_JUDGE" = "true" ]; then echo --judge; fi) \
+            $(if [ "$CODESIGHT_SKEPTIC" = "true" ]; then echo --skeptic; fi) \
+            --profile "$CODESIGHT_PROFILE" \
+            --provider "$CODESIGHT_PROVIDER" \
+            > codesight-results.sarif 2> codesight-results.log
+        else
+          codesight scan "$CODESIGHT_SCAN_PATH" \
+            --provider "$CODESIGHT_PROVIDER" \
+            --task "$CODESIGHT_TASK" \
+            --output "$CODESIGHT_OUTPUT" \
+            > codesight-results.sarif 2> codesight-results.log
+        fi
         EXIT_CODE=$?
-        echo "exit_code=$EXIT_CODE" >> $GITHUB_ENV
+        echo "exit_code=$EXIT_CODE" >> "$GITHUB_ENV"
 
-        if [ -f codesight-results.sarif ]; then
-          echo "sarif-file=codesight-results.sarif" >> $GITHUB_OUTPUT
+        if [ -s codesight-results.log ]; then
+          cat codesight-results.log
+        fi
+
+        if [ "$CODESIGHT_OUTPUT" = "sarif" ] && [ -f codesight-results.sarif ]; then
+          echo "sarif-file=codesight-results.sarif" >> "$GITHUB_OUTPUT"
         fi
         echo "Scan complete with exit code $EXIT_CODE"
 

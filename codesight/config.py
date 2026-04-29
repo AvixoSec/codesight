@@ -27,6 +27,7 @@ class KeyringUnavailableError(RuntimeError):
 def _keyring():
     try:
         import keyring as _kr
+
         _kr.get_keyring()
         return _kr
     except Exception:
@@ -83,9 +84,9 @@ class AppConfig:
     output_format: str = "markdown"
     language: str = "en"
     max_file_size_kb: int = 500
-    ignore_patterns: list = field(default_factory=lambda: [
-        "*.pyc", "__pycache__", ".git", "node_modules", ".env"
-    ])
+    ignore_patterns: list = field(
+        default_factory=lambda: ["*.pyc", "__pycache__", ".git", "node_modules", ".env"]
+    )
     # Opt-in to plaintext fallback when keyring is unavailable.
     # Env override: CODESIGHT_ALLOW_PLAINTEXT_KEYS=1
     allow_plaintext_keys: bool = False
@@ -237,10 +238,7 @@ def _apply_project_config(cfg: AppConfig, data: dict[str, Any]) -> None:
         for label, pdata in project_providers.items():
             if not isinstance(pdata, dict):
                 continue
-            pdata = {
-                k: v for k, v in pdata.items()
-                if k not in _PROJECT_PROVIDER_BLOCKED
-            }
+            pdata = {k: v for k, v in pdata.items() if k not in _PROJECT_PROVIDER_BLOCKED}
             existing = cfg.providers.get(label)
             if existing is None:
                 cfg.providers[label] = ProviderConfig.from_dict(
@@ -277,8 +275,7 @@ def save_config(config: AppConfig) -> None:
         dump["providers"][label] = pd
 
     residual_plaintext = any(
-        (pd.get("api_key") is not None)
-        for pd in dump.get("providers", {}).values()
+        (pd.get("api_key") is not None) for pd in dump.get("providers", {}).values()
     )
 
     if residual_plaintext and not allow_plaintext:
@@ -335,6 +332,4 @@ def get_provider_config(config: AppConfig, provider_name: str | None = None) -> 
             model=os.environ.get("CODESIGHT_MODEL", DEFAULT_OLLAMA_MODEL),
         )
     else:
-        raise ValueError(
-            f"Unknown provider: '{name}'. Run 'codesight config' to set it up."
-        )
+        raise ValueError(f"Unknown provider: '{name}'. Run 'codesight config' to set it up.")

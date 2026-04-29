@@ -1,0 +1,44 @@
+{
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeSightFixture",
+          "rules": [
+            {
+              "id": "ai-agent.unvalidated-tool-call.CWE-20",
+              "shortDescription": {
+                "text": "Unvalidated AI tool call"
+              },
+              "properties": {
+                "tags": ["CWE-20", "security"]
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "ai-agent.unvalidated-tool-call.CWE-20",
+          "level": "warning",
+          "message": {
+            "text": "Model-selected tool name and arguments reach tool execution without schema validation."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "agent.py"
+                },
+                "region": {
+                  "startLine": 4
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

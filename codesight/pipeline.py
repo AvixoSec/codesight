@@ -29,11 +29,7 @@ def _wrap_source(file_path: str, source: str) -> str:
     capped = source[:_MAX_SOURCE_CHARS]
     if len(source) > _MAX_SOURCE_CHARS:
         capped += "\n<!-- source truncated -->"
-    return (
-        f"<file path=\"{safe_path}\">\n"
-        f"<source>\n{capped}\n</source>\n"
-        f"</file>"
-    )
+    return f'<file path="{safe_path}">\n<source>\n{capped}\n</source>\n</file>'
 
 
 @dataclass
@@ -102,7 +98,9 @@ async def run_pipeline(
     ]
 
     triage_response = await triage_provider.complete(
-        triage_messages, max_tokens=2048, temperature=0.1,
+        triage_messages,
+        max_tokens=2048,
+        temperature=0.1,
     )
 
     triage_output = triage_response.content.strip()
@@ -138,7 +136,9 @@ async def run_pipeline(
     ]
 
     verify_response = await verify_provider.complete(
-        verify_messages, max_tokens=4096, temperature=0.2,
+        verify_messages,
+        max_tokens=4096,
+        temperature=0.2,
     )
 
     verify_usage = verify_response.usage

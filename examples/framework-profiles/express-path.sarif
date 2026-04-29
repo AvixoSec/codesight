@@ -1,0 +1,44 @@
+{
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeSightFixture",
+          "rules": [
+            {
+              "id": "express.path-traversal.CWE-22",
+              "shortDescription": {
+                "text": "Possible path traversal"
+              },
+              "properties": {
+                "tags": ["CWE-22", "security"]
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "express.path-traversal.CWE-22",
+          "level": "error",
+          "message": {
+            "text": "Request query parameter may reach filesystem read."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "server.js"
+                },
+                "region": {
+                  "startLine": 8
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

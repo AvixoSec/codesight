@@ -1,0 +1,38 @@
+{
+  "name": "semgrep-verify-import-proof",
+  "date": "2026-04-29",
+  "status": "deterministic import proof; judge proof needs a live provider key",
+  "commands": [
+    "codesight verify examples/semgrep-verify/semgrep.sarif --source examples/semgrep-verify/project --profile flask --preview-context",
+    "codesight verify examples/semgrep-verify/semgrep.sarif --source examples/semgrep-verify/project --profile flask --output markdown",
+    "codesight verify examples/semgrep-verify/semgrep.sarif --source examples/semgrep-verify/project --profile flask --judge --skeptic --provider openai --output markdown"
+  ],
+  "artifacts": [
+    {
+      "path": "examples/semgrep-verify/semgrep.sarif",
+      "kind": "input",
+      "description": "Scanner SARIF with one Semgrep-style SQL injection alert."
+    },
+    {
+      "path": "examples/semgrep-verify/project/app.py",
+      "kind": "source",
+      "description": "Small Flask sample used for context slicing."
+    },
+    {
+      "path": "examples/semgrep-verify/sample-preview-context.json",
+      "kind": "preview",
+      "description": "Expected shape of --preview-context output with relative paths."
+    },
+    {
+      "path": "examples/semgrep-verify/expected-import-report.md",
+      "kind": "report",
+      "description": "Expected conservative import-mode Markdown report."
+    },
+    {
+      "path": "examples/semgrep-verify/expected-import.sarif",
+      "kind": "sarif",
+      "description": "Expected conservative import-mode SARIF output."
+    }
+  ],
+  "next_public_proof_step": "Run the judge command with a live provider and save raw markdown, SARIF, and model metadata."
+}

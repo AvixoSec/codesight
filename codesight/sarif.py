@@ -2,6 +2,9 @@ import json
 import re
 import warnings
 from dataclasses import dataclass
+from typing import Any
+
+from .findings import VerifiedFinding
 
 
 @dataclass
@@ -85,15 +88,17 @@ def parse_findings(
         desc_match = re.search(r"\*\*Description:\*\*\s*(.{1,4000}?)(?:\n\*\*|\Z)", body, re.DOTALL)
         description = desc_match.group(1).strip() if desc_match else title
 
-        findings.append(Finding(
-            severity=severity,
-            title=title,
-            cwe_id=cwe_id,
-            line=line_num,
-            file_path=file_path,
-            description=description,
-            fix=fix,
-        ))
+        findings.append(
+            Finding(
+                severity=severity,
+                title=title,
+                cwe_id=cwe_id,
+                line=line_num,
+                file_path=file_path,
+                description=description,
+                fix=fix,
+            )
+        )
 
     if errors:
         if strict:
@@ -107,51 +112,128 @@ def parse_findings(
     return findings
 
 
-def to_sarif(findings: list[Finding]) -> dict:
+def _rule_id(finding: Finding | VerifiedFinding, index: int) -> str:
+    if isinstance(finding, VerifiedFinding):
+        return finding.cwe_id or finding.id or f"CS{index + 1:03d}"
+    return finding.cwe_id or f"CS{index + 1:03d}"
+
+
+def _rule_title(finding: Finding | VerifiedFinding) -> str:
+    return finding.title
+
+
+def _rule_help_uri(rule_id: str) -> str:
+    if rule_id.startswith("CWE-"):
+        return f"https://cwe.mitre.org/data/definitions/{rule_id.split('-')[1]}.html"
+    return "https://codesight.is-a.dev"
+
+
+def _level(finding: Finding | VerifiedFinding) -> str:
+    if isinstance(finding, VerifiedFinding):
+        severity = finding.severity.value.upper()
+    else:
+        severity = finding.severity
+    return SEVERITY_TO_SARIF.get(severity, "warning")
+
+
+def _message(finding: Finding | VerifiedFinding) -> str:
+    if isinstance(finding, VerifiedFinding):
+        parts = [
+            finding.title,
+            f"Verdict: {finding.verdict.value}",
+            f"Confidence: {finding.confidence.value}",
+            f"Exploitability: {finding.exploitability.total}/100",
+        ]
+        if finding.impact:
+            parts.append(f"Impact: {finding.impact}")
+        if finding.fix:
+            parts.append(f"Fix: {finding.fix}")
+        if finding.uncertainty:
+            parts.append(f"Uncertainty: {finding.uncertainty}")
+        return "\n\n".join(parts)
+    return f"{finding.description}\n\nFix: {finding.fix}" if finding.fix else finding.description
+
+
+def _location(finding: Finding | VerifiedFinding) -> dict[str, Any]:
+    if isinstance(finding, VerifiedFinding):
+        region: dict[str, int] = {"startLine": finding.start_line or 1}
+        if finding.end_line:
+            region["endLine"] = finding.end_line
+        return {
+            "physicalLocation": {
+                "artifactLocation": {"uri": finding.file_path},
+                "region": region,
+            }
+        }
+    return {
+        "physicalLocation": {
+            "artifactLocation": {"uri": finding.file_path},
+            "region": {"startLine": finding.line},
+        }
+    }
+
+
+def _properties(finding: Finding | VerifiedFinding) -> dict[str, Any] | None:
+    if not isinstance(finding, VerifiedFinding):
+        return None
+    return {
+        "verdict": finding.verdict.value,
+        "confidence": finding.confidence.value,
+        "exploitabilityScore": finding.exploitability.to_dict(),
+        "source": finding.source,
+        "sink": finding.sink,
+        "missingGuard": finding.missing_guard,
+        "uncertainty": finding.uncertainty,
+        "falsePositiveReason": finding.false_positive_reason,
+        "evidencePath": [step.to_dict() for step in finding.evidence_path],
+    }
+
+
+def to_sarif(findings: list[Finding | VerifiedFinding]) -> dict:
     rules = []
     results = []
     rule_ids = {}
 
     for i, f in enumerate(findings):
-        rule_id = f.cwe_id or f"CS{i+1:03d}"
+        rule_id = _rule_id(f, i)
         if rule_id not in rule_ids:
             rule_ids[rule_id] = len(rules)
             rule = {
                 "id": rule_id,
-                "shortDescription": {"text": f.title},
-                "helpUri": f"https://cwe.mitre.org/data/definitions/{f.cwe_id.split('-')[1]}.html"
-                if f.cwe_id else "https://codesight.is-a.dev",
+                "shortDescription": {"text": _rule_title(f)},
+                "helpUri": _rule_help_uri(rule_id),
             }
             rules.append(rule)
 
-        results.append({
+        result = {
             "ruleId": rule_id,
             "ruleIndex": rule_ids[rule_id],
-            "level": SEVERITY_TO_SARIF.get(f.severity, "warning"),
-            "message": {"text": f"{f.description}\n\nFix: {f.fix}" if f.fix else f.description},
-            "locations": [{
-                "physicalLocation": {
-                    "artifactLocation": {"uri": f.file_path},
-                    "region": {"startLine": f.line},
-                }
-            }],
-        })
+            "level": _level(f),
+            "message": {"text": _message(f)},
+            "locations": [_location(f)],
+        }
+        props = _properties(f)
+        if props is not None:
+            result["properties"] = props
+        results.append(result)
 
     return {
         "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
         "version": "2.1.0",
-        "runs": [{
-            "tool": {
-                "driver": {
-                    "name": "CodeSight",
-                    "informationUri": "https://github.com/AvixoSec/codesight",
-                    "rules": rules,
-                }
-            },
-            "results": results,
-        }],
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "CodeSight",
+                        "informationUri": "https://github.com/AvixoSec/codesight",
+                        "rules": rules,
+                    }
+                },
+                "results": results,
+            }
+        ],
     }
 
 
-def to_sarif_json(findings: list[Finding], indent: int = 2) -> str:
+def to_sarif_json(findings: list[Finding | VerifiedFinding], indent: int = 2) -> str:
     return json.dumps(to_sarif(findings), indent=indent)

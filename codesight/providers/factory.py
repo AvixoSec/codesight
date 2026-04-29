@@ -21,7 +21,5 @@ def create_provider(config: ProviderConfig) -> BaseLLMProvider:
         if config.base_url:
             return CustomProvider(config)
         supported = ", ".join(_PROVIDERS)
-        raise ValueError(
-            f"Unknown provider '{config.provider}'. Supported: {supported}"
-        )
+        raise ValueError(f"Unknown provider '{config.provider}'. Supported: {supported}")
     return factory(config)

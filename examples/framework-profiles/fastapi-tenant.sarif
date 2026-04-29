@@ -1,0 +1,44 @@
+{
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeSightFixture",
+          "rules": [
+            {
+              "id": "fastapi.tenant-boundary.CWE-862",
+              "shortDescription": {
+                "text": "Possible tenant authorization bypass"
+              },
+              "properties": {
+                "tags": ["CWE-862", "security"]
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "fastapi.tenant-boundary.CWE-862",
+          "level": "error",
+          "message": {
+            "text": "Route parameter may reach tenant object lookup without membership check."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app.py"
+                },
+                "region": {
+                  "startLine": 8
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -2,15 +2,17 @@
 
 ## Supported Versions
 
-| Version | Supported |
-|---------|-----------|
-| 0.3.x   | Yes       |
+- `0.3.x`: supported
 
 ## Reporting a Vulnerability
 
 If you find a security vulnerability in CodeSight, **do not open a public issue**.
 
-Email us at **AvixoSec@gmail.com** with:
+Use a private GitHub security advisory:
+
+https://github.com/AvixoSec/codesight/security/advisories/new
+
+Include:
 
 - Description of the vulnerability
 - Steps to reproduce

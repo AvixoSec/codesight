@@ -16,7 +16,6 @@ _REFUSED_FINISH_REASONS = {"SAFETY", "BLOCKLIST", "PROHIBITED_CONTENT", "RECITAT
 
 
 class GoogleVertexProvider(BaseLLMProvider):
-
     def __init__(self, config: ProviderConfig) -> None:
         self._config = config
         self._project = config.project_id
@@ -25,8 +24,7 @@ class GoogleVertexProvider(BaseLLMProvider):
 
         if not self._project:
             raise ValueError(
-                "Missing Google Cloud project ID. "
-                "Set GOOGLE_CLOUD_PROJECT or run: codesight config"
+                "Missing Google Cloud project ID. Set GOOGLE_CLOUD_PROJECT or run: codesight config"
             )
         if not _PROJECT_RE.match(self._project):
             raise ValueError(f"Invalid Google Cloud project ID: {self._project!r}")
@@ -65,8 +63,7 @@ class GoogleVertexProvider(BaseLLMProvider):
             import google.auth.transport.requests
         except ImportError as err:
             raise ImportError(
-                "google-auth is required for Vertex AI. "
-                "Install it: pip install google-auth"
+                "google-auth is required for Vertex AI. Install it: pip install google-auth"
             ) from err
 
         credentials, _ = google.auth.default()
@@ -136,13 +133,9 @@ class GoogleVertexProvider(BaseLLMProvider):
             raise RuntimeError("Vertex AI returned no candidates")
         finish_reason = candidates[0].get("finishReason", "")
         parts = (candidates[0].get("content") or {}).get("parts") or []
-        candidate = "".join(
-            p.get("text", "") for p in parts if isinstance(p, dict)
-        )
+        candidate = "".join(p.get("text", "") for p in parts if isinstance(p, dict))
         if not candidate and finish_reason in _REFUSED_FINISH_REASONS:
-            raise RuntimeError(
-                f"Vertex AI refused to answer (finishReason={finish_reason})"
-            )
+            raise RuntimeError(f"Vertex AI refused to answer (finishReason={finish_reason})")
         usage_meta = data.get("usageMetadata", {})
 
         return LLMResponse(

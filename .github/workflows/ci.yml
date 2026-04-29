@@ -25,7 +25,7 @@ jobs:
           pip install -r requirements-dev.txt
           pip install -e .
       - name: Lint with ruff
-        run: ruff check codesight/
+        run: ruff check .
       - name: Type check with mypy
         run: mypy codesight/ --ignore-missing-imports
       - name: Run tests

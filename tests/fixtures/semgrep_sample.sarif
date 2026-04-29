@@ -1,0 +1,44 @@
+{
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Semgrep",
+          "rules": [
+            {
+              "id": "python.flask.security.injection.sqlalchemy.CWE-89",
+              "shortDescription": {
+                "text": "Possible SQL injection"
+              },
+              "properties": {
+                "tags": ["CWE-89", "security"]
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "python.flask.security.injection.sqlalchemy.CWE-89",
+          "level": "error",
+          "message": {
+            "text": "User input may reach a SQL query."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app.py"
+                },
+                "region": {
+                  "startLine": 6
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

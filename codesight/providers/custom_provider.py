@@ -27,9 +27,7 @@ def _is_public_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
 def _host_of(base_url: str) -> str:
     parsed = urlparse(base_url)
     if parsed.scheme not in _ALLOWED_SCHEMES:
-        raise ValueError(
-            f"base_url must use http or https, got: {parsed.scheme or '(none)'}"
-        )
+        raise ValueError(f"base_url must use http or https, got: {parsed.scheme or '(none)'}")
     host = (parsed.hostname or "").strip()
     if not host:
         raise ValueError(f"base_url has no hostname: {base_url}")
@@ -46,8 +44,7 @@ def _validate_base_url(base_url: str) -> None:
 
     if host.lower() in _LOCALHOST_NAMES:
         raise ValueError(
-            f"base_url points at localhost ({host}). "
-            f"Set {_PRIVATE_ENV}=1 to allow it."
+            f"base_url points at localhost ({host}). Set {_PRIVATE_ENV}=1 to allow it."
         )
 
     try:
@@ -56,8 +53,7 @@ def _validate_base_url(base_url: str) -> None:
         literal = None
     if literal is not None and not _is_public_ip(literal):
         raise ValueError(
-            f"base_url points at a non-public address ({host}). "
-            f"Set {_PRIVATE_ENV}=1 to allow it."
+            f"base_url points at a non-public address ({host}). Set {_PRIVATE_ENV}=1 to allow it."
         )
     if literal is not None:
         return
@@ -71,9 +67,7 @@ def _validate_base_url(base_url: str) -> None:
             f"Set {_PRIVATE_ENV}=1 only if you trust this environment."
         ) from exc
     if not infos:
-        raise ValueError(
-            f"No addresses returned for host {host!r}; refusing to proceed."
-        )
+        raise ValueError(f"No addresses returned for host {host!r}; refusing to proceed.")
     for info in infos:
         addr = info[4][0]
         try:
@@ -87,6 +81,7 @@ def _validate_base_url(base_url: str) -> None:
                 f"base_url host {host} resolves to non-public address {addr}. "
                 f"Set {_PRIVATE_ENV}=1 to allow it."
             )
+
 
 KNOWN_PRESETS: dict[str, tuple[str, str]] = {
     "OpenRouter": (
@@ -134,12 +129,9 @@ KNOWN_PRESETS: dict[str, tuple[str, str]] = {
 
 
 class CustomProvider(BaseLLMProvider):
-
     def __init__(self, config: ProviderConfig) -> None:
         if not config.base_url:
-            raise ValueError(
-                "Custom provider requires a base_url. Run: codesight config"
-            )
+            raise ValueError("Custom provider requires a base_url. Run: codesight config")
         _validate_base_url(config.base_url)
         self._config = config
         self._base_url = config.base_url.rstrip("/")

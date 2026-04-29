@@ -16,11 +16,30 @@ def _safe_file_path(path: str) -> str:
     cleaned = _FILE_PATH_SAFE.sub("_", path)[:256]
     return cleaned or "unnamed"
 
+
 SCAN_EXTENSIONS = {
-    ".py", ".js", ".ts", ".jsx", ".tsx", ".go", ".rs", ".rb",
-    ".java", ".kt", ".cs", ".cpp", ".c", ".h", ".hpp",
-    ".php", ".swift", ".scala", ".sh", ".bash",
-    ".sol", ".vy",
+    ".py",
+    ".js",
+    ".ts",
+    ".jsx",
+    ".tsx",
+    ".go",
+    ".rs",
+    ".rb",
+    ".java",
+    ".kt",
+    ".cs",
+    ".cpp",
+    ".c",
+    ".h",
+    ".hpp",
+    ".php",
+    ".swift",
+    ".scala",
+    ".sh",
+    ".bash",
+    ".sol",
+    ".vy",
 }
 
 PROMPT_COMPRESSION_MAX_LINES = 1200
@@ -95,23 +114,23 @@ _UNTRUSTED_DATA_PREAMBLE = (
 
 SYSTEM_PROMPTS = {
     TaskType.REVIEW: (
-        _UNTRUSTED_DATA_PREAMBLE +
-        "You are a senior engineer doing a code review. Be direct and specific. "
+        _UNTRUSTED_DATA_PREAMBLE
+        + "You are a senior engineer doing a code review. Be direct and specific. "
         "For every issue: state the line number, severity "
         "[crit/warn/info], what's wrong, and how to fix it. "
         "Start with a one-line summary. Don't pad with praise. "
         "Sections: ## Summary, ## Issues, ## Suggestions"
     ),
     TaskType.BUGS: (
-        _UNTRUSTED_DATA_PREAMBLE +
-        "Find bugs in this code. Focus on things that will actually break at runtime: "
+        _UNTRUSTED_DATA_PREAMBLE
+        + "Find bugs in this code. Focus on things that will actually break at runtime: "
         "logic errors, off-by-ones, null access, unclosed resources, race conditions, "
         "unhandled edge cases. For each bug: line number, root cause, fix. "
         "Skip style nitpicks. Sections: ## Bugs Found, ## Risk Assessment"
     ),
     TaskType.SECURITY: (
-        _UNTRUSTED_DATA_PREAMBLE +
-        "You are a security auditor. Analyze this code for security vulnerabilities. "
+        _UNTRUSTED_DATA_PREAMBLE
+        + "You are a security auditor. Analyze this code for security vulnerabilities. "
         "For EACH finding, provide:\n"
         "- Severity: CRITICAL / HIGH / MEDIUM / LOW\n"
         "- CWE ID (e.g. CWE-89 for SQL injection)\n"
@@ -154,8 +173,8 @@ SYSTEM_PROMPTS = {
 
 
 SOLIDITY_SECURITY_PROMPT = (
-    _UNTRUSTED_DATA_PREAMBLE +
-    "You are a smart contract security auditor. Analyze this Solidity code. "
+    _UNTRUSTED_DATA_PREAMBLE
+    + "You are a smart contract security auditor. Analyze this Solidity code. "
     "For EACH finding, provide:\n"
     "- Severity: CRITICAL / HIGH / MEDIUM / LOW\n"
     "- SWC ID (e.g. SWC-107 for reentrancy)\n"
@@ -187,7 +206,6 @@ class AnalysisError(Exception):
 
 
 class Analyzer:
-
     def __init__(self, config: AppConfig, provider_name: str | None = None) -> None:
         pconfig = get_provider_config(config, provider_name)
         self.provider_config = pconfig
@@ -226,9 +244,7 @@ class Analyzer:
         is_compressed = display_source != source
         safe_path = _safe_file_path(file_path)
         user_content = (
-            f"<file path=\"{safe_path}\" ext=\"{ext}\">\n"
-            f"<source>\n{display_source}\n</source>\n"
-            f"</file>"
+            f'<file path="{safe_path}" ext="{ext}">\n<source>\n{display_source}\n</source>\n</file>'
         )
         if is_compressed:
             user_content += (
@@ -273,8 +289,7 @@ class Analyzer:
                     "Check the exact deployment name in the portal."
                 ) from exc
             raise AnalysisError(
-                f"API call failed: {exc}\n"
-                f"Check your API key and network connection."
+                f"API call failed: {exc}\nCheck your API key and network connection."
             ) from exc
 
         usage = response.usage
@@ -284,8 +299,7 @@ class Analyzer:
             content=response.content,
             model=response.model,
             provider=response.provider,
-            tokens_used=usage.get("prompt_tokens", 0)
-            + usage.get("completion_tokens", 0),
+            tokens_used=usage.get("prompt_tokens", 0) + usage.get("completion_tokens", 0),
             usage=usage,
         )
 

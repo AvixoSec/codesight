@@ -136,8 +136,7 @@ async def stream_google(
         import google.auth.transport.requests
     except ImportError as err:
         raise ImportError(
-            "google-auth is required for Vertex AI streaming. "
-            "Install: pip install google-auth"
+            "google-auth is required for Vertex AI streaming. Install: pip install google-auth"
         ) from err
 
     def _token() -> str:
@@ -242,25 +241,37 @@ async def stream_analysis(
 
     if name == "openai":
         async for chunk in stream_openai(
-            messages, pconfig.api_key, pconfig.model,
-            pconfig.max_tokens, pconfig.temperature,
+            messages,
+            pconfig.api_key,
+            pconfig.model,
+            pconfig.max_tokens,
+            pconfig.temperature,
         ):
             yield chunk
     elif name == "anthropic":
         async for chunk in stream_anthropic(
-            messages, pconfig.api_key, pconfig.model,
-            pconfig.max_tokens, pconfig.temperature,
+            messages,
+            pconfig.api_key,
+            pconfig.model,
+            pconfig.max_tokens,
+            pconfig.temperature,
         ):
             yield chunk
     elif name == "ollama":
         async for chunk in stream_ollama(
-            messages, pconfig.model, pconfig.base_url,
+            messages,
+            pconfig.model,
+            pconfig.base_url,
         ):
             yield chunk
     elif name == "google":
         async for chunk in stream_google(
-            messages, pconfig.project_id, pconfig.region or "us-central1",
-            pconfig.model, pconfig.max_tokens, pconfig.temperature,
+            messages,
+            pconfig.project_id,
+            pconfig.region or "us-central1",
+            pconfig.model,
+            pconfig.max_tokens,
+            pconfig.temperature,
         ):
             yield chunk
     else:

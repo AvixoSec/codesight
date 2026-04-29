@@ -1,9 +1,9 @@
 {
   "name": "codesight",
   "displayName": "CodeSight",
-  "description": "Code analysis and security review via LLMs",
+  "description": "Security-first CodeSight workflows from VS Code",
   "version": "0.1.0",
-  "publisher": "AvixoSec",
+  "publisher": "codesight",
   "license": "MIT",
   "icon": "assets/icon.png",
   "repository": {
@@ -21,6 +21,7 @@
   ],
   "keywords": [
     "security",
+    "security verification",
     "code review",
     "ai",
     "llm",
@@ -113,7 +114,7 @@
         "codesight.outputFormat": {
           "type": "string",
           "default": "markdown",
-          "enum": ["markdown", "json", "plain"],
+          "enum": ["markdown", "json", "plain", "sarif"],
           "description": "Output format for analysis results"
         }
       }
@@ -128,9 +129,9 @@
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
-    "typescript": "^5.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.0",
+    "@typescript-eslint/parser": "^8.59.0",
     "eslint": "^8.56.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0"
+    "typescript": "^5.3.3"
   }
 }

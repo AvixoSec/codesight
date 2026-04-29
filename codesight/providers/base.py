@@ -17,7 +17,6 @@ class LLMResponse:
 
 
 class BaseLLMProvider(ABC):
-
     @abstractmethod
     async def complete(
         self,

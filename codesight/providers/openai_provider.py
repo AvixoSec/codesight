@@ -10,7 +10,6 @@ _MAX_RETRIES = 3
 
 
 class OpenAIProvider(BaseLLMProvider):
-
     API_BASE = "https://api.openai.com/v1"
 
     def __init__(self, config: ProviderConfig) -> None:
@@ -38,19 +37,25 @@ class OpenAIProvider(BaseLLMProvider):
             self._client = None
 
     async def _post_with_retry(
-        self, url: str, payload: dict, timeout: float,
+        self,
+        url: str,
+        payload: dict,
+        timeout: float,
     ) -> httpx.Response:
         client = self._get_client()
         last: httpx.Response | None = None
         for attempt in range(_MAX_RETRIES):
             resp = await client.post(
-                url, headers=self._headers, json=payload, timeout=timeout,
+                url,
+                headers=self._headers,
+                json=payload,
+                timeout=timeout,
             )
             last = resp
             if resp.status_code not in _RETRY_STATUS or attempt == _MAX_RETRIES - 1:
                 return resp
             retry_after = resp.headers.get("retry-after")
-            delay = 2 ** attempt
+            delay = 2**attempt
             if retry_after and retry_after.isdigit():
                 delay = min(int(retry_after), 60)
             await asyncio.sleep(delay)
@@ -69,7 +74,9 @@ class OpenAIProvider(BaseLLMProvider):
             "temperature": temperature,
         }
         resp = await self._post_with_retry(
-            f"{self.API_BASE}/chat/completions", payload, timeout=120,
+            f"{self.API_BASE}/chat/completions",
+            payload,
+            timeout=120,
         )
         resp.raise_for_status()
         data = resp.json()

@@ -1,0 +1,15 @@
+{
+  "name": "framework-profile-fixtures",
+  "date": "2026-04-29",
+  "status": "deterministic fixtures; live judge proof needs a provider key",
+  "profiles": [
+    "fastapi",
+    "express",
+    "ai-agent"
+  ],
+  "commands": [
+    "codesight verify examples/framework-profiles/fastapi-tenant.sarif --source examples/framework-profiles/fastapi-project --profile fastapi --preview-context",
+    "codesight verify examples/framework-profiles/express-path.sarif --source examples/framework-profiles/express-project --profile express --preview-context",
+    "codesight verify examples/framework-profiles/ai-agent-tool.sarif --source examples/framework-profiles/ai-agent-project --profile ai-agent --preview-context"
+  ]
+}

@@ -30,6 +30,7 @@ from .analyzer import (
     TaskType,
     collect_files,
 )
+from .artifacts import verification_payload, write_verification_artifacts
 from .benchmark import benchmark_model, export_benchmark_json, format_benchmark
 from .config import (
     CONFIG_FILE,
@@ -43,12 +44,21 @@ from .config import (
     save_config,
 )
 from .cost import estimate_call_cost, estimate_cost, format_cost
+from .findings import VerifiedFinding
+from .formatters import format_markdown_report
 from .i18n import resolve_language, set_language, t
 from .pipeline import PipelineConfig, run_pipeline
+from .profiles import profile_names
 from .providers.anthropic_provider import is_azure_url, normalize_azure_base_url
 from .providers.base import Message
 from .sarif import parse_findings, to_sarif_json
 from .templates import delete_template, get_template, list_templates, save_template
+from .verify import (
+    VerificationError,
+    preview_sarif_contexts,
+    verify_sarif_file,
+    verify_sarif_file_with_judge,
+)
 
 console = Console(stderr=True)
 out = Console()
@@ -162,6 +172,19 @@ def _batch_exit_code(results: list[AnalysisResult], errors: list[tuple[str, str]
     return exit_code
 
 
+def _verify_exit_code(findings: list[VerifiedFinding], fail_on: str) -> int:
+    blocking_verdicts = {
+        "never": set(),
+        "exploitable": {"exploitable"},
+        "likely_exploitable": {"exploitable", "likely_exploitable"},
+        "uncertain": {"exploitable", "likely_exploitable", "uncertain"},
+    }[fail_on]
+    blockers = [finding for finding in findings if finding.verdict.value in blocking_verdicts]
+    if not blockers:
+        return 0
+    return _severity_exit_code({finding.severity.value for finding in blockers})
+
+
 async def _analyze_batch(
     analyzer: Analyzer,
     files: list[tuple[str, str]],
@@ -187,21 +210,45 @@ async def _analyze_batch(
 
 
 def _build_parser() -> argparse.ArgumentParser:
+    output_choices = ["markdown", "json", "plain", "sarif"]
+
+    def add_output_arg(command_parser: argparse.ArgumentParser) -> None:
+        command_parser.add_argument(
+            "-o",
+            "--output",
+            choices=output_choices,
+            default=None,
+            help="Output format",
+        )
+
+    def add_provider_arg(command_parser: argparse.ArgumentParser) -> None:
+        command_parser.add_argument(
+            "-p",
+            "--provider",
+            default=None,
+            help=(
+                "LLM provider to use (overrides config default): openai, anthropic, "
+                "google, ollama, or any custom label"
+            ),
+        )
+
     parser = argparse.ArgumentParser(
         prog="codesight",
         description="Code analysis and review tool using LLMs",
     )
     parser.add_argument("-v", "--version", action="version", version=f"codesight {__version__}")
     parser.add_argument(
-        "-p", "--provider",
+        "-p",
+        "--provider",
         help=(
             "LLM provider to use (overrides config default): openai, anthropic, "
             "google, ollama, or any custom label"
         ),
     )
     parser.add_argument(
-        "-o", "--output",
-        choices=["markdown", "json", "plain", "sarif"],
+        "-o",
+        "--output",
+        choices=output_choices,
         default=None,
         help="Output format",
     )
@@ -218,6 +265,8 @@ def _build_parser() -> argparse.ArgumentParser:
         p = sub.add_parser(cmd, help=f"Run {cmd} analysis on a file")
         p.add_argument("file", help="Path to the source file")
         p.add_argument("-c", "--context", help="Extra context for the analysis")
+        add_provider_arg(p)
+        add_output_arg(p)
         if cmd == "security":
             p.add_argument(
                 "--pipeline",
@@ -228,7 +277,8 @@ def _build_parser() -> argparse.ArgumentParser:
     scan = sub.add_parser("scan", help="Scan a directory")
     scan.add_argument("dir", nargs="?", default=".", help="Directory to scan (default: .)")
     scan.add_argument(
-        "-t", "--task",
+        "-t",
+        "--task",
         choices=["review", "bugs", "security"],
         default="review",
         help="Analysis type (default: review)",
@@ -239,20 +289,70 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Show token and cost estimate without calling the API",
     )
+    add_provider_arg(scan)
+    add_output_arg(scan)
 
     diff = sub.add_parser("diff", help="Review only git-changed files")
     diff.add_argument(
-        "-t", "--task",
+        "-t",
+        "--task",
         choices=["review", "bugs", "security"],
         default="security",
         help="Analysis type (default: security)",
     )
     diff.add_argument("--staged", action="store_true", help="Only staged changes")
+    add_provider_arg(diff)
+    add_output_arg(diff)
+
+    verify = sub.add_parser("verify", help="Verify scanner SARIF against local source")
+    verify.add_argument("sarif", help="SARIF file to verify")
+    verify.add_argument("--source", default=".", help="Source repo root")
+    verify.add_argument(
+        "--context-lines",
+        type=int,
+        default=20,
+        help="Source lines to include before and after each alert",
+    )
+    verify.add_argument(
+        "--fail-on",
+        choices=["exploitable", "likely_exploitable", "uncertain", "never"],
+        default="exploitable",
+        help="Exit non-zero at or above this verdict threshold",
+    )
+    verify.add_argument(
+        "--judge",
+        action="store_true",
+        help="Run the configured LLM provider as a semantic security judge",
+    )
+    verify.add_argument(
+        "--skeptic",
+        action="store_true",
+        help="Run a second skeptic pass for serious judge findings",
+    )
+    verify.add_argument(
+        "--preview-context",
+        action="store_true",
+        help="Print the source context that verify would inspect, then exit",
+    )
+    verify.add_argument(
+        "--profile",
+        choices=profile_names(),
+        default="auto",
+        help="Security profile hints for judge mode",
+    )
+    verify.add_argument(
+        "--artifact-dir",
+        help="Write report.md, report.json, results.sarif, and manifest.json",
+    )
+    add_provider_arg(verify)
+    add_output_arg(verify)
 
     bench = sub.add_parser("benchmark", help="Benchmark LLMs on vulnerable code")
     bench.add_argument("--models", nargs="+", help="Models to test (e.g. gpt-5.4 llama3)")
     bench.add_argument("--json", action="store_true", help="Output as JSON")
+    add_provider_arg(bench)
 
+    sub.add_parser("ui", aliases=["wizard"], help="Open guided terminal UI")
     sub.add_parser("config", help="Configure CodeSight interactively")
     sub.add_parser("health", help="Check provider connectivity")
 
@@ -346,8 +446,10 @@ def _run_analysis(args, config: AppConfig) -> None:
         file_path = str(source_path)
 
         pcfg = PipelineConfig(
-            triage_provider=t_provider, triage_model=t_model,
-            verify_provider=v_provider, verify_model=v_model,
+            triage_provider=t_provider,
+            triage_model=t_model,
+            verify_provider=v_provider,
+            verify_model=v_model,
         )
 
         with console.status(
@@ -355,16 +457,17 @@ def _run_analysis(args, config: AppConfig) -> None:
             spinner="dots",
         ):
             try:
-                content, usage = asyncio.run(
-                    run_pipeline(source, file_path, config, pcfg)
-                )
+                content, usage = asyncio.run(run_pipeline(source, file_path, config, pcfg))
             except Exception as exc:
                 console.print(f"[bold red]Pipeline error:[/] {exc}")
                 sys.exit(1)
 
         result = AnalysisResult(
-            task=task, file_path=file_path, content=content,
-            model=f"{t_model}→{v_model}", provider="pipeline",
+            task=task,
+            file_path=file_path,
+            content=content,
+            model=f"{t_model}→{v_model}",
+            provider="pipeline",
             tokens_used=usage.get("prompt_tokens", 0) + usage.get("completion_tokens", 0),
             usage=usage,
         )
@@ -385,11 +488,13 @@ def _run_analysis(args, config: AppConfig) -> None:
         spinner="dots",
     ):
         try:
-            result = asyncio.run(analyzer.analyze_file(
-                file_path,
-                task,
-                extra_context=getattr(args, "context", None),
-            ))
+            result = asyncio.run(
+                analyzer.analyze_file(
+                    file_path,
+                    task,
+                    extra_context=getattr(args, "context", None),
+                )
+            )
         except AnalysisError as exc:
             console.print(f"[bold red]Error:[/] {exc}")
             sys.exit(1)
@@ -495,6 +600,116 @@ def _run_scan(args, config: AppConfig) -> None:
         sys.exit(exit_code)
 
 
+def _run_verify(args, config: AppConfig) -> None:
+    profile = getattr(args, "profile", "auto")
+    artifact_dir = getattr(args, "artifact_dir", None)
+    context_lines = max(0, getattr(args, "context_lines", 20))
+    judge_enabled = bool(getattr(args, "judge", False))
+    skeptic_enabled = bool(getattr(args, "skeptic", False))
+    preview_context = bool(getattr(args, "preview_context", False))
+
+    try:
+        preview = None
+        if preview_context:
+            preview = preview_sarif_contexts(
+                args.sarif,
+                source_root=args.source,
+                context_lines=context_lines,
+                profile=profile,
+            )
+            if artifact_dir:
+                target = Path(artifact_dir).resolve()
+                target.mkdir(parents=True, exist_ok=True)
+                (target / "preview-context.json").write_text(
+                    json.dumps(preview, indent=2) + "\n",
+                    encoding="utf-8",
+                )
+            sys.stdout.write(f"{json.dumps(preview, indent=2)}\n")
+            return
+
+        if judge_enabled:
+            analyzer = Analyzer(config, provider_name=args.provider)
+            result = asyncio.run(
+                verify_sarif_file_with_judge(
+                    args.sarif,
+                    source_root=args.source,
+                    completer=analyzer,
+                    context_lines=context_lines,
+                    skeptic=skeptic_enabled,
+                    profile=profile,
+                )
+            )
+        else:
+            result = verify_sarif_file(
+                args.sarif,
+                source_root=args.source,
+                context_lines=context_lines,
+            )
+    except VerificationError as exc:
+        console.print(f"[bold red]Verify error:[/] {exc}")
+        sys.exit(1)
+    except ValueError as exc:
+        console.print(f"[bold red]Config error:[/] {exc}")
+        sys.exit(1)
+
+    output_format = config.output_format
+    exit_code = _verify_exit_code(result.findings, args.fail_on)
+    if artifact_dir:
+        preview = preview_sarif_contexts(
+            args.sarif,
+            source_root=args.source,
+            context_lines=context_lines,
+            profile=profile,
+        )
+        artifacts = write_verification_artifacts(
+            result,
+            artifact_dir,
+            fail_on=args.fail_on,
+            judge_enabled=judge_enabled,
+            skeptic_enabled=skeptic_enabled,
+            profile=profile,
+            preview=preview,
+        )
+        console.print(f"[green]Artifacts written:[/] {artifacts['manifest']}")
+
+    if output_format == "sarif":
+        sys.stdout.write(f"{to_sarif_json(result.findings)}\n")
+        if exit_code:
+            sys.exit(exit_code)
+        return
+
+    if output_format == "json":
+        payload = verification_payload(
+            result,
+            fail_on=args.fail_on,
+            judge_enabled=judge_enabled,
+            skeptic_enabled=skeptic_enabled,
+            profile=profile,
+        )
+        sys.stdout.write(f"{json.dumps(payload, indent=2)}\n")
+        if exit_code:
+            sys.exit(exit_code)
+        return
+
+    report = format_markdown_report(result.findings)
+    if output_format == "plain":
+        out.print(report)
+        if exit_code:
+            sys.exit(exit_code)
+        return
+
+    summary = Text()
+    summary.append(f"{len(result.alerts)} scanner alert(s) imported", style="bold")
+    summary.append(" | ", style="dim")
+    summary.append(f"{len(result.findings)} need review", style="yellow")
+    out.print()
+    out.print(Panel(summary, border_style="green", title="CodeSight Verify"))
+    out.print(Markdown(report))
+    out.print()
+    if exit_code:
+        sys.exit(exit_code)
+
+
 def _run_benchmark(args, config: AppConfig) -> None:
     default_pc = config.providers.get(
         config.default_provider,
@@ -502,14 +717,12 @@ def _run_benchmark(args, config: AppConfig) -> None:
     )
     models = args.models or [default_pc.model]
     provider_name = (
-        args.provider
-        if hasattr(args, "provider") and args.provider
-        else config.default_provider
+        args.provider if hasattr(args, "provider") and args.provider else config.default_provider
     )
 
     for model in models:
         console.print(f"\n[bold cyan]Benchmarking:[/] {model} ({provider_name})")
-        with console.status("[bold green]Running benchmark on 8 test cases...", spinner="dots"):
+        with console.status("[bold green]Running benchmark on 12 test cases...", spinner="dots"):
             try:
                 summary = asyncio.run(benchmark_model(provider_name, model, config))
             except Exception as exc:
@@ -619,11 +832,13 @@ def _run_diff(args, config: AppConfig) -> None:
 def _run_config() -> None:
     config = load_config()
     console.print()
-    console.print(Panel(
-        "[bold]CodeSight Setup[/]\n[dim]Use arrow keys, Enter to select[/]",
-        border_style="cyan",
-        width=50,
-    ))
+    console.print(
+        Panel(
+            "[bold]CodeSight Setup[/]\n[dim]Use arrow keys, Enter to select[/]",
+            border_style="cyan",
+            width=50,
+        )
+    )
     console.print()
 
     def validate_http_url(val: str) -> bool | str:
@@ -650,7 +865,8 @@ def _run_config() -> None:
         ],
         default=(
             config.default_provider
-            if config.default_provider in (
+            if config.default_provider
+            in (
                 "openai",
                 "anthropic",
                 "azure",
@@ -670,8 +886,7 @@ def _run_config() -> None:
     if provider == "openai":
         key = questionary.password("OpenAI API key (sk-...):").ask() or ""
         model = (
-            questionary.text("Model:", default=DEFAULT_OPENAI_MODEL).ask()
-            or DEFAULT_OPENAI_MODEL
+            questionary.text("Model:", default=DEFAULT_OPENAI_MODEL).ask() or DEFAULT_OPENAI_MODEL
         )
         config.providers["openai"] = ProviderConfig(
             provider="openai",
@@ -682,10 +897,7 @@ def _run_config() -> None:
     elif provider == "anthropic":
         key = questionary.password("Anthropic API key (sk-ant-...):").ask() or ""
         default_m = DEFAULT_ANTHROPIC_MODEL
-        model = (
-            questionary.text("Model:", default=default_m).ask()
-            or default_m
-        )
+        model = questionary.text("Model:", default=default_m).ask() or default_m
         config.providers["anthropic"] = ProviderConfig(
             provider="anthropic",
             api_key=key,
@@ -696,8 +908,7 @@ def _run_config() -> None:
         project = questionary.text("Google Cloud Project ID:").ask() or ""
         region = questionary.text("Region:", default="us-central1").ask() or "us-central1"
         model = (
-            questionary.text("Model:", default=DEFAULT_GOOGLE_MODEL).ask()
-            or DEFAULT_GOOGLE_MODEL
+            questionary.text("Model:", default=DEFAULT_GOOGLE_MODEL).ask() or DEFAULT_GOOGLE_MODEL
         )
         config.providers["google"] = ProviderConfig(
             provider="google",
@@ -715,10 +926,13 @@ def _run_config() -> None:
             "or /api/projects/... URL (normalized automatically).[/]"
         )
         console.print()
-        resource = questionary.text(
-            "Resource name or full base URL:",
-            instruction="(e.g. 'my-resource-name' or full https://... URL)",
-        ).ask() or ""
+        resource = (
+            questionary.text(
+                "Resource name or full base URL:",
+                instruction="(e.g. 'my-resource-name' or full https://... URL)",
+            ).ask()
+            or ""
+        )
         if not resource:
             console.print("[yellow]Cancelled.[/]")
             return
@@ -728,14 +942,17 @@ def _run_config() -> None:
         else:
             base_url = f"https://{resource}.services.ai.azure.com"
 
-        api_key = questionary.password(
-            "API key (from Foundry portal → Endpoints & keys):"
-        ).ask() or ""
-        model = questionary.text(
-            "Deployment name (model):",
-            default=DEFAULT_ANTHROPIC_MODEL,
-            instruction="Must match the deployment name you created in Azure",
-        ).ask() or DEFAULT_ANTHROPIC_MODEL
+        api_key = (
+            questionary.password("API key (from Foundry portal → Endpoints & keys):").ask() or ""
+        )
+        model = (
+            questionary.text(
+                "Deployment name (model):",
+                default=DEFAULT_ANTHROPIC_MODEL,
+                instruction="Must match the deployment name you created in Azure",
+            ).ask()
+            or DEFAULT_ANTHROPIC_MODEL
+        )
         label = questionary.text("Config label:", default="azure").ask() or "azure"
         config.providers[label] = ProviderConfig(
             provider="anthropic",
@@ -748,22 +965,26 @@ def _run_config() -> None:
         masked_endpoint = _mask_url_display(f"{base_url}/anthropic/v1/messages")
         console.print(f"\n  [dim]Resource root: [cyan]{masked_base_url}[/][/]")
 
-        console.print(
-            f"  [dim]Endpoint:      [cyan]{masked_endpoint}[/][/]")
+        console.print(f"  [dim]Endpoint:      [cyan]{masked_endpoint}[/][/]")
 
-        console.print(
-            f"  [dim]Use with:  [green]codesight -p {label} review file.py[/][/]")
+        console.print(f"  [dim]Use with:  [green]codesight -p {label} review file.py[/][/]")
 
     elif provider == "ollama":
-        host = questionary.text(
-            "Ollama host:",
-            default="http://localhost:11434",
-            validate=validate_http_url,
-        ).ask() or "http://localhost:11434"
-        model = questionary.text(
-            "Model (must be pulled in Ollama):",
-            default=DEFAULT_OLLAMA_MODEL,
-        ).ask() or DEFAULT_OLLAMA_MODEL
+        host = (
+            questionary.text(
+                "Ollama host:",
+                default="http://localhost:11434",
+                validate=validate_http_url,
+            ).ask()
+            or "http://localhost:11434"
+        )
+        model = (
+            questionary.text(
+                "Model (must be pulled in Ollama):",
+                default=DEFAULT_OLLAMA_MODEL,
+            ).ask()
+            or DEFAULT_OLLAMA_MODEL
+        )
         config.providers["ollama"] = ProviderConfig(
             provider="ollama",
             base_url=host,
@@ -777,8 +998,7 @@ def _run_config() -> None:
         from .providers.custom_provider import KNOWN_PRESETS
 
         preset_choices = [
-            Choice(f"{name:15s}  {url}", value=name)
-            for name, (url, _) in KNOWN_PRESETS.items()
+            Choice(f"{name:15s}  {url}", value=name) for name, (url, _) in KNOWN_PRESETS.items()
         ]
         preset_name = questionary.select(
             "Pick a provider (or Custom URL to enter manually):",
@@ -789,23 +1009,27 @@ def _run_config() -> None:
             return
 
         preset_url, preset_model = KNOWN_PRESETS[preset_name]
-        base_url = questionary.text(
-            "Base URL (e.g. https://openrouter.ai/api/v1):",
-            default=preset_url,
-            validate=validate_http_url,
-        ).ask() or preset_url
+        base_url = (
+            questionary.text(
+                "Base URL (e.g. https://openrouter.ai/api/v1):",
+                default=preset_url,
+                validate=validate_http_url,
+            ).ask()
+            or preset_url
+        )
         api_key = questionary.password("API key (leave blank if not needed):").ask() or ""
         model = questionary.text(
             "Model name:",
             default=preset_model or DEFAULT_OPENAI_MODEL,
         ).ask() or (preset_model or DEFAULT_OPENAI_MODEL)
-        default_label = (
-            preset_name.lower().replace(" ", "-").replace("(", "").replace(")", "")
+        default_label = preset_name.lower().replace(" ", "-").replace("(", "").replace(")", "")
+        label = (
+            questionary.text(
+                "Config label (used as provider name, e.g. openrouter):",
+                default=default_label,
+            ).ask()
+            or "custom"
         )
-        label = questionary.text(
-            "Config label (used as provider name, e.g. openrouter):",
-            default=default_label,
-        ).ask() or "custom"
 
         config.providers[label] = ProviderConfig(
             provider="custom",
@@ -816,8 +1040,7 @@ def _run_config() -> None:
         config.default_provider = label
         console.print(f"\n  [dim]Provider saved as: [cyan]{label}[/][/]")
 
-        console.print(
-            f"  [dim]Use with: [green]codesight -p {label} review file.py[/][/]")
+        console.print(f"  [dim]Use with: [green]codesight -p {label} review file.py[/][/]")
 
     save_config(config)
     console.print(f"\n[bold green]Saved to[/] [cyan]{CONFIG_FILE}[/]")
@@ -854,9 +1077,7 @@ def _run_health(args, config: AppConfig) -> None:
         key = pconf.api_key or ""
         masked = f"...{key[-4:]}" if len(key) > 6 else "[red]NOT SET[/]"
         console.print(f"  Resource: [dim]{masked_base_url}[/]")
-        console.print(
-            f"  Endpoint: [dim]{masked_endpoint}[/]"
-        )
+        console.print(f"  Endpoint: [dim]{masked_endpoint}[/]")
         console.print(f"  API key:  [dim]{masked}[/]")
         console.print(f"  Model:    [dim]{pconf.model}[/]")
     elif provider_type == "custom":
@@ -913,9 +1134,7 @@ def _run_health(args, config: AppConfig) -> None:
         console.print("  [yellow]Azure Foundry auth failed.[/]")
         console.print("  Check:")
         console.print(f"    1. Resource root is [green]{masked_base_url}[/]")
-        console.print(
-            f"    2. Endpoint is [green]{masked_endpoint}[/]"
-        )
+        console.print(f"    2. Endpoint is [green]{masked_endpoint}[/]")
         console.print(
             "    3. Do not use [green]/api/projects/...[/] or paste the full "
             "[green]/anthropic/v1/messages[/] path"
@@ -925,10 +1144,7 @@ def _run_health(args, config: AppConfig) -> None:
     elif provider_type == "openai":
         if not (pconf.api_key or ""):
             console.print("  [yellow]API key is not set.[/]")
-            console.print(
-                "  Run [green]codesight config[/] or set "
-                "[green]OPENAI_API_KEY=sk-...[/]"
-            )
+            console.print("  Run [green]codesight config[/] or set [green]OPENAI_API_KEY=sk-...[/]")
         else:
             console.print("  [yellow]API key may be invalid or OpenAI is unreachable.[/]")
             console.print("  Check: https://platform.openai.com/account/api-keys")
@@ -936,8 +1152,7 @@ def _run_health(args, config: AppConfig) -> None:
         if not (pconf.api_key or ""):
             console.print("  [yellow]API key is not set.[/]")
             console.print(
-                "  Run [green]codesight config[/] or set "
-                "[green]ANTHROPIC_API_KEY=sk-ant-...[/]"
+                "  Run [green]codesight config[/] or set [green]ANTHROPIC_API_KEY=sk-ant-...[/]"
             )
         else:
             console.print("  [yellow]API key may be invalid.[/]")
@@ -998,8 +1213,7 @@ def _run_templates(args, config: AppConfig) -> None:
             Message(role="system", content=tmpl["system"]),
             Message(
                 role="user",
-                content=f"File: `{file_path}` ({ext})\n\n"
-                f"```{ext.lstrip('.')}\n{source}\n```",
+                content=f"File: `{file_path}` ({ext})\n\n```{ext.lstrip('.')}\n{source}\n```",
             ),
         ]
 
@@ -1032,8 +1246,7 @@ def _run_templates(args, config: AppConfig) -> None:
         if get_template(name):
             console.print(f"[bold red]Template already exists:[/] {name}")
             console.print(
-                "Choose a different name; built-in and existing templates cannot "
-                "be overridden."
+                "Choose a different name; built-in and existing templates cannot be overridden."
             )
             sys.exit(1)
         display = console.input(f"  Display name for [cyan]{name}[/]: ").strip() or name
@@ -1059,29 +1272,173 @@ def _run_templates(args, config: AppConfig) -> None:
             console.print(f"[yellow]Template not found:[/] {args.name}")
             console.print("[dim]Only custom templates can be deleted, not built-in ones.[/]")
 
+
+def _parse_context_lines(value: str | None) -> int:
+    try:
+        parsed = int((value or "20").strip())
+    except ValueError:
+        return 20
+    return max(0, parsed)
+
+
+def _ask_verify_wizard_args(
+    config: AppConfig,
+    provider_name: str | None,
+) -> SimpleNamespace | None:
+    sarif_path = questionary.path(
+        "SARIF file:",
+        validate=lambda p: Path(p).is_file() or "SARIF file not found",
+    ).ask()
+    if not sarif_path:
+        return None
+
+    source_root = questionary.path(
+        "Source root:",
+        default=".",
+        only_directories=True,
+    ).ask()
+    if source_root is None:
+        return None
+
+    flow = questionary.select(
+        "Verify flow:",
+        choices=[
+            Choice("Preview context only", value="preview"),
+            Choice("Conservative report", value="report"),
+            Choice("Proof bundle", value="bundle"),
+            Choice("AI judge + skeptic", value="judge"),
+        ],
+    ).ask()
+    if flow is None:
+        return None
+
+    profile = questionary.select(
+        "Security profile:",
+        choices=[Choice(name, value=name) for name in profile_names()],
+        default="auto",
+    ).ask()
+    if profile is None:
+        return None
+
+    context_raw = questionary.text("Context lines:", default="20").ask()
+    if context_raw is None:
+        return None
+
+    output = "markdown"
+    fail_on = "exploitable"
+    artifact_dir = None
+    judge = flow == "judge"
+    skeptic = False
+    selected_provider = provider_name
+
+    if flow == "preview":
+        output = "json"
+    else:
+        output = questionary.select(
+            "Output format:",
+            choices=[
+                Choice("Markdown", value="markdown"),
+                Choice("JSON", value="json"),
+                Choice("SARIF", value="sarif"),
+                Choice("Plain text", value="plain"),
+            ],
+            default="markdown",
+        ).ask()
+        if output is None:
+            return None
+
+        fail_on = questionary.select(
+            "Fail threshold:",
+            choices=[
+                Choice("Only confirmed exploitable", value="exploitable"),
+                Choice("Likely exploitable or worse", value="likely_exploitable"),
+                Choice("Also fail on uncertain", value="uncertain"),
+                Choice("Never fail", value="never"),
+            ],
+            default="exploitable",
+        ).ask()
+        if fail_on is None:
+            return None
+
+    if flow == "bundle":
+        artifact_dir = questionary.path("Artifact directory:", default="codesight-proof").ask()
+        if not artifact_dir:
+            return None
+        output = "json"
+
+    if flow == "judge":
+        selected_provider = questionary.text(
+            "Provider:",
+            default=provider_name or config.default_provider,
+        ).ask()
+        if not selected_provider:
+            return None
+        skeptic_answer = questionary.confirm("Run skeptic pass?", default=True).ask()
+        if skeptic_answer is None:
+            return None
+        skeptic = bool(skeptic_answer)
+        save_bundle = questionary.confirm("Save proof bundle?", default=True).ask()
+        if save_bundle is None:
+            return None
+        if save_bundle:
+            artifact_dir = questionary.path(
+                "Artifact directory:",
+                default="codesight-live-proof",
+            ).ask()
+            if not artifact_dir:
+                return None
+
+    return SimpleNamespace(
+        sarif=sarif_path,
+        source=source_root or ".",
+        context_lines=_parse_context_lines(context_raw),
+        fail_on=fail_on,
+        judge=judge,
+        skeptic=skeptic,
+        preview_context=flow == "preview",
+        profile=profile,
+        provider=selected_provider,
+        output=output,
+        artifact_dir=artifact_dir,
+    )
+
+
+def _run_verify_wizard(config: AppConfig, provider_name: str | None = None) -> None:
+    args = _ask_verify_wizard_args(config, provider_name)
+    if args is None:
+        console.print("[yellow]Cancelled.[/]")
+        return
+    config.output_format = args.output
+    _run_verify(args, config)
+
+
 def _run_interactive(config: AppConfig, provider_name: str | None = None) -> None:
     while True:
         config = load_config()
         active_provider = provider_name or config.default_provider
         console.print()
-        console.print(Panel(
-            f"[bold]CodeSight[/] [dim]v{__version__}[/]\n"
-            f"[dim]Provider: {active_provider}[/]",
-            border_style="green",
-            width=48,
-        ))
+        console.print(
+            Panel(
+                f"[bold]CodeSight[/] [dim]v{__version__}[/]\n"
+                f"[dim]Provider: {active_provider}[/]\n"
+                "[dim]Guided terminal UI[/]",
+                border_style="green",
+                width=56,
+            )
+        )
         console.print()
 
         action = questionary.select(
             "What do you want to do?",
             choices=[
-                questionary.Choice("review    - code review", value="review"),
-                questionary.Choice("bugs      - find logic errors & race conditions", value="bugs"),
-                questionary.Choice("security  - security audit (CWE / OWASP)", value="security"),
-                questionary.Choice("scan      - scan a whole directory", value="scan"),
-                questionary.Choice("diff      - review git-changed files", value="diff"),
-                questionary.Choice("explain   - plain-language code breakdown", value="explain"),
-                questionary.Choice("refactor  - refactoring suggestions", value="refactor"),
+                questionary.Choice("verify SARIF  - guided security proof", value="verify"),
+                questionary.Choice("scan project  - ask LLM to inspect files", value="scan"),
+                questionary.Choice("diff review   - inspect git changes", value="diff"),
+                questionary.Choice("security file - audit one file", value="security"),
+                questionary.Choice("review file   - code review", value="review"),
+                questionary.Choice("bugs file     - find logic errors", value="bugs"),
+                questionary.Choice("explain file  - plain-language breakdown", value="explain"),
+                questionary.Choice("refactor file - refactoring suggestions", value="refactor"),
                 questionary.Separator(),
                 questionary.Choice("config    - setup API keys / provider", value="config"),
                 questionary.Choice("health    - test provider connection", value="health"),
@@ -1104,7 +1461,9 @@ def _run_interactive(config: AppConfig, provider_name: str | None = None) -> Non
                 )
             elif action == "scan":
                 directory = questionary.path(
-                    "Directory to scan:", default=".", only_directories=True,
+                    "Directory to scan:",
+                    default=".",
+                    only_directories=True,
                 ).ask()
                 if directory is None:
                     continue
@@ -1128,6 +1487,8 @@ def _run_interactive(config: AppConfig, provider_name: str | None = None) -> Non
                     ),
                     config,
                 )
+            elif action == "verify":
+                _run_verify_wizard(config, provider_name=provider_name)
             else:
                 file_path = questionary.path(
                     f"File to {action}:",
@@ -1171,8 +1532,12 @@ def main() -> None:
         _run_scan(args, config)
     elif args.command == "diff":
         _run_diff(args, config)
+    elif args.command == "verify":
+        _run_verify(args, config)
     elif args.command == "benchmark":
         _run_benchmark(args, config)
+    elif args.command in ("ui", "wizard"):
+        _run_interactive(config, provider_name=args.provider)
     elif args.command == "config":
         _run_config()
     elif args.command == "health":

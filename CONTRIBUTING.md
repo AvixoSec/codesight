@@ -1,8 +1,8 @@
-# Contributing to CodeSight
+# Contributing
 
-Thanks for your interest in contributing! Here's how to get started.
+Thanks for helping CodeSight. Keep changes small, tested, and easy to review.
 
-## Development Setup
+## Setup
 
 ```bash
 git clone https://github.com/AvixoSec/codesight.git
@@ -12,31 +12,37 @@ source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 pip install -e ".[dev]"
 ```
 
-## Running Tests
+## Tests
 
 ```bash
-pytest tests/ -v
+pytest tests -v
+python -m ruff check codesight tests
+python -m mypy codesight/ --ignore-missing-imports
 ```
 
-## Code Style
+## Style
 
-We use [Ruff](https://docs.astral.sh/ruff/) for linting:
-
-```bash
-ruff check codesight/
-ruff format codesight/
-```
+Use [Ruff](https://docs.astral.sh/ruff/) for linting. Match the existing code
+before adding new abstractions.
 
 ## Pull Requests
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feat/my-feature`)
+2. Create a focused branch (`git checkout -b feat/my-feature`)
 3. Commit your changes with clear messages
-4. Push to your fork and open a Pull Request
+4. Push to your fork and open a pull request
+
+Good pull requests include:
+
+- what changed
+- why it matters
+- how you tested it
+- screenshots or sample output when the UI or docs change
 
 ## Reporting Issues
 
 Use GitHub Issues. Please include:
+
 - Python version
 - OS
 - Minimal reproduction steps

@@ -1,160 +1,261 @@
 # CodeSight
 
-**Code analysis CLI - reviews, bugs, docs, and refactoring from your terminal.**
+Security CLI for scanner alerts, code review, and CI reports.
 
-CodeSight sends your code to LLMs (OpenAI, Anthropic, Google Vertex AI, Ollama, or any OpenAI-compatible endpoint) with structured prompts for code review, bug detection, security analysis, documentation, and refactoring. Multi-provider, configurable, works with any language.
+CodeSight started as a direct code scanner. Now the main lane is stronger:
+take alerts from Semgrep, CodeQL, or another SARIF tool, open the matching
+source files, collect evidence, and decide what deserves attention.
+
+It still scans files and folders directly. The bigger value is verification:
+less noise, clearer proof, and reports that can go back into CI.
 
 [![PyPI](https://img.shields.io/pypi/v/codesight?color=8b5cf6)](https://pypi.org/project/codesight/)
 [![CI](https://github.com/AvixoSec/codesight/actions/workflows/ci.yml/badge.svg)](https://github.com/AvixoSec/codesight/actions)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Docs](https://img.shields.io/badge/docs-codesight.is--a.dev-c084fc)](https://codesight.is-a.dev)
-[![Downloads](https://img.shields.io/pypi/dm/codesight?color=blue)](https://pypi.org/project/codesight/)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
----
+## What It Is Now
 
-## What it does
+CodeSight has three useful paths:
 
-- **`codesight review`** - code review with severity-tagged issues (crit/warn/info)
-- **`codesight bugs`** - find logic errors, race conditions, resource leaks
-- **`codesight security`** - security audit with CWE IDs and OWASP mapping
-- **`codesight scan .`** - scan an entire directory with progress bar
-- **`codesight docs`** - auto-generate docstrings and module docs
-- **`codesight explain`** - plain-language breakdown of complex code
-- **`codesight refactor`** - refactoring suggestions with before/after diffs
+- guided terminal UI for people who do not want to remember commands
+- direct scan for one file, a folder, or a git diff
+- SARIF verify for scanner alerts that need real source context
 
-## Demo
+The verify path is the important one.
 
-<p align="center">
-  <img src="docs/demo.svg" alt="CodeSight terminal demo" width="720">
-</p>
+Scanners are good at breadth. They find suspicious lines fast. CodeSight checks
+what is behind the alert:
+
+- where the input comes from
+- which sink or trust boundary it reaches
+- what guard is missing
+- why the verdict is exploitable, likely exploitable, uncertain, or dismissed
+- what fix would actually reduce risk
+
+No evidence, no confident verdict.
 
 ## Quick Start
 
+Guided UI:
+
 ```bash
-# Install
 pip install codesight
-
-# Configure your provider
-codesight config
-
-# Run a review
-codesight review src/main.py
-
-# Detect bugs
-codesight bugs lib/parser.py
-
-# Scan a whole project
-codesight scan . --task review
-codesight scan src/ --ext .py .js
-
-# Generate docs
-codesight docs utils/helpers.py
+codesight
 ```
 
-## Provider Support
-
-| Provider | Models | Setup |
-|----------|--------|-------|
-| **OpenAI** | GPT-5.4, GPT-5.3-Codex | `OPENAI_API_KEY` |
-| **Anthropic** | Claude Opus 4.6, Claude Sonnet 4.6 | `ANTHROPIC_API_KEY` |
-| **Google Vertex AI** | Gemini 3.1 Pro, Gemini 3.1 Flash | `GOOGLE_CLOUD_PROJECT` + ADC |
-| **Ollama (local)** | Llama 3, CodeLlama, Mistral, etc. | Just run `ollama serve` |
-| **Custom (OpenAI-compatible)** | OpenRouter, Groq, Together AI, Mistral, xAI (Grok), Fireworks, DeepSeek, Perplexity, Cerebras, Cohere, Azure AI Foundry, or any OpenAI-compatible URL | `codesight config` -> Custom, or `base_url` + API key in `~/.codesight/config.json` |
-
-## Configuration
-
-CodeSight stores config in `~/.codesight/config.json`. You can configure it interactively:
+From the repo:
 
 ```bash
-codesight config
+python -m codesight
 ```
 
-Or set environment variables:
+Pick a path in the menu:
+
+- scan a file
+- scan a folder
+- review a git diff
+- verify a SARIF file
+- build a proof bundle
+- run judge and skeptic mode
+
+Direct commands still work:
 
 ```bash
-export OPENAI_API_KEY="sk-..."
-export CODESIGHT_MODEL="gpt-5.4"
-codesight review my_file.py
+codesight security src/app.py
+codesight scan src --task security --output sarif > codesight.sarif
+codesight diff --task security
 ```
 
-Switch providers on the fly:
+Local model:
 
 ```bash
-codesight review my_file.py --provider anthropic
-codesight bugs my_file.py --provider google
-codesight explain my_file.py --provider openai
-codesight review my_file.py --provider ollama      # fully offline, no data leaves your machine
-codesight review my_file.py --provider openrouter  # any OpenAI-compatible endpoint you saved in config
+ollama serve
+codesight security src/app.py --provider ollama
 ```
 
-Custom OpenAI-compatible providers (OpenRouter, Groq, Together, Mistral, xAI, Fireworks, DeepSeek, Perplexity, Cerebras, Cohere, Azure AI Foundry) are set up through the wizard:
+## Verify Scanner Alerts
+
+Run your scanner first:
 
 ```bash
-codesight config
-# Select: Custom (OpenRouter / Groq / Together / any OpenAI-compat)
-# Pick a preset or enter a custom base URL, save under a label (e.g. "openrouter")
-codesight review my_file.py --provider openrouter
+semgrep scan --config auto --sarif > semgrep.sarif
 ```
 
-## Architecture
+Then let CodeSight import the alert and attach local source context:
 
-```
-codesight/
-├── cli.py              # CLI entry point (argparse)
-├── analyzer.py         # Core analysis engine
-├── config.py           # Config management (~/.codesight/)
-├── compression.py      # Context compression / code maps
-├── streaming.py        # Streaming output (OpenAI, Anthropic, Ollama)
-├── templates.py        # Custom prompt templates
-├── pipeline.py         # Multi-model triage → verify pipeline
-├── sarif.py            # SARIF output for CI/CD
-├── benchmark.py        # LLM benchmark runner
-├── cost.py             # Token cost tracking
-└── providers/
-    ├── base.py
-    ├── factory.py
-    ├── openai_provider.py
-    ├── anthropic_provider.py
-    ├── google_provider.py
-    ├── ollama_provider.py
-    └── custom_provider.py    # OpenAI-compatible adapter (OpenRouter, Groq, Azure, etc.)
+```bash
+codesight verify semgrep.sarif --source . --output markdown
 ```
 
-## Per-project config
+Useful verify modes:
 
-Drop a `.codesight.toml` (or `.codesight.json`) in your repo root to share settings across the team:
-
-```toml
-max_file_size_kb = 1000
-ignore_patterns = ["build/", "migrations/", "*.generated.ts"]
-
-[providers.anthropic]
-model = "claude-opus-4-7"
+```bash
+codesight verify semgrep.sarif --source . --preview-context
+codesight verify semgrep.sarif --source . --fail-on likely_exploitable
+codesight verify semgrep.sarif --source . --judge --skeptic --profile auto --provider openai
+codesight verify semgrep.sarif --source . --artifact-dir .codesight-proof
 ```
 
-Project config can only override benign fields: `output_format`, `language`, `max_file_size_kb`, `ignore_patterns`, and per-provider `model` / `project_id` / `region`. These are deliberately blocked from project files: `api_key` (stays in your keyring), `base_url` (a hostile repo could redirect requests to `https://attacker.tld`), and `default_provider` (a hostile repo could switch you from local Ollama to a paid cloud provider and burn your quota). Project-config discovery only runs inside `$HOME` and refuses to run at all when `$HOME` is unset (containers, reset-env CI).
+Plain import mode is conservative. It keeps scanner alerts as `uncertain`.
+Judge mode can promote, downgrade, or dismiss alerts. Skeptic mode checks
+serious verdicts again before CI has to trust them.
 
-## Pre-commit integration
+Typical summary:
 
-Add CodeSight to your `.pre-commit-config.yaml`:
+```text
+Blocked: 0 exploitable issue(s)
+Likely exploitable: 0
+Needs review: 42
+Dismissed: 0
+```
+
+Try the local fixture:
+
+```bash
+codesight verify examples/semgrep-verify/semgrep.sarif \
+  --source examples/semgrep-verify/project \
+  --output markdown
+```
+
+Framework fixtures are in `examples/framework-profiles`.
+
+## Evidence Format
+
+CodeSight uses structured verdicts:
+
+- `exploitable`
+- `likely_exploitable`
+- `uncertain`
+- `probably_false_positive`
+- `not_exploitable`
+
+Example:
+
+```md
+### CS-AUTH-001: Tenant isolation bypass
+
+- Verdict: `exploitable`
+- Severity: `high`
+- Confidence: `high`
+- Exploitability: `91/100`
+- Location: `api/projects.py:88`
+- CWE: `CWE-862`
+
+#### Evidence
+
+- Source: `request.path_params["org_id"]`
+- Sink: `Project.query.filter_by(org_id=org_id)`
+- Missing guard: no membership check before project lookup
+
+#### Evidence path
+
+1. `api/projects.py:82` - route accepts org_id from the request path
+2. `api/projects.py:88` - query trusts org_id before checking membership
+```
+
+## Commands
+
+Core:
+
+- `codesight`
+- `codesight ui`
+- `codesight security <file>`
+- `codesight scan <dir> --task security`
+- `codesight diff --task security`
+- `codesight verify <scanner.sarif> --source .`
+- `codesight benchmark`
+
+Secondary:
+
+- `codesight review <file>`
+- `codesight bugs <file>`
+- `codesight docs <file>`
+- `codesight explain <file>`
+- `codesight refactor <file>`
+
+## Providers
+
+- OpenAI: `OPENAI_API_KEY`
+- Anthropic: `ANTHROPIC_API_KEY`
+- Google Vertex AI: `GOOGLE_CLOUD_PROJECT` and ADC
+- Ollama: local `ollama serve`
+- OpenAI-compatible: custom label from `codesight config`
+
+OpenAI-compatible presets include OpenRouter, Groq, Together AI, Mistral, xAI,
+Fireworks, DeepSeek, Perplexity, Cerebras, Cohere, and Azure AI Foundry.
+
+## Output
+
+```bash
+codesight security app.py --output markdown
+codesight security app.py --output json
+codesight security app.py --output sarif > codesight.sarif
+codesight verify semgrep.sarif --source . --output sarif > verified.sarif
+```
+
+SARIF can be uploaded to GitHub code scanning.
+
+## Privacy
+
+CodeSight does not need a hosted account or repo connection.
+
+- Ollama keeps analysis local.
+- BYOK providers use your own key.
+- Project config cannot set `api_key`, `base_url`, or `default_provider`.
+- Project config discovery is restricted to `$HOME`.
+- Large files can be compressed into code maps before prompting.
+
+Cloud providers still receive the selected code context. Use Ollama when code
+must stay on the machine.
+
+## Benchmarks
+
+The built-in benchmark is a smoke test: 10 vulnerable Python cases and 2 clean
+false-positive traps. It is useful for checking provider behavior and prompt
+drift. It is not a public claim that CodeSight is better than another scanner.
+
+```bash
+codesight benchmark --models gpt-5.4 llama3
+codesight benchmark --json > benchmark-results.json
+```
+
+Public benchmark claims need the exact cases, commands, expected verdicts, raw
+results, model, provider, and run date.
+
+## GitHub Action
+
+Verify scanner SARIF:
 
 ```yaml
-repos:
-  - repo: https://github.com/AvixoSec/codesight
-    rev: v0.3.0
-    hooks:
-      - id: codesight-security   # or codesight-review / codesight-bugs
+- run: |
+    python -m pip install semgrep
+    semgrep scan --config auto --sarif --output semgrep.sarif
+
+- uses: AvixoSec/codesight@v0.3.1
+  with:
+    mode: verify
+    path: .
+    sarif-input: semgrep.sarif
+    output: sarif
+    fail-on: exploitable
+    judge: "true"
+    skeptic: "true"
+    profile: auto
 ```
 
-Then:
+Direct scan:
 
-```bash
-pre-commit install
+```yaml
+- uses: AvixoSec/codesight@v0.3.1
+  with:
+    provider: openai
+    api-key: ${{ secrets.OPENAI_API_KEY }}
+    task: security
+    path: .
+    output: sarif
 ```
-
-CodeSight will run on staged files before every commit. It needs an API key already configured (`codesight config`) or an env var like `OPENAI_API_KEY` available at commit time.
 
 ## Development
 
@@ -162,36 +263,10 @@ CodeSight will run on staged files before every commit. It needs an API key alre
 git clone https://github.com/AvixoSec/codesight.git
 cd codesight
 pip install -e ".[dev]"
-pytest tests/ -v
-ruff check codesight/
+pytest tests -v
+ruff check .
 ```
-
-## Roadmap
-
-- [x] `codesight scan .` - analyze a whole directory
-- [x] Ollama support - fully offline analysis with local models
-- [x] `codesight security` - dedicated security audit with CWE IDs and OWASP mapping
-- [x] `codesight diff` - review only git-changed files
-- [x] SARIF output - standard format for GitHub Security tab
-- [x] Exit codes for CI/CD (0 = clean, 1 = warnings, 2 = critical)
-- [x] GitHub Action - auto-scan PRs with SARIF upload
-- [x] Multi-model pipeline - fast triage + deep verification
-- [x] Cost tracking per query
-- [x] `codesight benchmark` - test LLMs on vulnerable codebases
-- [x] Context compression - code maps to reduce token usage
-- [x] Streaming output for large files
-- [x] Custom prompt templates
-- [x] OpenAI-compatible providers (OpenRouter, Groq, Azure, 10+ presets)
-- [x] Publish to PyPI
-- [x] VS Code extension (scaffold)
-- [x] Pre-commit hook integration
-- [x] Per-project config (`.codesight.toml`)
-- [x] Gemini streaming via Vertex AI
-- [x] Cost pre-estimate (`codesight scan . --estimate`)
-- [x] i18n (English, Russian via `--lang ru` or `CODESIGHT_LANG=ru`)
-- [ ] VS Code Marketplace publish
-- [ ] Web dashboard
 
 ## License
 
-MIT - see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).

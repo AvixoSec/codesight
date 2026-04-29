@@ -1240,7 +1240,7 @@
         provName: 'ci',
         lines: [
           {prompt:'$', cmd:'codesight verify semgrep.sarif', flag:'--source . --fail-on exploitable'},
-          {type:'out-dim', text:'CodeSight 0.3.0 - profile=auto - provider=openai'},
+          {type:'out-dim', text:'CodeSight 0.3.1 - profile=auto - provider=openai'},
           {type:'gap'},
           {type:'crit', text:'Блокировано: 0 exploitable issue(s)'},
           {type:'high', text:'Вероятно эксплуатируемо: 1'},
@@ -1282,7 +1282,7 @@
         provName: 'ci',
         lines: [
           {prompt:'$', cmd:'codesight verify semgrep.sarif', flag:'--source . --fail-on exploitable'},
-          {type:'out-dim', text:'CodeSight 0.3.0 - profile=auto - provider=openai'},
+          {type:'out-dim', text:'CodeSight 0.3.1 - profile=auto - provider=openai'},
           {type:'gap'},
           {type:'crit', text:'Blocked: 0 exploitable issue(s)'},
           {type:'high', text:'Likely exploitable: 1'},
