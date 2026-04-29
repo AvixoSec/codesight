@@ -1,13 +1,10 @@
-/* =======================================================================
-   CodeSight Docs - minimal editorial script
-   theme toggle, scroll progress, copy buttons
-   ======================================================================= */
+/* CodeSight docs script: theme toggle, scroll progress, copy buttons. */
 (function(){
   'use strict';
 
   var STORAGE_THEME = 'codesight-editorial-theme';
 
-  /* --- theme (sun/moon, localStorage, prefers-color-scheme) ---------- */
+  /* Theme toggle. */
   function applyTheme(theme){
     document.documentElement.setAttribute('data-theme', theme);
   }
@@ -33,7 +30,7 @@
       });
     }
 
-    /* --- system theme change, if user hasn't picked one explicitly --- */
+    /* System theme change when the user has not picked one. */
     if (window.matchMedia) {
       var mq = window.matchMedia('(prefers-color-scheme: dark)');
       var listener = function(e){
@@ -46,7 +43,7 @@
       else if (mq.addListener) mq.addListener(listener);
     }
 
-    /* --- scroll progress bar ---------------------------------------- */
+    /* Scroll progress bar. */
     var fill = document.getElementById('progress-fill');
     if (fill) {
       var updateProgress = function(){
@@ -61,7 +58,7 @@
       window.addEventListener('resize', updateProgress, { passive: true });
     }
 
-    /* --- copy buttons on code blocks -------------------------------- */
+    /* Copy buttons on code blocks. */
     var codeBlocks = document.querySelectorAll('.code-block');
     codeBlocks.forEach(function(block){
       var header = block.querySelector('.code-header');

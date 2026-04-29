@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Benchmarks - CodeSight Docs</title>
-<meta name="description" content="CodeSight CWE detection rates, comparison with Semgrep and CodeQL, and false positive analysis.">
+<meta name="description" content="CodeSight benchmark status, current dataset, limits, and rules for public claims.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -13,154 +13,68 @@
 <body>
 <div class="grain" aria-hidden="true"></div>
 <div class="progress" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
-
-<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme">
-  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-  </svg>
-  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <circle cx="12" cy="12" r="4"/>
-    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-  </svg>
-</button>
-
-<nav class="doc-nav">
-  <a href="../" class="brand"><span class="mark"></span>CodeSight</a>
-  <div class="nav-links">
-    <a href="./" class="active">Docs</a>
-    <a href="https://github.com/AvixoSec/codesight" target="_blank" rel="noopener">GitHub</a>
-    <a href="https://pypi.org/project/codesight/" target="_blank" rel="noopener">PyPI</a>
-  </div>
-</nav>
-
+<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button>
+<nav class="doc-nav"><a href="../" class="brand"><span class="mark"></span>CodeSight</a><div class="nav-links"><a href="./">Docs</a><a href="https://github.com/your-org/codesight" target="_blank" rel="noopener">GitHub</a><a href="https://pypi.org/project/codesight/" target="_blank" rel="noopener">PyPI</a></div></nav>
 <div class="doc-layout">
   <aside class="sidebar">
-    <div class="sb-section">
-      <div class="sb-title">Getting Started</div>
-      <a href="./" class="sb-link">Overview</a>
-      <a href="installation.html" class="sb-link">Installation</a>
-      <a href="quickstart.html" class="sb-link">Quick Start</a>
-    </div>
-    <div class="sb-section">
-      <div class="sb-title">Usage</div>
-      <a href="commands.html" class="sb-link">Commands</a>
-      <a href="providers.html" class="sb-link">Providers</a>
-      <a href="templates.html" class="sb-link">Custom Templates</a>
-      <a href="ci-cd.html" class="sb-link">CI/CD Integration</a>
-    </div>
-    <div class="sb-section">
-      <div class="sb-title">Reference</div>
-      <a href="benchmarks.html" class="sb-link active">Benchmarks</a>
-      <a href="architecture.html" class="sb-link">Architecture</a>
-      <a href="api.html" class="sb-link">Python API</a>
-    </div>
-    <div class="sb-section">
-      <div class="sb-title">Community</div>
-      <a href="contributing.html" class="sb-link">Contributing</a>
-      <a href="security.html" class="sb-link">Security Policy</a>
-    </div>
+    <div class="sb-section"><div class="sb-title">Getting Started</div><a href="./" class="sb-link">Overview</a><a href="installation.html" class="sb-link">Installation</a><a href="quickstart.html" class="sb-link">Quick Start</a></div>
+    <div class="sb-section"><div class="sb-title">Usage</div><a href="verify.html" class="sb-link">Verify SARIF</a><a href="commands.html" class="sb-link">Commands</a><a href="providers.html" class="sb-link">Providers</a><a href="templates.html" class="sb-link">Templates</a><a href="ci-cd.html" class="sb-link">CI/CD</a></div>
+    <div class="sb-section"><div class="sb-title">Reference</div><a href="benchmarks.html" class="sb-link active">Benchmarks</a><a href="architecture.html" class="sb-link">Architecture</a><a href="api.html" class="sb-link">Python API</a></div>
+    <div class="sb-section"><div class="sb-title">Project</div><a href="contributing.html" class="sb-link">Contributing</a><a href="security.html" class="sb-link">Security Policy</a></div>
   </aside>
-
   <main class="doc-content">
     <h1>Benchmarks</h1>
-    <p class="lead">CWE detection rates, comparison with Semgrep and CodeQL, and false positive analysis.</p>
+    <p class="lead">The current benchmark is a smoke test. Treat it that way.</p>
 
-    <h2>CWE Detection (v0.3.0, GPT-5.4)</h2>
-    <p>Run on 47 vulnerable code samples across Python, JavaScript, Go, Java.</p>
+    <h2>Current Dataset</h2>
+    <p>It has 10 vulnerable Python cases and 2 clean traps. It checks provider behavior, CWE extraction, and basic false-positive pressure.</p>
     <table>
-      <thead><tr><th>CWE</th><th>Name</th><th>Rate</th><th>Samples</th></tr></thead>
+      <thead><tr><th>Case</th><th>Expected CWE</th></tr></thead>
       <tbody>
-        <tr><td>CWE-78</td><td>OS Command Injection</td><td>94%</td><td>8/8</td></tr>
-        <tr><td>CWE-79</td><td>Cross-site Scripting</td><td>91%</td><td>10/11</td></tr>
-        <tr><td>CWE-89</td><td>SQL Injection</td><td>100%</td><td>6/6</td></tr>
-        <tr><td>CWE-94</td><td>Code Injection</td><td>88%</td><td>7/8</td></tr>
-        <tr><td>CWE-200</td><td>Sensitive Info Exposure</td><td>83%</td><td>5/6</td></tr>
-        <tr><td>CWE-259</td><td>Hard-coded Password</td><td>100%</td><td>4/4</td></tr>
-        <tr><td>CWE-295</td><td>Improper Cert Validation</td><td>75%</td><td>3/4</td></tr>
-        <tr><td>CWE-327</td><td>Broken Crypto</td><td>86%</td><td>6/7</td></tr>
-        <tr><td>CWE-352</td><td>CSRF</td><td>80%</td><td>4/5</td></tr>
-        <tr><td>CWE-502</td><td>Unsafe Deserialization</td><td>100%</td><td>3/3</td></tr>
-        <tr><td>CWE-601</td><td>Open Redirect</td><td>83%</td><td>5/6</td></tr>
-        <tr><td>CWE-611</td><td>XXE</td><td>100%</td><td>2/2</td></tr>
-        <tr><td>CWE-798</td><td>Hard-coded Credentials</td><td>100%</td><td>5/5</td></tr>
-        <tr><td>CWE-918</td><td>SSRF</td><td>86%</td><td>6/7</td></tr>
-      </tbody>
-    </table>
-    <p><strong>Overall: 91.5% detection rate (43/47 samples).</strong></p>
-
-    <h2>Comparison with Static Analysis Tools</h2>
-    <table>
-      <thead><tr><th>Vulnerability</th><th>CodeSight</th><th>Semgrep</th><th>CodeQL</th></tr></thead>
-      <tbody>
-        <tr><td>SQL Injection</td><td><strong>100%</strong></td><td>100%</td><td>100%</td></tr>
-        <tr><td>XSS</td><td><strong>91%</strong></td><td>82%</td><td>91%</td></tr>
-        <tr><td>Command Injection</td><td><strong>94%</strong></td><td>75%</td><td>88%</td></tr>
-        <tr><td>Hard-coded Secrets</td><td><strong>100%</strong></td><td>60%</td><td>40%</td></tr>
-        <tr><td>Broken Crypto</td><td><strong>86%</strong></td><td>71%</td><td>57%</td></tr>
-        <tr><td>SSRF</td><td><strong>86%</strong></td><td>43%</td><td>71%</td></tr>
-        <tr><td>Deserialization</td><td><strong>100%</strong></td><td>67%</td><td>100%</td></tr>
-        <tr><td>Logic-dependent</td><td><strong>83%</strong></td><td>12%</td><td>25%</td></tr>
+        <tr><td>SQL injection</td><td>CWE-89</td></tr>
+        <tr><td>Reflected XSS</td><td>CWE-79</td></tr>
+        <tr><td>Path traversal</td><td>CWE-22</td></tr>
+        <tr><td>Hardcoded secret</td><td>CWE-798</td></tr>
+        <tr><td>Command injection</td><td>CWE-78</td></tr>
+        <tr><td>Auth bypass</td><td>CWE-287</td></tr>
+        <tr><td>SSRF</td><td>CWE-918</td></tr>
+        <tr><td>Insecure deserialization</td><td>CWE-502</td></tr>
+        <tr><td>Tenant auth bypass</td><td>CWE-862</td></tr>
+        <tr><td>AI-agent tool call</td><td>CWE-20</td></tr>
+        <tr><td>Clean parameterized query</td><td>none</td></tr>
+        <tr><td>Clean safe path join</td><td>none</td></tr>
       </tbody>
     </table>
 
-    <h2>False Positive Rate</h2>
-    <p>Tested on 30 clean code samples:</p>
-    <table>
-      <thead><tr><th>Model</th><th>False Positives</th><th>Rate</th></tr></thead>
-      <tbody>
-        <tr><td>GPT-5.4</td><td>2</td><td>6.7%</td></tr>
-        <tr><td>Claude Opus 4.6</td><td>3</td><td>10.0%</td></tr>
-        <tr><td>Gemini 3.1 Pro</td><td>4</td><td>13.3%</td></tr>
-        <tr><td>Llama 3 (8B)</td><td>7</td><td>23.3%</td></tr>
-      </tbody>
-    </table>
+    <h2>Run</h2>
+    <div class="code-block"><div class="code-header"><span>Terminal</span></div><pre><code><span class="prompt">$</span> codesight benchmark --models gpt-5.4 llama3
+<span class="prompt">$</span> codesight benchmark --json > benchmark-results.json</code></pre></div>
 
-    <h2>Where CodeSight Wins</h2>
+    <h2>Measured</h2>
     <ul>
-      <li><strong>Logic-dependent vulnerabilities</strong> - auth bypass, race conditions, TOCTOU bugs</li>
-      <li><strong>Hard-coded secrets</strong> - catches secrets through intermediate variables, not just <code>password = "..."</code></li>
-      <li><strong>Zero-day patterns</strong> - generalises to new vulnerability classes without explicit rules</li>
-      <li><strong>Context-aware</strong> - <code>eval()</code> in a test file vs. a request handler</li>
+      <li>detection rate</li>
+      <li>true positives and false negatives</li>
+      <li>false positives on clean cases</li>
+      <li>response time</li>
+      <li>token usage</li>
+      <li>provider errors</li>
     </ul>
 
-    <h2>Where Traditional Tools Win</h2>
+    <h2>Not Measured Yet</h2>
     <ul>
-      <li><strong>Speed</strong> - Semgrep: milliseconds. CodeSight: 1-3 seconds per file.</li>
-      <li><strong>Determinism</strong> - Same input, same output every time.</li>
-      <li><strong>False positive rate</strong> - CodeQL's dataflow has fewer false positives.</li>
-      <li><strong>Cost at scale</strong> - 10K files &times; $0.003 = $30. Semgrep is free.</li>
+      <li>exploitability verdict quality</li>
+      <li>source-to-sink evidence quality</li>
+      <li>SARIF alert verification</li>
+      <li>framework-specific behavior</li>
+      <li>multi-file context</li>
+      <li>repeatability across multiple runs</li>
     </ul>
 
-    <h2>Run Your Own Benchmarks</h2>
-    <div class="code-block">
-      <div class="code-header"><span>Terminal</span></div>
-      <pre><code><span class="prompt">$</span> codesight benchmark --models gpt-5.4 claude-opus-4-6-20251101 llama3
-<span class="prompt">$</span> codesight benchmark --json &gt; results.json</code></pre>
-    </div>
-
-    <h2>OWASP Top 10 (2021) Coverage</h2>
-    <table>
-      <thead><tr><th>Category</th><th>Coverage</th></tr></thead>
-      <tbody>
-        <tr><td>A01 - Broken Access Control</td><td>Partial</td></tr>
-        <tr><td>A02 - Cryptographic Failures</td><td>Full</td></tr>
-        <tr><td>A03 - Injection</td><td>Full</td></tr>
-        <tr><td>A04 - Insecure Design</td><td>Partial</td></tr>
-        <tr><td>A05 - Security Misconfiguration</td><td>Partial</td></tr>
-        <tr><td>A06 - Vulnerable Components</td><td>No (use pip-audit/npm audit)</td></tr>
-        <tr><td>A07 - Auth Failures</td><td>Full</td></tr>
-        <tr><td>A08 - Data Integrity Failures</td><td>Partial</td></tr>
-        <tr><td>A09 - Logging Failures</td><td>Partial</td></tr>
-        <tr><td>A10 - SSRF</td><td>Full</td></tr>
-      </tbody>
-    </table>
+    <h2>Claim Rule</h2>
+    <p>Do not claim CodeSight is better than another tool unless the repo includes the cases, command, expected verdicts, raw results, model, provider, and run date.</p>
   </main>
 </div>
-
-<footer class="doc-footer">
-  <div>MIT License &middot; <a href="https://github.com/AvixoSec/codesight">AvixoSec/codesight</a></div>
-</footer>
-
+<footer class="doc-footer"><div>MIT License &middot; <a href="https://github.com/your-org/codesight">your-org/codesight</a></div></footer>
 <script src="script.js" defer></script>
 </body>
 </html>

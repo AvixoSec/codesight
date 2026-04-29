@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Custom Templates - CodeSight Docs</title>
-<meta name="description" content="Write custom analysis prompts for CodeSight. Reuse them across projects.">
+<title>Templates - CodeSight Docs</title>
+<meta name="description" content="Use CodeSight prompt templates for repeatable review tasks.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -13,134 +13,42 @@
 <body>
 <div class="grain" aria-hidden="true"></div>
 <div class="progress" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
-
-<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme">
-  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-  </svg>
-  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <circle cx="12" cy="12" r="4"/>
-    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-  </svg>
-</button>
-
-<nav class="doc-nav">
-  <a href="../" class="brand"><span class="mark"></span>CodeSight</a>
-  <div class="nav-links">
-    <a href="./" class="active">Docs</a>
-    <a href="https://github.com/AvixoSec/codesight" target="_blank" rel="noopener">GitHub</a>
-    <a href="https://pypi.org/project/codesight/" target="_blank" rel="noopener">PyPI</a>
-  </div>
-</nav>
-
+<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button>
+<nav class="doc-nav"><a href="../" class="brand"><span class="mark"></span>CodeSight</a><div class="nav-links"><a href="./">Docs</a><a href="https://github.com/your-org/codesight" target="_blank" rel="noopener">GitHub</a><a href="https://pypi.org/project/codesight/" target="_blank" rel="noopener">PyPI</a></div></nav>
 <div class="doc-layout">
   <aside class="sidebar">
-    <div class="sb-section">
-      <div class="sb-title">Getting Started</div>
-      <a href="./" class="sb-link">Overview</a>
-      <a href="installation.html" class="sb-link">Installation</a>
-      <a href="quickstart.html" class="sb-link">Quick Start</a>
-    </div>
-    <div class="sb-section">
-      <div class="sb-title">Usage</div>
-      <a href="commands.html" class="sb-link">Commands</a>
-      <a href="providers.html" class="sb-link">Providers</a>
-      <a href="templates.html" class="sb-link active">Custom Templates</a>
-      <a href="ci-cd.html" class="sb-link">CI/CD Integration</a>
-    </div>
-    <div class="sb-section">
-      <div class="sb-title">Reference</div>
-      <a href="benchmarks.html" class="sb-link">Benchmarks</a>
-      <a href="architecture.html" class="sb-link">Architecture</a>
-      <a href="api.html" class="sb-link">Python API</a>
-    </div>
-    <div class="sb-section">
-      <div class="sb-title">Community</div>
-      <a href="contributing.html" class="sb-link">Contributing</a>
-      <a href="security.html" class="sb-link">Security Policy</a>
-    </div>
+    <div class="sb-section"><div class="sb-title">Getting Started</div><a href="./" class="sb-link">Overview</a><a href="installation.html" class="sb-link">Installation</a><a href="quickstart.html" class="sb-link">Quick Start</a></div>
+    <div class="sb-section"><div class="sb-title">Usage</div><a href="verify.html" class="sb-link">Verify SARIF</a><a href="commands.html" class="sb-link">Commands</a><a href="providers.html" class="sb-link">Providers</a><a href="templates.html" class="sb-link active">Templates</a><a href="ci-cd.html" class="sb-link">CI/CD</a></div>
+    <div class="sb-section"><div class="sb-title">Reference</div><a href="benchmarks.html" class="sb-link">Benchmarks</a><a href="architecture.html" class="sb-link">Architecture</a><a href="api.html" class="sb-link">Python API</a></div>
+    <div class="sb-section"><div class="sb-title">Project</div><a href="contributing.html" class="sb-link">Contributing</a><a href="security.html" class="sb-link">Security Policy</a></div>
   </aside>
-
   <main class="doc-content">
-    <h1>Custom Prompt Templates</h1>
-    <p class="lead">Write your own analysis prompts. Reuse them across projects.</p>
+    <h1>Templates</h1>
+    <p class="lead">Templates are reusable prompts for repeatable review work.</p>
 
-    <h2>Built-in Templates</h2>
-    <table>
-      <thead>
-        <tr><th>Template</th><th>Description</th></tr>
-      </thead>
-      <tbody>
-        <tr><td><code>quick-review</code></td><td>Fast review, critical issues only</td></tr>
-        <tr><td><code>pr-review</code></td><td>Review formatted for pull request comments</td></tr>
-        <tr><td><code>security-owasp</code></td><td>OWASP Top 10 (2021) audit</td></tr>
-        <tr><td><code>api-docs</code></td><td>REST API documentation from route handlers</td></tr>
-        <tr><td><code>performance</code></td><td>Performance bottleneck analysis</td></tr>
-      </tbody>
-    </table>
+    <h2>List</h2>
+    <div class="code-block"><div class="code-header"><span>Terminal</span></div><pre><code><span class="prompt">$</span> codesight templates list</code></pre></div>
 
-    <h2>List Templates</h2>
-    <div class="code-block">
-      <div class="code-header"><span>Terminal</span></div>
-      <pre><code><span class="prompt">$</span> codesight templates list</code></pre>
-    </div>
+    <h2>Run</h2>
+    <div class="code-block"><div class="code-header"><span>Terminal</span></div><pre><code><span class="prompt">$</span> codesight templates run python-security src/app.py
+<span class="prompt">$</span> codesight templates run my-template src/app.py --provider openai</code></pre></div>
 
-    <h2>Run a Template</h2>
-    <div class="code-block">
-      <div class="code-header"><span>Terminal</span></div>
-      <pre><code><span class="prompt">$</span> codesight templates run quick-review src/main.py
-<span class="prompt">$</span> codesight templates run performance lib/db.py --provider anthropic</code></pre>
-    </div>
+    <h2>Create</h2>
+    <div class="code-block"><div class="code-header"><span>Terminal</span></div><pre><code><span class="prompt">$</span> codesight templates create my-template</code></pre></div>
 
-    <h2>Create a Template</h2>
-    <p>Interactive creation:</p>
-    <div class="code-block">
-      <div class="code-header"><span>Terminal</span></div>
-      <pre><code><span class="prompt">$</span> codesight templates add my-review
-  Display name: My Code Review
-  Description: Custom review for our team standards
-  Enter system prompt (end with an empty line):
-  &gt; Review this code for our team standards. Check for:
-  &gt; 1. Missing error handling
-  &gt; 2. Hardcoded config values
-  &gt; 3. Functions longer than 30 lines
-  &gt; For each issue: line number, category, and fix.
-  &gt;</code></pre>
-    </div>
+    <h2>Delete</h2>
+    <div class="code-block"><div class="code-header"><span>Terminal</span></div><pre><code><span class="prompt">$</span> codesight templates delete my-template</code></pre></div>
 
-    <p>Or create the JSON file directly in <code>~/.codesight/templates/</code>:</p>
-    <div class="code-block">
-      <div class="code-header"><span>~/.codesight/templates/my-review.json</span></div>
-      <pre><code>{
-  "name": "My Code Review",
-  "description": "Custom review for our team standards",
-  "system": "Review this code for our team standards..."
-}</code></pre>
-    </div>
-
-    <h2>Delete a Template</h2>
-    <div class="code-block">
-      <div class="code-header"><span>Terminal</span></div>
-      <pre><code><span class="prompt">$</span> codesight templates delete my-review</code></pre>
-    </div>
-    <div class="callout">
-      Built-in templates can't be deleted. Only custom templates stored in <code>~/.codesight/templates/</code> can be removed.
-    </div>
-
-    <h2>Template Tips</h2>
+    <h2>Good Template Rules</h2>
     <ul>
-      <li>Be specific about output format - models follow structure better than vague instructions</li>
-      <li>Include severity levels if the output needs them</li>
-      <li>Reference the patterns you want caught (e.g. "check for N+1 queries in Django ORM calls")</li>
-      <li>Keep prompts under ~500 words - longer prompts don't improve accuracy</li>
+      <li>Ask for concrete output.</li>
+      <li>Require line references when the task is code review or security.</li>
+      <li>Say how to handle uncertainty.</li>
+      <li>Do not ask the model to invent context it cannot see.</li>
     </ul>
   </main>
 </div>
-
-<footer class="doc-footer">
-  <div>MIT License &middot; <a href="https://github.com/AvixoSec/codesight">AvixoSec/codesight</a></div>
-</footer>
-
+<footer class="doc-footer"><div>MIT License &middot; <a href="https://github.com/your-org/codesight">your-org/codesight</a></div></footer>
 <script src="script.js" defer></script>
 </body>
 </html>
